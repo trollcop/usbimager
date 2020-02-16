@@ -5,23 +5,6 @@ USBImager
 [Usbimager](https://gitlab.com/bztsrc/usbimager) is a really really simple GUI application that writes disk images to USB drives.
 Available platforms: Windows, MacOSX and Linux. Its interface is as simple as it gets, totally bloat-free.
 
-<img src="https://gitlab.com/bztsrc/usbimager/raw/master/usbimager.png">
-
-Features
---------
-
-- Open Source and MIT licensed
-- Portable executable, no installation needed, just extract the archives
-- Small. Really small, few kilobytes only, yet has no dependencies
-- No privacy concerns nor advertisements like with etch*r
-- Tries to be bullet-proof and avoids overwriting of the system disk
-- Can verify writing by comparing the disk to the image
-- Can read raw disk images: .img, .bin, .raw, .iso, .dd, etc.
-- Can read compressed images on-the-fly: .gz, .bz2, .xz
-- Can read archives on-the-fly: .zip (PKZIP and ZIP64) (*)
-
-(* - for archives with multiple files, the first file in the archive is used as input)
-
 Installation
 ------------
 
@@ -30,6 +13,24 @@ Installation
 3. Enjoy!
 
 You can use the executable in the archive as-is, the other files only provide integration with your desktop (icons and such).
+
+Features
+--------
+
+- Open Source and MIT licensed
+- Portable executable, no installation needed, just extract the archives
+- Small. Really small, few kilobytes only, yet has no dependencies
+- No privacy concerns nor advertisements like with etch*r
+- Minimalist, native interface on all platforms
+- Tries to be bullet-proof and avoids overwriting of the system disk
+- Can verify writing by comparing the disk to the image
+- Can read raw disk images: .img, .bin, .raw, .iso, .dd, etc.
+- Can read compressed images on-the-fly: .gz, .bz2, .xz
+- Can read archives on-the-fly: .zip (PKZIP and ZIP64) (*)
+
+(* - for archives with multiple files, the first file in the archive is used as input)
+
+<img src="https://gitlab.com/bztsrc/usbimager/raw/master/usbimager.png">
 
 Compilation
 -----------
