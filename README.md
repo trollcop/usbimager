@@ -14,9 +14,9 @@ Installation
 
 You can use the executable in the archive as-is, the other files only provide integration with your desktop (icons and such).
 
-If you can't seem to write the target device (you get "permission denied" errors), then use `chgrp disk /usr/bin/usbimager && chmod g+s /usr/bin/usbimager`
-on Linux and on other POSIX-compatible systems, and "Run As Administrator" option under Windows. No need for `sudo`, just make sure your user has write
-access to the device.
+If you can't seem to write the target device (you get "permission denied" errors), then use the "Run As Administrator" option under Windows, and
+the `chgrp disk /usr/bin/usbimager && chmod g+s /usr/bin/usbimager` one-liner on Linux and on other POSIX-compatible systems. No need for `sudo`, just
+make sure your user has write access to the device.
 
 Features
 --------
