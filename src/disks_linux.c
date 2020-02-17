@@ -74,7 +74,7 @@ void disks_refreshlist()
             if(f) {
                 memset(path, 0, 32);
                 fread(path, 31, 1, f);
-                size = (uint64_t)atoll(path);
+                size = (uint64_t)atoll(path) * 512L;
                 fclose(f);
             }
             memset(vendorName, 0, sizeof(vendorName));
@@ -96,7 +96,7 @@ void disks_refreshlist()
                 fclose(f);
             }
             if(size) {
-                sizeInGbTimes10 = (uint64_t)(10 * (size + 1024L*1024L-1L) / 1024L / 1024L);
+                sizeInGbTimes10 = (uint64_t)(10 * (size + 1024L*1024L*1024L-1L) / 1024L / 1024L / 1024L);
                 snprintf(str, sizeof(str)-1, "%s [%ld.%ld GiB] %s %s", de->d_name,
                     sizeInGbTimes10 / 10, sizeInGbTimes10 % 10, vendorName, productName);
             } else
