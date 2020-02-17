@@ -18,7 +18,7 @@ If you can't seem to write the target device (you get "permission denied" errors
 ```
 chgrp disk /usr/bin/usbimager && chmod g+s /usr/bin/usbimager
 ```
-one-liner on Linux and on other POSIX-compatible systems. No need for `sudo`, just make sure your user has write access to the device.
+one-liner on Linux and on other POSIX-compatible systems. *No need* for `sudo /usr/bin/usbimager`, just make sure your user has write access to the device.
 
 Features
 --------
