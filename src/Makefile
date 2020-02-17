@@ -103,11 +103,13 @@ resource.o: misc/resource.rc
 $(TARGET): $(DECOMPRESSORS) $(OBJ)
 	$(LD) $(LDFLAGS) -o $@ $(OBJ) $(DECOMPRESSORS) $(LIBS)
 	$(STRIP) $(TARGET)
+	@chgrp disk $(TARGET)
+	@chmod g+s $(TARGET)
 
 ####### install and package creation #######
 
 install: $(TARGET)
-	install -m 755 -g bin $(TARGET) /usr/bin
+	install -m 2755 -g disk $(TARGET) /usr/bin
 	cp misc/usbimager.desktop /usr/share/applications
 	cp misc/icon128.png /usr/share/icons/hicolor/128x128/apps/usbimager.png
 	cp misc/icon64.png /usr/share/icons/hicolor/64x64/apps/usbimager.png
