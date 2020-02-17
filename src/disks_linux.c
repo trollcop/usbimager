@@ -27,26 +27,24 @@
  *
  */
 
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <dirent.h>
-#include <sys/mount.h>
+#include <errno.h>
 #include <fcntl.h>
-#include "libui/ui.h"
+#include <sys/mount.h>
 #include "disks.h"
-
-extern int verbose;
 
 int disks_targets[DISKS_MAX];
 
 /**
  * Refresh target device list in the combobox
  */
-void disks_refreshlist(void *data)
+void disks_refreshlist()
 {
-    uiCombobox *target = (uiCombobox *)data;
     FILE *f;
     DIR *dir;
     struct dirent *de;
@@ -58,26 +56,25 @@ void disks_refreshlist(void *data)
     memset(disks_targets, 0xff, sizeof(disks_targets));
 #if DISKS_TEST
     disks_targets[i++] = 'T';
-    uiComboboxAppend(target, "sdT Testfile ./test.bin");
+    main_addToCombobox("sdT Testfile ./test.bin");
 #endif
     dir = opendir("/sys/block");
     if(dir) {
         while((de = readdir(dir))) {
             if(de->d_name[0] != 's' || de->d_name[1] != 'd') continue;
             sprintf(path, "/sys/block/%s/removable", de->d_name);
-            f = fopen(path, "r");
-            if(f) {
-                fread(path, 1, 1, f);
-                fclose(f);
-            }
+            f = fopen(path, "r"); if(f) { fread(path, 1, 1, f); fclose(f); }
             if(path[0] != '1') continue;
+            sprintf(path, "/sys/block/%s/ro", de->d_name);
+            f = fopen(path, "r"); if(f) { fread(path, 1, 1, f); fclose(f); }
+            if(path[0] != '0') continue;
             size = 0;
             sprintf(path, "/sys/block/%s/size", de->d_name);
             f = fopen(path, "r");
             if(f) {
                 memset(path, 0, 32);
                 fread(path, 31, 1, f);
-                size = (uint64_t)atol(path);
+                size = (uint64_t)atoll(path);
                 fclose(f);
             }
             memset(vendorName, 0, sizeof(vendorName));
@@ -106,7 +103,7 @@ void disks_refreshlist(void *data)
                 snprintf(str, sizeof(str)-1, "%s %s %s", de->d_name, vendorName, productName);
             str[128] = 0;
             disks_targets[i++] = de->d_name[2];
-            uiComboboxAppend(target, str);
+            main_addToCombobox(str);
             if(i >= DISKS_MAX) break;
         }
         closedir(dir);
@@ -128,9 +125,15 @@ void *disks_open(int targetId)
     if((char)disks_targets[targetId] == 'T') {
         sprintf(deviceName, "./test.bin");
         unlink(deviceName);
+        errno = 0;
         ret = open(deviceName, O_RDWR | O_EXCL | O_CREAT, 0644);
-        if(verbose) printf("disks_open(%s)\r\n  fd=%d\r\n", deviceName, ret);
-        if(ret < 0) return NULL;
+        if(verbose)
+            printf("disks_open(%s)\r\n  fd=%d errno=%d err=%s\r\n",
+                deviceName, ret, errno, strerror(errno));
+        if(ret < 0 || errno) {
+            main_getErrorMessage();
+            return NULL;
+        }
         return (void*)((long int)ret);
     }
 #endif
@@ -150,18 +153,26 @@ void *disks_open(int targetId)
                     while(*c && *c != ' ' && *c != '\t' && *c != '\n') c++;
                 }
                 if(device && !strncmp(device, deviceName, l)) {
-                    if(!strcmp(path, "/") || !strcmp(path, "/boot")) { fclose(m); return (void*)-1; }
+                    if(!strcmp(path, "/") || !strcmp(path, "/boot")) { fclose(m); return (void*)-2; }
                     if(verbose) printf("  umount(%s)\r\n", path);
-                    umount2(path, MNT_FORCE);
+                    if(umount2(path, MNT_FORCE)) {
+                        if(verbose) printf("  errno=%d err=%s\r\n", errno, strerror(errno));
+                        main_getErrorMessage();
+                        return (void*)-2;
+                    }
                 }
             }
         }
         fclose(m);
     }
 
+    errno = 0;
     ret = open(deviceName, O_RDWR | O_SYNC | O_EXCL);
-    if(verbose) printf("  fd=%d\r\n", ret);
-    if(ret < 0) return NULL;
+    if(verbose) printf("  fd=%d errno=%d err=%s\r\n", ret, errno, strerror(errno));
+    if(ret < 0 || errno) {
+        main_getErrorMessage();
+        return NULL;
+    }
     return (void*)((long int)ret);
 }
 

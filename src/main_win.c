@@ -41,6 +41,41 @@
 #define DBT_DEVICEREMOVECOMPLETE 0x8004
 #endif
 
+static HWND mainHwndDlg;
+
+char *main_errorMessage;
+
+void main_addToCombobox(char *option)
+{
+    /* option is actually a TCHAR* in Win */
+    SendDlgItemMessage(mainHwndDlg, IDC_MAINDLG_TARGET_LIST, CB_ADDSTRING, 0, (LPARAM) option);
+}
+
+void main_getErrorMessage()
+{
+    if(main_errorMessage) {
+        LocalFree(main_errorMessage);
+        main_errorMessage = NULL;
+    }
+    if(GetLastError())
+        FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL,
+            GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR) &main_errorMessage, 0, NULL);
+}
+
+static void MainDlgMsgBox(HWND hwndDlg, char *message)
+{
+    TCHAR msg[1024], *err = (TCHAR*)main_errorMessage;
+    int i = 0;
+    if(main_errorMessage && *main_errorMessage) {
+        for(; err[i]; i++) msg[i] = err[i];
+        msg[i++] = (TCHAR)'\r';
+        msg[i++] = (TCHAR)'\n';
+    }
+    for(; *message; i++, message++)
+        msg[i] = (TCHAR)*message;
+    MessageBox(hwndDlg, msg, TEXT("Error"), MB_ICONERROR);
+}
+
 static DWORD WINAPI writerRoutine(LPVOID lpParam) {
     HWND hwndDlg = (HWND) lpParam;
     TCHAR szFilePathName[MAX_PATH];
@@ -69,10 +104,8 @@ static DWORD WINAPI writerRoutine(LPVOID lpParam) {
         LRESULT index = SendDlgItemMessage(hwndDlg, IDC_MAINDLG_TARGET_LIST, CB_GETCURSEL, 0, 0);
         int needVerify = IsDlgButtonChecked(hwndDlg, IDC_MAINDLG_VERIFY);
 
-        if(index == CB_ERR) {
-            MessageBox(hwndDlg, TEXT("Please select a target."), TEXT("Error"), MB_ICONEXCLAMATION);
-        } else
-        if ((hTargetDevice = (HANDLE)disks_open((int)index)) != NULL) {
+        hTargetDevice = index == CB_ERR ? (HANDLE)-1 : (HANDLE)disks_open((int)index);
+        if (hTargetDevice != NULL && hTargetDevice != (HANDLE)-1 && hTargetDevice != (HANDLE)-2) {
             totalNumberOfBytesWritten.QuadPart = 0;
 
             while(1) {
@@ -106,25 +139,35 @@ static DWORD WINAPI writerRoutine(LPVOID lpParam) {
                             ShowWindow(GetDlgItem(hwndDlg, IDC_MAINDLG_STATUS), SW_HIDE);
                             ShowWindow(GetDlgItem(hwndDlg, IDC_MAINDLG_STATUS), SW_SHOW);
                         } else {
-                            MessageBox(hwndDlg, TEXT("An error occurred while writing to the target device."), TEXT("Error"), MB_ICONERROR);
+                            main_getErrorMessage();
+                            MainDlgMsgBox(hwndDlg, "An error occurred while writing to the target device.");
                             break;
                         }
                     }
                 } else {
-                    MessageBox(hwndDlg, TEXT("An error occurred while reading the source file."), TEXT("Error"), MB_ICONERROR);
+                    MainDlgMsgBox(hwndDlg, "An error occurred while reading the source file.");
                     break;
                 }
             }
             disks_close((void*)hTargetDevice);
         } else {
-            MessageBox(hwndDlg, TEXT("An error occurred while opening the target volume."), TEXT("Error"), MB_ICONERROR);
+            MainDlgMsgBox(hwndDlg,
+                hTargetDevice == (HANDLE)-1 ? "Please select a valid target." :
+                (hTargetDevice == (HANDLE)-2 ? "Unable to dismount volume or lock the target device" :
+                (hTargetDevice == (HANDLE)-3 ? "Unable to open target volume" :
+                "An error occurred while opening the target device.")));
         }
         input_close(&ctx);
     } else {
-        MessageBox(hwndDlg, ret == 2 ? TEXT("Encrypted ZIP not supported") :
-            (ret == 3 ? TEXT("Unsupported compression method in ZIP") :
-            (ret == 4 ? TEXT("Decompressor error") :
-            TEXT("Please select a readable source file."))), TEXT("Error"), MB_ICONEXCLAMATION);
+        main_getErrorMessage();
+        MainDlgMsgBox(hwndDlg, ret == 2 ? "Encrypted ZIP not supported" :
+            (ret == 3 ? "Unsupported compression method in ZIP" :
+            (ret == 4 ? "Decompressor error" :
+            "Please select a readable source file.")));
+    }
+    if(main_errorMessage) {
+        LocalFree(main_errorMessage);
+        main_errorMessage = NULL;
     }
 
     EnableWindow(GetDlgItem(hwndDlg, IDC_MAINDLG_SOURCE), TRUE);
@@ -147,6 +190,10 @@ INT_PTR MainDlgButtonClick(HWND hwndDlg) {
     EnableWindow(GetDlgItem(hwndDlg, IDC_MAINDLG_VERIFY), FALSE);
     EnableWindow(GetDlgItem(hwndDlg, IDC_MAINDLG_BUTTON), FALSE);
     SendDlgItemMessage(hwndDlg, IDC_MAINDLG_PROGRESSBAR, PBM_SETPOS, 0, 0);
+    if(main_errorMessage) {
+        LocalFree(main_errorMessage);
+        main_errorMessage = NULL;
+    }
 
     CloseHandle(CreateThread(NULL, 0, writerRoutine, hwndDlg, 0, NULL));
     return TRUE;
@@ -155,7 +202,7 @@ INT_PTR MainDlgButtonClick(HWND hwndDlg) {
 INT_PTR MainDlgRefreshTarget(HWND hwndDlg) {
     LRESULT index = SendDlgItemMessage(hwndDlg, IDC_MAINDLG_TARGET_LIST, CB_GETCURSEL, 0, 0);
     SendDlgItemMessage(hwndDlg, IDC_MAINDLG_TARGET_LIST, CB_RESETCONTENT, 0, 0);
-    disks_refreshlist(hwndDlg);
+    disks_refreshlist();
     if(index != CB_ERR)
         SendDlgItemMessage(hwndDlg, IDC_MAINDLG_TARGET_LIST, CB_SETCURSEL, (WPARAM) index, 0);
     return TRUE;
@@ -189,6 +236,7 @@ static INT_PTR CALLBACK MainDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
     UNREFERENCED_PARAMETER(lParam);
     switch (uMsg) {
         case WM_INITDIALOG:
+            mainHwndDlg = hwndDlg;
             SendMessage(hwndDlg, WM_SETICON, ICON_SMALL, (LPARAM) LoadIcon((HINSTANCE) lParam, MAKEINTRESOURCE(IDI_APP_ICON)));
             MainDlgRefreshTarget(hwndDlg);
             return TRUE;

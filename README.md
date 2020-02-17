@@ -8,7 +8,7 @@ Available platforms: Windows, MacOSX and Linux. Its interface is as simple as it
 Installation
 ------------
 
-1. download one of the `usbimager-*.zip` archives above for your operating system
+1. download one of the `usbimager-*.zip` archives above for your operating system (approx. 128 kilobytes each)
 2. extract to: `C:\Program Files` (Windows), `/Applications` (MacOSX) or `/usr` (Linux)
 3. Enjoy!
 
@@ -23,12 +23,16 @@ Features
 - No privacy concerns nor advertisements like with etch*r
 - Minimalist, native interface on all platforms
 - Tries to be bullet-proof and avoids overwriting of the system disk
+- Makes synchronized writes, that is, all data is on disk when the progressbar reaches 100%
 - Can verify writing by comparing the disk to the image
 - Can read raw disk images: .img, .bin, .raw, .iso, .dd, etc.
 - Can read compressed images on-the-fly: .gz, .bz2, .xz
 - Can read archives on-the-fly: .zip (PKZIP and ZIP64) (*)
 
 (* - for archives with multiple files, the first file in the archive is used as input)
+
+Screenshots
+-----------
 
 <img src="https://gitlab.com/bztsrc/usbimager/raw/master/usbimager.png">
 
@@ -62,8 +66,7 @@ Dependencies: libc, libui for GTK+-3.0 (included) and GNU toolchain. Libui relie
 Known Issues
 ------------
 
-Needs lots of testing. MacOSX port seems to have issues with phtread? It would be nice to have a full native main_darwin.m in Obj-C, would solve
-the ugly interface and threading problems.
+Needs lots of testing. For MacOSX it would be nice to have a full native main_cocoa.m in Obj-C.
 
 Authors
 -------

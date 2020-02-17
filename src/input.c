@@ -28,6 +28,7 @@
  */
 
 #include <time.h>
+#include <errno.h>
 #include "input.h"
 
 int verbose = 0;
@@ -50,18 +51,21 @@ int input_status(input_t *ctx, char *str)
         else
             d = (t - ctx->start) * (ctx->compSize - ctx->cmrdSize) / ctx->cmrdSize;
         h = d / 3600; d %= 3600; m = d / 60; s = d % 60;
-        if(h > 0) sprintf(rem, "%d hour%s and %d min%s left", h, h>1?"s":"", m, m>1?"s":"");
-        else if(m > 0) sprintf(rem, "%d min%s and %d sec%s left", m, m>1?"s":"", s, s>1?"s":"");
+        if(h > 0) sprintf(rem, "%d hour%s and %d min%s left",
+            h, h>1?"s":"", m, m>1?"s":"");
+        else if(m > 0) sprintf(rem, "%d min%s and %d sec%s left",
+            m, m>1?"s":"", s, s>1?"s":"");
         else sprintf(rem, "%d sec%s left", s, s>1?"s":"");
         if(ctx->fileSize)
-            sprintf(str, "%6ld MiB / %ld MiB, %s",
-                (long int)(ctx->readSize / 1024 / 1024),
-                (long int)(ctx->fileSize / 1024 / 1024), rem);
+            sprintf(str, "%6" SPFLG "u MiB / %" SPFLG "u MiB, %s",
+                (ctx->readSize / 1024 / 1024),
+                (ctx->fileSize / 1024 / 1024), rem);
         else
-            sprintf(str, "%6ld MiB so far, %s",
-                (long int)(ctx->readSize / 1024 / 1024), rem);
+            sprintf(str, "%6" SPFLG "u MiB so far, %s",
+                (ctx->readSize / 1024 / 1024), rem);
     }
-    return ctx->fileSize ? (ctx->readSize * 100) / ctx->fileSize : (ctx->cmrdSize * 100) / (ctx->compSize+1);
+    return ctx->fileSize ? (ctx->readSize * 100) / ctx->fileSize :
+        (ctx->cmrdSize * 100) / (ctx->compSize+1);
 }
 
 /**
@@ -72,6 +76,7 @@ int input_open(input_t *ctx, char *fn)
     unsigned char hdr[65536], *buff;
     int x, y;
 
+    errno = 0;
     memset(ctx, 0, sizeof(input_t));
     if(!fn || !*fn) return 1;
 
@@ -169,9 +174,9 @@ int input_open(input_t *ctx, char *fn)
         break;
     }
     if(!ctx->compSize && !ctx->fileSize) { fclose(ctx->f); return 1; }
-    if(verbose) printf("  type %d compSize %lu fileSize %lu data offset %lu\r\n",
-        ctx->type, (unsigned long int)ctx->compSize, (unsigned long int)ctx->fileSize,
-        (unsigned long int)ftell(ctx->f));
+    if(verbose) printf("  type %d compSize %" SPFLG "u fileSize %" SPFLG
+        "u data offset %" SPFLG "u\r\n",
+        ctx->type, ctx->compSize, ctx->fileSize, (uint64_t)ftell(ctx->f));
 
     ctx->start = time(NULL);
     return 0;
@@ -185,14 +190,14 @@ int input_read(input_t *ctx, char *buffer)
     int ret = 0;
     int64_t size = 0, insiz;
 
+    errno = 0;
     size = ctx->fileSize - ctx->readSize;
     if(size < 1) { if(ctx->fileSize) return 0; size = 0; }
     if(size > BUFFER_SIZE) size = BUFFER_SIZE;
     if(verbose)
-        printf("input_read() readSize %lu / fileSize %lu (input size %ld), "
-            "cmrdSize %lu / compSize %lu\r\n", (unsigned long int)ctx->readSize,
-            (unsigned long int)ctx->fileSize, (long int)size, (unsigned long int)ctx->cmrdSize,
-            (unsigned long int)ctx->compSize);
+        printf("input_read() readSize %" SPFLG "u / fileSize %" SPFLG "u (input size %"
+            SPFLG "d), cmrdSize %" SPFLG "u / compSize %" SPFLG "u\r\n",
+            ctx->readSize, ctx->fileSize, size, ctx->cmrdSize, ctx->compSize);
     
     switch(ctx->type) {
         case TYPE_PLAIN:
@@ -206,8 +211,8 @@ int input_read(input_t *ctx, char *buffer)
                     insiz = ctx->compSize - ctx->cmrdSize;
                     if(insiz < 1) { ret = Z_STREAM_END; break; }
                     if(insiz > BUFFER_SIZE) insiz = BUFFER_SIZE;
-                    if(verbose) printf("  deflate cmrdSize %lu insiz %ld\r\n",
-                        (unsigned long int)ctx->cmrdSize, (long int)insiz);
+                    if(verbose) printf("  deflate cmrdSize %" SPFLG
+                        "u insiz %" SPFLG "d\r\n", ctx->cmrdSize, insiz);
                     ctx->zstrm.next_in = ctx->compBuf;
                     ctx->zstrm.avail_in = insiz;
                     if(!fread(&ctx->compBuf, insiz, 1, ctx->f)) break;
@@ -228,8 +233,8 @@ int input_read(input_t *ctx, char *buffer)
                     insiz = ctx->compSize - ctx->cmrdSize;
                     if(insiz < 1) { ret = BZ_STREAM_END; break; }
                     if(insiz > BUFFER_SIZE) insiz = BUFFER_SIZE;
-                    if(verbose) printf("  bzip2 cmrdSize %lu insiz %ld\r\n",
-                        (unsigned long int)ctx->cmrdSize, (long int)insiz);
+                    if(verbose) printf("  bzip2 cmrdSize %" SPFLG
+                        "u insiz %" SPFLG "d\r\n", ctx->cmrdSize, insiz);
                     ctx->bstrm.next_in = (char*)ctx->compBuf;
                     ctx->bstrm.avail_in = insiz;
                     if(!fread(&ctx->compBuf, insiz, 1, ctx->f)) break;
@@ -252,13 +257,14 @@ int input_read(input_t *ctx, char *buffer)
                     insiz = ctx->compSize - ctx->cmrdSize;
                     if(insiz < 1) { ret = XZ_STREAM_END; break; }
                     if(insiz > BUFFER_SIZE) insiz = BUFFER_SIZE;
-                    if(verbose) printf("  xz cmrdSize %lu insiz %ld\r\n",
-                        (unsigned long int)ctx->cmrdSize, (long int)insiz);
+                    if(verbose) printf("  xz cmrdSize %" SPFLG
+                        "u insiz %" SPFLG "d\r\n", ctx->cmrdSize, insiz);
                     ctx->xstrm.in = (unsigned char*)ctx->compBuf;
                     ctx->xstrm.in_pos = 0;
                     ctx->xstrm.in_size = insiz;
                     if(!fread(&ctx->compBuf, insiz, 1, ctx->f)) break;
-                    if(insiz < BUFFER_SIZE) memset(ctx->compBuf + insiz, 0, BUFFER_SIZE - insiz);
+                    if(insiz < BUFFER_SIZE)
+                        memset(ctx->compBuf + insiz, 0, BUFFER_SIZE - insiz);
                     ctx->cmrdSize += (uint64_t)insiz;
                 }
                 ret = xz_dec_run(ctx->xz, &ctx->xstrm);
@@ -271,7 +277,7 @@ int input_read(input_t *ctx, char *buffer)
             size = ctx->xstrm.out_pos;
         break;
     }
-    if(verbose) printf("input_read() output size %ld\r\n", (long int)size);
+    if(verbose) printf("input_read() output size %" SPFLG "d\r\n", size);
     ctx->readSize += (uint64_t)size;
     return size;
 }

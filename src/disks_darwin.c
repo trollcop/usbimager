@@ -30,7 +30,9 @@
 #import <stdio.h>
 #import <stdlib.h>
 #import <string.h>
+#import <unistd.h>
 #import <fcntl.h>
+#import <errno.h>
 #import <sys/param.h>
 #import <sys/ucred.h>
 #import <sys/mount.h>
@@ -44,21 +46,27 @@
 #import <IOKit/usb/IOUSBLib.h>
 #import <IOKit/IOBSD.h>
 
-#import "libui/ui.h"
 #import "disks.h"
 
-extern int verbose;
-
 int disks_targets[DISKS_MAX], currTarget = 0;
+
+static int numUmount = 0;
+void disks_umountDone(DADiskRef disk, DADissenterRef dis, void *context)
+{
+    (void)disk;
+    (void)dis;
+    (void)context;
+    numUmount--;
+    if(verbose) printf("\r\n  umountDone num=%d\r\n", numUmount);
+}
 
 /**
  * Refresh target device list in the combobox
  */
-void disks_refreshlist(void *data)
+void disks_refreshlist()
 {
     NSAutoreleasePool * pool = [[NSAutoreleasePool alloc] init];
 
-    uiCombobox *target = (uiCombobox *)data;
     char str[1024];
     mach_port_t             master_port;
     kern_return_t           k_result = KERN_FAILURE;
@@ -74,7 +82,7 @@ void disks_refreshlist(void *data)
     memset(disks_targets, 0xff, sizeof(disks_targets));
 #if DISKS_TEST
     disks_targets[i++] = 999;
-    uiComboboxAppend(target, "disk999 Testfile ./test.bin");
+    main_addToCombobox("disk999 Testfile ./test.bin");
 #endif
     k_result = IOMasterPort(MACH_PORT_NULL, &master_port);
     if (KERN_SUCCESS != k_result) return;
@@ -151,7 +159,7 @@ void disks_refreshlist(void *data)
             snprintf(str, sizeof(str)-1, "%s %s %s", deviceName, vendorName, productName);
         str[128] = 0;
         disks_targets[i++] = atoi(deviceName + (deviceName[0] == 'r' ? 5 : 4));
-        uiComboboxAppend(target, str);
+        main_addToCombobox(str);
 
         CFRelease(bsdName); bsdName = NULL;
         if(vendor) CFRelease(vendor); vendor = NULL;
@@ -170,7 +178,7 @@ void *disks_open(int targetId)
 {
     int ret = 0, i, l, n;
     char deviceName[16];
-    struct statfs buf[256];
+    struct statfs *buf;
 
     if(targetId < 0 || targetId >= DISKS_MAX || disks_targets[targetId] == -1) return (void*)-1;
     currTarget = disks_targets[targetId];
@@ -179,9 +187,15 @@ void *disks_open(int targetId)
     if(currTarget == 999) {
         sprintf(deviceName, "./test.bin");
         unlink(deviceName);
+        errno = 0;
         ret = open(deviceName, O_RDWR | O_EXCL | O_CREAT, 0644);
-        if(verbose) printf("disks_open(%s)\r\n  fd=%d\r\n", deviceName, ret);
-        if(ret < 0) return NULL;
+        if(verbose)
+            printf("disks_open(%s)\r\n  fd=%d errno=%d err=%s\r\n",
+                deviceName, ret, errno, strerror(errno));
+        if(ret < 0) {
+            main_getErrorMessage();
+            return NULL;
+        }
         return (void*)((long int)ret);
     }
 #endif
@@ -191,24 +205,46 @@ void *disks_open(int targetId)
     DADiskRef disk;
     DASessionRef session = DASessionCreate(kCFAllocatorDefault);
 
-    n = getfsstat(buf, 256, MNT_NOWAIT);
+    n = getfsstat(NULL, 0, MNT_NOWAIT);
+    if(verbose) printf("  getfsstat = %d\r\n", n);
     if(n > 0) {
-        sprintf(deviceName, "/dev/disk%d", disks_targets[targetId]);
-        l = strlen(deviceName);
-        for (i = 0; i < n; i++)
-            if(!strncmp(buf[i].f_mntfromname, deviceName, l)) {
-                if(!strcmp(buf[i].f_mntonname, "/")) { CFRelease(session); return (void*)-1; }
-                path = CFURLCreateWithBytes(kCFAllocatorDefault, (UInt8*)&buf[i].f_mntonname, strlen(buf[i].f_mntonname), kCFStringEncodingUTF8, NULL);
-                if(path) {
-                    disk = DADiskCreateFromVolumePath(kCFAllocatorDefault, session, path);
-                    if(disk) {
-                        DADiskUnmount(disk, kDADiskUnmountOptionForce, NULL , NULL);
-                        CFRelease(disk);
-                        if(verbose) printf("  umount(%s)\n", buf[i].f_mntonname);
+        buf = (struct statfs *)malloc(n * sizeof(struct statfs));
+        if(buf) {
+            n = getfsstat(buf, n * sizeof(struct statfs), MNT_NOWAIT);
+            sprintf(deviceName, "/dev/disk%d", disks_targets[targetId]);
+            l = strlen(deviceName);
+            DASessionScheduleWithRunLoop(session, CFRunLoopGetCurrent(), kCFRunLoopDefaultMode);
+            if(verbose) printf(" checking mounted fs list, n=%d\r\n", n);
+            for (i = 0; i < n; i++) {
+                if(!strncmp(buf[i].f_mntfromname, deviceName, l) && (!buf[i].f_mntfromname[l] || buf[i].f_mntfromname[l] == 's')) {
+                    if(!strcmp(buf[i].f_mntonname, "/")) {
+                        DASessionUnscheduleFromRunLoop(session, CFRunLoopGetCurrent(), kCFRunLoopDefaultMode);
+                        CFRelease(session);
+                        return (void*)-2;
                     }
-                    CFRelease(path);
+                    if(verbose) printf("  fsstat %s %s\r\n", buf[i].f_mntfromname, buf[i].f_mntonname);
+                    path = CFURLCreateWithBytes(kCFAllocatorDefault, (UInt8*)&buf[i].f_mntonname, strlen(buf[i].f_mntonname), kCFStringEncodingUTF8, NULL);
+                    if(path) {
+                        disk = DADiskCreateFromVolumePath(kCFAllocatorDefault, session, path);
+                        if(disk) {
+                            numUmount++;
+                            DADiskUnmount(disk, kDADiskUnmountOptionForce, disks_umountDone, NULL);
+                            CFRelease(disk);
+                            if(verbose) printf("  umount(%s)\n", buf[i].f_mntonname);
+                        }
+                        CFRelease(path);
+                    }
                 }
             }
+            free(buf);
+            for(i = 0; numUmount > 0 && i < 30000; i++) {
+               CFRunLoopRun();
+               if(verbose) { printf("  waiting for umount num=%d i=%d\r", numUmount, i); fflush(stdout); }
+               if(numUmount) usleep(100);
+            }
+            if(verbose) printf("\n");
+            DASessionUnscheduleFromRunLoop(session, CFRunLoopGetCurrent(), kCFRunLoopDefaultMode);
+        }
     }
 
     sprintf(deviceName, "/dev/rdisk%d", disks_targets[targetId]);
@@ -227,9 +263,13 @@ void *disks_open(int targetId)
 
     [pool release];
 
+    errno = 0;
     ret = open(deviceName, O_RDWR | O_SYNC | O_EXCL);
-    if(verbose) printf("  fd=%d\r\n", ret);
-    if(ret < 0) return NULL;
+    if(verbose) printf("  fd=%d errno=%d err=%s\r\n", ret, errno, strerror(errno));
+    if(ret < 0 || errno) {
+        main_getErrorMessage();
+        return NULL;
+    }
     return (void*)((long int)ret);
 }
 
@@ -242,6 +282,7 @@ void disks_close(void *data)
     char deviceName[16];
 
     close(fd);
+    sync();
     if(verbose) printf("disks_close(%d)\r\n", fd);
 #if DISKS_TEST
     if(currTarget == 999) return;

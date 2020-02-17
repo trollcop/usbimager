@@ -33,7 +33,7 @@ CC = gcc
 LD = gcc
 STRIP = strip
 # setting DISKS_TEST to 1 will add a test.bin "device" to the target disks list
-CFLAGS = -Wall -Wextra -pedantic --std=c99 -O3 -fvisibility=hidden -I./zlib -I./bzip2 -I./xz -DDISKS_TEST=0
+CFLAGS = -DDISKS_TEST=0 -Wall -Wextra -pedantic --std=c99 -O3 -fvisibility=hidden -I./zlib -I./bzip2 -I./xz
 LDFLAGS =
 LIBS =
 DECOMPRESSORS = zlib/libz.a bzip2/libbz2.a xz/libxz.a
@@ -57,8 +57,8 @@ ifneq ("$(wildcard /Library/Frameworks)","")
 # MacOSX
 MACOSX = 1
 SRC += main_unix.c disks_darwin.c
-CFLAGS += -x objective-c -fobjc-exceptions -pthread
-LDFLAGS += -macosx_version_min 10.14 -framework Foundation -framework CoreFoundation -framework IOKit -framework DiskArbitration -framework Cocoa
+CFLAGS += -DMACOSX=1 -pthread -x objective-c -fobjc-exceptions
+LDFLAGS += -macosx_version_min 10.14 -framework CoreFoundation -framework Foundation -framework IOKit -framework DiskArbitration -framework Cocoa
 LIBS += libui/darwin.a -lc -lobjc -lpthread
 LD = ld
 else
@@ -94,15 +94,15 @@ bzip2/libbz2.a:
 xz/libxz.a:
 	@make -C xz libxz.a
 
-$(TARGET): $(DECOMPRESSORS) $(OBJ)
-	$(LD) $(LDFLAGS) -o $@ $(OBJ) $(DECOMPRESSORS) $(LIBS)
-	$(STRIP) $(TARGET)
+resource.o: misc/resource.rc
+	$(WINDRES) misc/resource.rc -o resource.o
 
 %.o: %.c
 	$(CC) $(CFLAGS) -o $@ -c $<
 
-resource.o: misc/resource.rc
-	$(WINDRES) misc/resource.rc -o resource.o
+$(TARGET): $(DECOMPRESSORS) $(OBJ)
+	$(LD) $(LDFLAGS) -o $@ $(OBJ) $(DECOMPRESSORS) $(LIBS)
+	$(STRIP) $(TARGET)
 
 ####### install and package creation #######
 
@@ -118,7 +118,8 @@ package: $(TARGET)
 ifneq ($(WIN),)
 	@mkdir USBImager
 	@cp $(TARGET) USBImager
-	zip -r ../usbimager-i686-win.zip USBImager
+	@rm ../usbimager-i686-win.zip 2>/dev/null || true
+	zip -r -9 ../usbimager-i686-win.zip USBImager
 	@rm -rf USBImager
 else
 ifneq ($(MACOSX),)
@@ -126,7 +127,8 @@ ifneq ($(MACOSX),)
 	@cp $(TARGET) USBImager.app/Contents/MacOS
 	@cp misc/Info.plist USBImager.app/Contents
 	@cp misc/usbimager.icns USBImager.app/Contents/Resources
-	zip -r ../usbimager-intel-macosx.zip USBImager.app
+	@rm ../usbimager-intel-macosx.zip 2>/dev/null || true
+	zip -r -9 ../usbimager-intel-macosx.zip USBImager.app
 	@rm -rf USBImager.app
 else
 	@mkdir bin share share/applications share/icons share/icons/hicolor share/icons/hicolor/16x16 share/icons/hicolor/16x16/apps share/icons/hicolor/32x32 share/icons/hicolor/32x32/apps share/icons/hicolor/64x64 share/icons/hicolor/64x64/apps share/icons/hicolor/128x128 share/icons/hicolor/128x128/apps
@@ -136,7 +138,8 @@ else
 	@cp misc/icon64.png share/icons/hicolor/64x64/apps/usbimager.png
 	@cp misc/icon32.png share/icons/hicolor/32x32/apps/usbimager.png
 	@cp misc/icon16.png share/icons/hicolor/16x16/apps/usbimager.png
-	zip -r ../usbimager-x86_64-linux.zip bin share
+	@rm ../usbimager-x86_64-linux.zip 2>/dev/null || true
+	zip -r -9 ../usbimager-x86_64-linux.zip bin share
 	@rm -rf bin share
 endif
 endif

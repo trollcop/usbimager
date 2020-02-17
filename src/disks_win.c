@@ -34,8 +34,6 @@
 #include "resource.h"
 #include "disks.h"
 
-extern int verbose;
-
 int disks_targets[DISKS_MAX];
 
 HANDLE hTargetVolume = NULL;
@@ -43,12 +41,12 @@ HANDLE hTargetVolume = NULL;
 /**
  * Refresh target device list in the combobox
  */
-void disks_refreshlist(void *data) {
-    HWND hwndDlg = (HWND)data;
+void disks_refreshlist() {
     int i = 0, j;
     TCHAR szLbText[1024];
     HANDLE hTargetDevice;
     DISK_GEOMETRY diskGeometry;
+    DISK_GEOMETRY_EX diskGeometryEx;
     DWORD bytesReturned;
     long long int totalNumberOfBytes = 0;
     STORAGE_PROPERTY_QUERY Query;
@@ -63,15 +61,18 @@ void disks_refreshlist(void *data) {
     disks_targets[i++] = 'T';
     sprintf(siz, "T: Testfile .\\test.bin");
     for(c = siz; *c; c++, j++) szLbText[j] = (TCHAR)*c;
-    SendDlgItemMessage(hwndDlg, IDC_MAINDLG_TARGET_LIST, CB_ADDSTRING, 0, (LPARAM) szLbText);
+    main_addToCombobox((char*)szLbText);
 #endif
     for(letter = 'A'; letter <= 'Z'; letter++) {
         fn[4] = letter;
         /* fn[6] = '\\'; if(GetDriveType(fn) != DRIVE_REMOVABLE) continue; else fn[6] = 0; */
         if(letter == 'C') continue;
-        hTargetDevice = CreateFileA(fn, FILE_READ_ATTRIBUTES, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
+        hTargetDevice = CreateFileA(fn, GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
         if (hTargetDevice != INVALID_HANDLE_VALUE) {
             totalNumberOfBytes = 0;
+            if (DeviceIoControl(hTargetDevice, IOCTL_DISK_GET_DRIVE_GEOMETRY_EX, NULL, 0, &diskGeometryEx, sizeof diskGeometryEx, &bytesReturned, NULL)) {
+                totalNumberOfBytes = (long long int)diskGeometryEx.DiskSize.QuadPart;
+            } else
             if (DeviceIoControl(hTargetDevice, IOCTL_DISK_GET_DRIVE_GEOMETRY, NULL, 0, &diskGeometry, sizeof diskGeometry, &bytesReturned, NULL)) {
                 totalNumberOfBytes = (long long int)diskGeometry.Cylinders.QuadPart * (long long int)diskGeometry.TracksPerCylinder * (long long int)diskGeometry.SectorsPerTrack * (long long int)diskGeometry.BytesPerSector;
             }
@@ -93,9 +94,10 @@ void disks_refreshlist(void *data) {
                     for(c = (PCHAR)((PBYTE)pDevDesc + pDevDesc->ProductIdOffset); *c; c++, j++) szLbText[j] = (TCHAR)*c;
                 }
             }
+            szLbText[j] = 0;
             CloseHandle(hTargetDevice);
             disks_targets[i++] = letter;
-            SendDlgItemMessage(hwndDlg, IDC_MAINDLG_TARGET_LIST, CB_ADDSTRING, 0, (LPARAM) szLbText);
+            main_addToCombobox((char*)szLbText);
             if(i >= DISKS_MAX) break;
         }
     }
@@ -116,29 +118,38 @@ void *disks_open(int targetId)
 #if DISKS_TEST
     if((char)disks_targets[targetId] == 'T') {
         hTargetVolume = NULL;
-        ret = CreateFileA(".\\test.bin", FILE_WRITE_ATTRIBUTES, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, 0, 0, NULL);
+        ret = CreateFileA(".\\test.bin", GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, 0, 0, NULL);
+        if (ret == INVALID_HANDLE_VALUE) {
+            main_getErrorMessage();
+            return NULL;
+        }
         return (void*)ret;
     }
 #endif
     szVolumePathName[4] = (char)disks_targets[targetId];
-    hTargetVolume = CreateFileA(szVolumePathName, FILE_WRITE_ATTRIBUTES, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
-    if (hTargetVolume == INVALID_HANDLE_VALUE) return NULL;
+    hTargetVolume = CreateFileA(szVolumePathName, GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
+    if (hTargetVolume == INVALID_HANDLE_VALUE) {
+        main_getErrorMessage();
+        return (HANDLE)-3;
+    }
 
-    if (DeviceIoControl(hTargetVolume, FSCTL_LOCK_VOLUME, NULL, 0, NULL, 0, &bytesReturned, NULL)) {
-        DeviceIoControl(hTargetVolume, IOCTL_VOLUME_GET_VOLUME_DISK_EXTENTS, NULL, 0, &volumeDiskExtents, sizeof volumeDiskExtents, &bytesReturned, NULL);
-        DeviceIoControl(hTargetVolume, FSCTL_DISMOUNT_VOLUME, NULL, 0, NULL, 0, &bytesReturned, NULL);
-        sprintf(szDevicePathName, "\\\\.\\PhysicalDrive%u", (unsigned int)volumeDiskExtents.Extents[0].DiskNumber);
-        ret = CreateFileA(szDevicePathName, FILE_WRITE_ATTRIBUTES, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
-        if (ret == INVALID_HANDLE_VALUE) {
-            DeviceIoControl(hTargetVolume, FSCTL_UNLOCK_VOLUME, NULL, 0, NULL, 0, &bytesReturned, NULL);
-            CloseHandle(hTargetVolume);
-            hTargetVolume = NULL;
-            return NULL;
-        }
+    if (DeviceIoControl(hTargetVolume, FSCTL_LOCK_VOLUME, NULL, 0, NULL, 0, &bytesReturned, NULL) &&
+        DeviceIoControl(hTargetVolume, IOCTL_VOLUME_GET_VOLUME_DISK_EXTENTS, NULL, 0, &volumeDiskExtents, sizeof volumeDiskExtents, &bytesReturned, NULL) &&
+        DeviceIoControl(hTargetVolume, FSCTL_DISMOUNT_VOLUME, NULL, 0, NULL, 0, &bytesReturned, NULL)) {
+            sprintf(szDevicePathName, "\\\\.\\PhysicalDrive%u", (unsigned int)volumeDiskExtents.Extents[0].DiskNumber);
+            ret = CreateFileA(szDevicePathName, GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
+            if (ret == INVALID_HANDLE_VALUE) {
+                main_getErrorMessage();
+                DeviceIoControl(hTargetVolume, FSCTL_UNLOCK_VOLUME, NULL, 0, NULL, 0, &bytesReturned, NULL);
+                CloseHandle(hTargetVolume);
+                hTargetVolume = NULL;
+                return NULL;
+            }
     } else {
+        main_getErrorMessage();
         CloseHandle(hTargetVolume);
         hTargetVolume = NULL;
-        return NULL;
+        return (HANDLE)-2;
     }
     return (void*)ret;
 }

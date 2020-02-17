@@ -31,8 +31,27 @@
 
 #define DISKS_MAX 32
 
+/*** External resources ***/
+extern int verbose;
 extern int disks_targets[DISKS_MAX];
+extern char *main_errorMessage;
+void main_addToCombobox(char *option);
+void main_getErrorMessage();
 
-void disks_refreshlist(void *data);
+/**
+ * Refresh target device list in the combobox
+ * Should set disks_targets[] and call main_addToCombobox()
+ */
+void disks_refreshlist();
+
+/**
+ * Lock, umount and open the target disk for writing
+ * this returns FD on unices, and HANDLE on Windows
+ */
 void *disks_open(int targetId);
+
+/**
+ * Close the target disk
+ * Receives FD or HANDLE
+ */
 void disks_close(void *ctx);

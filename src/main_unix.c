@@ -27,7 +27,11 @@
  *
  */
 
+#ifdef MACOSX
+#import <Foundation/Foundation.h>
+#endif
 #include <pthread.h>
+#include <errno.h>
 #include "input.h"
 #include "disks.h"
 #include "libui/ui.h"
@@ -41,9 +45,21 @@ static uiCheckbox *verify;
 static uiButton *button;
 static uiProgressBar *pbar;
 static uiLabel *status;
-static pthread_t thread;
+pthread_t thrd;
+pthread_attr_t tha;
+char *main_errorMessage;
 
-void onDone(void *data)
+void main_addToCombobox(char *option)
+{
+    uiComboboxAppend(target, option);
+}
+
+void main_getErrorMessage()
+{
+    main_errorMessage = errno ? strerror(errno) : NULL;
+}
+
+static void onDone(void *data)
 {
     uiControlEnable(uiControl(source));
     uiControlEnable(uiControl(sourceButton));
@@ -52,9 +68,10 @@ void onDone(void *data)
     uiControlEnable(uiControl(button));
     uiProgressBarSetValue(pbar, 0);
     uiLabelSetText(status, (char*)data);
+    main_errorMessage = NULL;
 }
 
-void onProgress(void *data)
+static void onProgress(void *data)
 {
     char textstat[128];
     int pos;
@@ -62,11 +79,14 @@ void onProgress(void *data)
     pos = input_status((input_t*)data, textstat);
     uiProgressBarSetValue(pbar, pos);
     uiLabelSetText(status, textstat);
+#ifdef MACOSX
+    CFRunLoopRun();
+#endif
 }
 
-void onThreadError(void *data)
+static void onThreadError(void *data)
 {
-    uiMsgBoxError(mainwin, "Error", (char*)data);
+    uiMsgBoxError(mainwin, main_errorMessage && *main_errorMessage ? main_errorMessage : "Error", (char*)data);
 }
 
 static void *writerRoutine(void *data)
@@ -79,54 +99,57 @@ static void *writerRoutine(void *data)
 
     dst = input_open(&ctx, uiEntryText(source));
     if(!dst) {
-        dst = uiComboboxSelected(target);
-        if(dst < 0) {
-            uiQueueMain(onThreadError, "Please select a target.");
-        } else {
-            dst = (int)((long int)disks_open(dst));
-            if(dst > 0) {
-                while(1) {
-                    if((numberOfBytesRead = input_read(&ctx, buffer)) >= 0) {
-                        if(numberOfBytesRead == 0) {
-                            if(!ctx.fileSize) ctx.fileSize = ctx.readSize;
-                            break;
-                        } else {
-                            numberOfBytesWritten = write(dst, buffer, numberOfBytesRead);
-                            if(verbose) printf("writerRoutine() numberOfBytesRead %d numberOfBytesWritten %lu\n",
-                                numberOfBytesRead, numberOfBytesWritten);
-                            if((int)numberOfBytesWritten == numberOfBytesRead) {
-                                if(needVerify) {
-                                    lseek(dst, -((off_t)numberOfBytesWritten), SEEK_CUR);
-                                    numberOfBytesVerify = read(dst, verifyBuf, numberOfBytesWritten);
-                                    if(verbose) printf("  numberOfBytesVerify %lu\n", numberOfBytesVerify);
-                                    if(numberOfBytesVerify != numberOfBytesWritten ||
-                                        memcmp(buffer, verifyBuf, numberOfBytesWritten)) {
-                                            uiQueueMain(onThreadError,
-                                                "Write verification failed.");
-                                        break;
-                                    }
-                                }
-                                uiQueueMain(onProgress, &ctx);
-                            } else {
-                                uiQueueMain(onThreadError,
-                                    "An error occurred while writing to the target device.");
-                                break;
-                            }
-                        }
-                    } else {
-                        uiQueueMain(onThreadError,
-                            "An error occurred while reading the source file.");
+        dst = (int)((long int)disks_open(uiComboboxSelected(target)));
+        if(dst > 0) {
+            while(1) {
+                if((numberOfBytesRead = input_read(&ctx, buffer)) >= 0) {
+                    if(numberOfBytesRead == 0) {
+                        if(!ctx.fileSize) ctx.fileSize = ctx.readSize;
                         break;
+                    } else {
+                        errno = 0;
+                        numberOfBytesWritten = write(dst, buffer, numberOfBytesRead);
+                        if(verbose) printf("writerRoutine() numberOfBytesRead %d numberOfBytesWritten %lu\n",
+                            numberOfBytesRead, numberOfBytesWritten);
+                        if((int)numberOfBytesWritten == numberOfBytesRead) {
+#ifndef MACOSX
+                            fdatasync(dst);
+#endif
+                            if(needVerify) {
+                                lseek(dst, -((off_t)numberOfBytesWritten), SEEK_CUR);
+                                numberOfBytesVerify = read(dst, verifyBuf, numberOfBytesWritten);
+                                if(verbose) printf("  numberOfBytesVerify %lu\n", numberOfBytesVerify);
+                                if(numberOfBytesVerify != numberOfBytesWritten ||
+                                    memcmp(buffer, verifyBuf, numberOfBytesWritten)) {
+                                        uiQueueMain(onThreadError,
+                                            "Write verification failed.");
+                                    break;
+                                }
+                            }
+                            uiQueueMain(onProgress, &ctx);
+                        } else {
+                            if(errno) main_errorMessage = strerror(errno);
+                            uiQueueMain(onThreadError,
+                                "An error occurred while writing to the target device.");
+                            break;
+                        }
                     }
+                } else {
+                    uiQueueMain(onThreadError,
+                        "An error occurred while reading the source file.");
+                    break;
                 }
-                disks_close((void*)((long int)dst));
-            } else {
-                uiQueueMain(onThreadError,
-                    "An error occurred while opening the target device.");
             }
+            disks_close((void*)((long int)dst));
+        } else {
+            uiQueueMain(onThreadError,
+                dst == -1 ? "Please select a valid target." :
+                (dst == -2 ? "Unable to umount volumes on target device" :
+                "An error occurred while opening the target device."));
         }
         input_close(&ctx);
     } else {
+        if(errno) main_errorMessage = strerror(errno);
         uiQueueMain(onThreadError,
             dst == 2 ? "Encrypted ZIP not supported" :
             (dst == 3 ? "Unsupported compression method in ZIP" :
@@ -150,9 +173,15 @@ static void onWriteButtonClicked(uiButton *b, void *data)
     uiControlDisable(uiControl(button));
     uiProgressBarSetValue(pbar, 0);
     uiLabelSetText(status, "");
+    main_errorMessage = NULL;
 
     if(verbose) printf("Starting worker thread\r\n");
-    pthread_create(&thread, NULL, writerRoutine, NULL);
+#ifndef MACOSX
+    pthread_create(&thrd, &tha, writerRoutine, NULL);
+#else
+    CFRunLoopRun();
+    writerRoutine(NULL);
+#endif
 }
 
 static void refreshTarget(uiCombobox *cb, void *data)
@@ -164,7 +193,7 @@ static void refreshTarget(uiCombobox *cb, void *data)
     target = uiNewCombobox();
     uiBoxAppend(targetCont, uiControl(target), 1);
     uiComboboxOnSelected(target, refreshTarget, NULL);
-    disks_refreshlist(target);
+    disks_refreshlist();
     uiComboboxSetSelected(target, current);
 }
 
@@ -186,14 +215,14 @@ static int onClosing(uiWindow *w, void *data)
 {
     (void)w;
     (void)data;
-    if(thread) pthread_cancel(thread);
+    if(thrd) { pthread_cancel(thrd); thrd = 0; }
     uiQuit();
     return 1;
 }
 
 static int onShouldQuit(void *data)
 {
-    if(thread) pthread_cancel(thread);
+    if(thrd) { pthread_cancel(thrd); thrd = 0; }
     uiControlDestroy(uiControl(uiWindow(data)));
     return 1;
 }
@@ -208,7 +237,9 @@ int main(int argc, char **argv)
     if(argc > 1 && argv[1] && argv[1][0] == '-' && argv[1][1] == 'v')
         verbose = 1;
 
-    memset(&thread, 0, sizeof(pthread_t));
+    pthread_attr_init(&tha);
+    memset(&thrd, 0, sizeof(pthread_t));
+
     memset(&options, 0, sizeof (uiInitOptions));
     err = uiInit(&options);
     if (err != NULL) {
@@ -257,7 +288,8 @@ int main(int argc, char **argv)
 
     uiControlShow(uiControl(mainwin));
     uiMain();
-    if(thread) pthread_cancel(thread);
+    if(thrd) { pthread_cancel(thrd); thrd = 0; }
+    pthread_attr_destroy(&tha);
     uiQuit();
     return 0;
 }
