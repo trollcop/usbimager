@@ -60,14 +60,14 @@ void disks_refreshlist() {
 #if DISKS_TEST
     disks_targets[i++] = 'T';
     sprintf(siz, "T: Testfile .\\test.bin");
-    for(c = siz; *c; c++, j++) szLbText[j] = (TCHAR)*c;
+    for(j = 0, c = siz; *c; c++, j++) szLbText[j] = (TCHAR)*c;
     main_addToCombobox((char*)szLbText);
 #endif
     for(letter = 'A'; letter <= 'Z'; letter++) {
         fn[4] = letter;
         /* fn[6] = '\\'; if(GetDriveType(fn) != DRIVE_REMOVABLE) continue; else fn[6] = 0; */
         if(letter == 'C') continue;
-        hTargetDevice = CreateFileA(fn, GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
+        hTargetDevice = CreateFileA(fn, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
         if (hTargetDevice != INVALID_HANDLE_VALUE) {
             totalNumberOfBytes = 0;
             if (DeviceIoControl(hTargetDevice, IOCTL_DISK_GET_DRIVE_GEOMETRY_EX, NULL, 0, &diskGeometryEx, sizeof diskGeometryEx, &bytesReturned, NULL)) {
@@ -118,7 +118,7 @@ void *disks_open(int targetId)
 #if DISKS_TEST
     if((char)disks_targets[targetId] == 'T') {
         hTargetVolume = NULL;
-        ret = CreateFileA(".\\test.bin", GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, 0, 0, NULL);
+        ret = CreateFileA(".\\test.bin", GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, CREATE_ALWAYS, 0, NULL);
         if (ret == INVALID_HANDLE_VALUE) {
             main_getErrorMessage();
             return NULL;
@@ -127,7 +127,7 @@ void *disks_open(int targetId)
     }
 #endif
     szVolumePathName[4] = (char)disks_targets[targetId];
-    hTargetVolume = CreateFileA(szVolumePathName, GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
+    hTargetVolume = CreateFileA(szVolumePathName, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
     if (hTargetVolume == INVALID_HANDLE_VALUE) {
         main_getErrorMessage();
         return (HANDLE)-3;
@@ -137,7 +137,7 @@ void *disks_open(int targetId)
         DeviceIoControl(hTargetVolume, IOCTL_VOLUME_GET_VOLUME_DISK_EXTENTS, NULL, 0, &volumeDiskExtents, sizeof volumeDiskExtents, &bytesReturned, NULL) &&
         DeviceIoControl(hTargetVolume, FSCTL_DISMOUNT_VOLUME, NULL, 0, NULL, 0, &bytesReturned, NULL)) {
             sprintf(szDevicePathName, "\\\\.\\PhysicalDrive%u", (unsigned int)volumeDiskExtents.Extents[0].DiskNumber);
-            ret = CreateFileA(szDevicePathName, GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
+            ret = CreateFileA(szDevicePathName, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
             if (ret == INVALID_HANDLE_VALUE) {
                 main_getErrorMessage();
                 DeviceIoControl(hTargetVolume, FSCTL_UNLOCK_VOLUME, NULL, 0, NULL, 0, &bytesReturned, NULL);

@@ -30,6 +30,8 @@
 #include <windows.h>
 #include <winioctl.h>
 #include <commctrl.h>
+#include <io.h>
+#include <fcntl.h>
 #include "resource.h"
 #include "input.h"
 #include "disks.h"
@@ -40,6 +42,8 @@
 #ifndef DBT_DEVICEREMOVECOMPLETE
 #define DBT_DEVICEREMOVECOMPLETE 0x8004
 #endif
+
+_CRTIMP __cdecl __MINGW_NOTHROW  FILE * _fdopen (int, const char *);
 
 static HWND mainHwndDlg;
 
@@ -105,7 +109,7 @@ static DWORD WINAPI writerRoutine(LPVOID lpParam) {
         int needVerify = IsDlgButtonChecked(hwndDlg, IDC_MAINDLG_VERIFY);
 
         hTargetDevice = index == CB_ERR ? (HANDLE)-1 : (HANDLE)disks_open((int)index);
-        if (hTargetDevice != NULL && hTargetDevice != (HANDLE)-1 && hTargetDevice != (HANDLE)-2) {
+        if (hTargetDevice != NULL && hTargetDevice != (HANDLE)-1 && hTargetDevice != (HANDLE)-2 && hTargetDevice != (HANDLE)-3) {
             totalNumberOfBytesWritten.QuadPart = 0;
 
             while(1) {
@@ -283,8 +287,21 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszArgum
 
     char *cmdline = GetCommandLine();
     for(; cmdline && cmdline[0] && cmdline[1] && cmdline[2] && !verbose; cmdline++)
-        if(cmdline[0] == ' ' && cmdline[1] == '-' && cmdline[2] == 'v')
+        if(cmdline[0] == ' ' && cmdline[1] == '-' && cmdline[2] == 'v') {
             verbose = 1;
+            AllocConsole();
+            HANDLE ConsoleHandle = GetStdHandle(STD_OUTPUT_HANDLE);
+            FILE *f = _fdopen(_open_osfhandle((intptr_t)ConsoleHandle, _O_TEXT), "w");
+            *stdout = *f;
+            setvbuf(stdout, NULL, _IONBF, 0);
+            SetConsoleTitle(TEXT("USBImager Debug"));
+            CONSOLE_SCREEN_BUFFER_INFO csbi;
+            if(GetConsoleScreenBufferInfo(ConsoleHandle, &csbi)) {
+                COORD bs;
+                bs.X = 132; bs.Y = 32767;
+                SetConsoleScreenBufferSize(ConsoleHandle, bs);
+            }
+        }
 
     return DialogBoxParam(hInstance, MAKEINTRESOURCE(IDC_MAINDLG), NULL, MainDlgProc, (LPARAM) hInstance);
 }

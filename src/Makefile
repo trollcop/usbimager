@@ -61,6 +61,7 @@ CFLAGS += -DMACOSX=1 -pthread -x objective-c -fobjc-exceptions
 LDFLAGS += -macosx_version_min 10.14 -framework CoreFoundation -framework Foundation -framework IOKit -framework DiskArbitration -framework Cocoa
 LIBS += libui/darwin.a -lc -lobjc -lpthread
 LD = ld
+GRP = operator
 else
 # Linux
 LINUX = 1
@@ -73,6 +74,8 @@ LIBS += $(shell pkg-config --libs gtk+-3.0)
 else
 LIBS += -lgtk-3 -lgdk-3 -lgobject-2.0 -lglib-2.0
 endif
+# don't use. GTK will refuse to start...
+#GRP = disk
 endif
 endif
 
@@ -103,13 +106,15 @@ resource.o: misc/resource.rc
 $(TARGET): $(DECOMPRESSORS) $(OBJ)
 	$(LD) $(LDFLAGS) -o $@ $(OBJ) $(DECOMPRESSORS) $(LIBS)
 	$(STRIP) $(TARGET)
-	@chgrp disk $(TARGET)
+ifneq ($(GRP),)
+	@chgrp $(GRP) $(TARGET)
 	@chmod g+s $(TARGET)
+endif
 
 ####### install and package creation #######
 
 install: $(TARGET)
-	install -m 2755 -g disk $(TARGET) /usr/bin
+	install -m 755 -g bin $(TARGET) /usr/bin
 	cp misc/usbimager.desktop /usr/share/applications
 	cp misc/icon128.png /usr/share/icons/hicolor/128x128/apps/usbimager.png
 	cp misc/icon64.png /usr/share/icons/hicolor/64x64/apps/usbimager.png

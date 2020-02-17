@@ -28,7 +28,7 @@
  */
 
 #ifdef MACOSX
-#import <Foundation/Foundation.h>
+#import <CoreFoundation/CoreFoundation.h>
 #endif
 #include <pthread.h>
 #include <errno.h>
@@ -80,6 +80,7 @@ static void onProgress(void *data)
     uiProgressBarSetValue(pbar, pos);
     uiLabelSetText(status, textstat);
 #ifdef MACOSX
+    uiMainStep(0);
     CFRunLoopRun();
 #endif
 }
@@ -92,7 +93,7 @@ static void onThreadError(void *data)
 static void *writerRoutine(void *data)
 {
     int dst, needVerify = uiCheckboxChecked(verify), numberOfBytesRead;
-    size_t numberOfBytesWritten, numberOfBytesVerify;
+    int numberOfBytesWritten, numberOfBytesVerify;
     char buffer[BUFFER_SIZE], verifyBuf[BUFFER_SIZE];
     input_t ctx;
     (void)data;
@@ -108,17 +109,14 @@ static void *writerRoutine(void *data)
                         break;
                     } else {
                         errno = 0;
-                        numberOfBytesWritten = write(dst, buffer, numberOfBytesRead);
-                        if(verbose) printf("writerRoutine() numberOfBytesRead %d numberOfBytesWritten %lu\n",
-                            numberOfBytesRead, numberOfBytesWritten);
-                        if((int)numberOfBytesWritten == numberOfBytesRead) {
-#ifndef MACOSX
-                            fdatasync(dst);
-#endif
+                        numberOfBytesWritten = (int)write(dst, buffer, numberOfBytesRead);
+                        if(verbose) printf("writerRoutine() numberOfBytesRead %d numberOfBytesWritten %d errno=%d\n",
+                            numberOfBytesRead, numberOfBytesWritten, errno);
+                        if(numberOfBytesWritten == numberOfBytesRead) {
                             if(needVerify) {
                                 lseek(dst, -((off_t)numberOfBytesWritten), SEEK_CUR);
                                 numberOfBytesVerify = read(dst, verifyBuf, numberOfBytesWritten);
-                                if(verbose) printf("  numberOfBytesVerify %lu\n", numberOfBytesVerify);
+                                if(verbose) printf("  numberOfBytesVerify %d\n", numberOfBytesVerify);
                                 if(numberOfBytesVerify != numberOfBytesWritten ||
                                     memcmp(buffer, verifyBuf, numberOfBytesWritten)) {
                                         uiQueueMain(onThreadError,
@@ -156,7 +154,7 @@ static void *writerRoutine(void *data)
             (dst == 4 ? "Decompressor error" :
             "Please select a readable source file.")));
     }
-    uiQueueMain(onDone, ctx.fileSize && ctx.readSize == ctx.fileSize ?
+    uiQueueMain(onDone, !errno && ctx.fileSize && ctx.readSize >= ctx.fileSize ?
         "Done. Image written successfully." : "");
     if(verbose) printf("Worker thread finished.\r\n");
     return NULL;

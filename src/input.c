@@ -277,6 +277,7 @@ int input_read(input_t *ctx, char *buffer)
             size = ctx->xstrm.out_pos;
         break;
     }
+    while(size & 511) buffer[size++] = 0;
     if(verbose) printf("input_read() output size %" SPFLG "d\r\n", size);
     ctx->readSize += (uint64_t)size;
     return size;

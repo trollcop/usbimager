@@ -182,6 +182,7 @@ void *disks_open(int targetId)
 void disks_close(void *data)
 {
     int fd = (int)((long int)data);
+    fdatasync(fd);
     close(fd);
     if(verbose) printf("disks_close(%d)\r\n", fd);
 }
