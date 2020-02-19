@@ -33,10 +33,13 @@ CC = gcc
 LD = gcc
 STRIP = strip
 # setting DISKS_TEST to 1 will add a test.bin "device" to the target disks list
-CFLAGS = -DDISKS_TEST=0 -Wall -Wextra -pedantic --std=c99 -O3 -fvisibility=hidden -I./zlib -I./bzip2 -I./xz -g
+CFLAGS = -DDISKS_TEST=0 -Wall -Wextra -pedantic --std=c99 -O3 -fvisibility=hidden -I./zlib -I./bzip2 -I./xz
 LDFLAGS =
 LIBS =
 DECOMPRESSORS = zlib/libz.a bzip2/libbz2.a xz/libxz.a
+ifneq ($(DEBUG),)
+CFLAGS += -g
+endif
 
 SRC = $(filter-out $(wildcard main_*.c) $(wildcard disks_*.c),$(wildcard *.c))
 OBJ =
@@ -129,7 +132,9 @@ resource.o: misc/resource.rc
 
 $(TARGET): $(DECOMPRESSORS) $(OBJ)
 	$(LD) $(LDFLAGS) -o $@ $(OBJ) $(DECOMPRESSORS) $(LIBS)
-	#$(STRIP) $(TARGET)
+ifeq ($(DEBUG),)
+	$(STRIP) $(TARGET)
+endif
 ifneq ($(GRP),)
 	@chgrp $(GRP) $(TARGET)
 	@chmod g+s $(TARGET)

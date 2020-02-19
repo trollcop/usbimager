@@ -33,7 +33,6 @@
 
 int verbose = 0;
 
-
 /**
  * Returns progress percentage and the status string in str
  */
@@ -57,12 +56,12 @@ int input_status(input_t *ctx, char *str)
             m, m>1?"s":"", s, s>1?"s":"");
         else sprintf(rem, "%d sec%s left", s, s>1?"s":"");
         if(ctx->fileSize)
-            sprintf(str, "%6" SPFLG "u MiB / %" SPFLG "u MiB, %s",
-                (ctx->readSize / 1024 / 1024),
-                (ctx->fileSize / 1024 / 1024), rem);
+            sprintf(str, "%6" PRIu64 " MiB / %" PRIu64 " MiB, %s",
+                (ctx->readSize >> 20),
+                (ctx->fileSize >> 20), rem);
         else
-            sprintf(str, "%6" SPFLG "u MiB so far, %s",
-                (ctx->readSize / 1024 / 1024), rem);
+            sprintf(str, "%6" PRIu64 " MiB so far, %s",
+                (ctx->readSize >> 20), rem);
     }
     return ctx->fileSize ? (ctx->readSize * 100) / ctx->fileSize :
         (ctx->cmrdSize * 100) / (ctx->compSize+1);
@@ -174,8 +173,8 @@ int input_open(input_t *ctx, char *fn)
         break;
     }
     if(!ctx->compSize && !ctx->fileSize) { fclose(ctx->f); return 1; }
-    if(verbose) printf("  type %d compSize %" SPFLG "u fileSize %" SPFLG
-        "u data offset %" SPFLG "u\r\n",
+    if(verbose) printf("  type %d compSize %" PRIu64 " fileSize %" PRIu64
+        " data offset %" PRIu64 "\r\n",
         ctx->type, ctx->compSize, ctx->fileSize, (uint64_t)ftell(ctx->f));
 
     ctx->start = time(NULL);
@@ -195,8 +194,8 @@ int input_read(input_t *ctx, char *buffer)
     if(size < 1) { if(ctx->fileSize) return 0; size = 0; }
     if(size > BUFFER_SIZE) size = BUFFER_SIZE;
     if(verbose)
-        printf("input_read() readSize %" SPFLG "u / fileSize %" SPFLG "u (input size %"
-            SPFLG "d), cmrdSize %" SPFLG "u / compSize %" SPFLG "u\r\n",
+        printf("input_read() readSize %" PRIu64 " / fileSize %" PRIu64 " (input size %"
+            PRId64 "), cmrdSize %" PRIu64 " / compSize %" PRIu64 "u\r\n",
             ctx->readSize, ctx->fileSize, size, ctx->cmrdSize, ctx->compSize);
     
     switch(ctx->type) {
@@ -211,8 +210,8 @@ int input_read(input_t *ctx, char *buffer)
                     insiz = ctx->compSize - ctx->cmrdSize;
                     if(insiz < 1) { ret = Z_STREAM_END; break; }
                     if(insiz > BUFFER_SIZE) insiz = BUFFER_SIZE;
-                    if(verbose) printf("  deflate cmrdSize %" SPFLG
-                        "u insiz %" SPFLG "d\r\n", ctx->cmrdSize, insiz);
+                    if(verbose) printf("  deflate cmrdSize %" PRIu64
+                        " insiz %" PRId64 "\r\n", ctx->cmrdSize, insiz);
                     ctx->zstrm.next_in = ctx->compBuf;
                     ctx->zstrm.avail_in = insiz;
                     if(!fread(&ctx->compBuf, insiz, 1, ctx->f)) break;
@@ -233,8 +232,8 @@ int input_read(input_t *ctx, char *buffer)
                     insiz = ctx->compSize - ctx->cmrdSize;
                     if(insiz < 1) { ret = BZ_STREAM_END; break; }
                     if(insiz > BUFFER_SIZE) insiz = BUFFER_SIZE;
-                    if(verbose) printf("  bzip2 cmrdSize %" SPFLG
-                        "u insiz %" SPFLG "d\r\n", ctx->cmrdSize, insiz);
+                    if(verbose) printf("  bzip2 cmrdSize %" PRIu64
+                        " insiz %" PRId64 "\r\n", ctx->cmrdSize, insiz);
                     ctx->bstrm.next_in = (char*)ctx->compBuf;
                     ctx->bstrm.avail_in = insiz;
                     if(!fread(&ctx->compBuf, insiz, 1, ctx->f)) break;
@@ -257,8 +256,8 @@ int input_read(input_t *ctx, char *buffer)
                     insiz = ctx->compSize - ctx->cmrdSize;
                     if(insiz < 1) { ret = XZ_STREAM_END; break; }
                     if(insiz > BUFFER_SIZE) insiz = BUFFER_SIZE;
-                    if(verbose) printf("  xz cmrdSize %" SPFLG
-                        "u insiz %" SPFLG "d\r\n", ctx->cmrdSize, insiz);
+                    if(verbose) printf("  xz cmrdSize %" PRIu64
+                        " insiz %" PRId64 "\r\n", ctx->cmrdSize, insiz);
                     ctx->xstrm.in = (unsigned char*)ctx->compBuf;
                     ctx->xstrm.in_pos = 0;
                     ctx->xstrm.in_size = insiz;
@@ -278,7 +277,7 @@ int input_read(input_t *ctx, char *buffer)
         break;
     }
     while(size & 511) buffer[size++] = 0;
-    if(verbose) printf("input_read() output size %" SPFLG "d\r\n", size);
+    if(verbose) printf("input_read() output size %" PRId64 "\r\n", size);
     ctx->readSize += (uint64_t)size;
     return size;
 }

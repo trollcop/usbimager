@@ -449,18 +449,30 @@ static void onProgress(void *data)
 
 static void onThreadError(void *data)
 {
+    char *err = main_errorMessage && *main_errorMessage ? main_errorMessage : "Error";
 #ifdef MACOSX
+    int el = strlen(err), dl = data ? strlen(data) : 0;
     NSAutoreleasePool * pool = [[NSAutoreleasePool alloc] init];
-    NSWindow window = [[NSApplication] sharedApplication] mainWindow];
-    if(!window)
-        window = [[NSApplication] sharedApplication] keyWindow];
+    NSApplication *app = [NSApplication] sharedApplication];
+    NSAlert* alert = [[NSAlert alloc] init];
+
+    [[alert window] setTitle:@"Error"];
+    [alert setMessageText:[[NSString alloc] initWithBytes:err length:el encoding:NSUTF8StringEncoding]];
+    [alert setInformativeText:[[NSString alloc] initWithBytes:data length:dl encoding:NSUTF8StringEncoding]];
+    [alert setIcon:[NSImage imageNamed:NSImageNameCaution]];
+    [alert setAlertStyle:style];
+    [alert setShowsHelp:NO];
+    [alert addButtonWithTitle:@"OK"];
+    [alert beginSheetModalForWindow:[app mainWindow] completionHandler:^(NSInteger result) {
+        [app stopModalWithCode:result];
+    }];
+    [app runModalForWindow:alert];
 
     [pool release];
 #else
     XEvent e;
     Window win;
     int mw, mh = 4*fonth+40, pressed = 0, w, old = inactive;
-    char *err = main_errorMessage && *main_errorMessage ? main_errorMessage : "Error";
 
     w = mainPrint(mainwin, txtgc, 0, 0, 0, 2, err) + 40;
     mw = mainPrint(mainwin, txtgc, 0, 0, 0, 2, (char*)data) + 40;
@@ -594,7 +606,7 @@ static void onSelectClicked()
 #ifdef MACOSX
     NSAutoreleasePool * pool = [[NSAutoreleasePool alloc] init];
     NSOpenPanel *o = [NSOpenPanel openPanel];
-    NSApplication *app = [NSApplication] sharedApplication];
+    NSApplication *app = [[NSApplication] sharedApplication];
     [o setCanChooseFiles:YES];
     [o setCanChooseDirectories:NO];
     [o setResolvesAliases:NO];
@@ -621,6 +633,7 @@ static void onSelectClicked()
     int refresh = 1, pressedPath = -1, pressedBtn = -1, allfiles = 0, fns = 200, ds = 100;
     int scrollMounts = 0, overMount = -1, numFiles = 0, scrollFiles = 0, selFile = -1, lastFile = -2;
     filelist_t *files = NULL;
+    uint64_t size;
     DIR *dir;
     FILE *f;
     struct dirent *de;
@@ -901,7 +914,18 @@ ok:             if(selFile >=0 && selFile < numFiles) {
                     if(s) s++; else s = files[i].name;
                     mainPrint(win, i == selFile ? shdgc : txtgc, 230, y+4, mw-241-fns, 2, s);
                     if(files[i].type) {
-                        sprintf(tmp, "%" SPFLG "d", files[i].size);
+                        size = files[i].size;
+                        if(size < 1024L*1024L)
+                            sprintf(tmp, "%u", (unsigned int)size);
+                        else {
+                            size >>= 20;
+                            if(size < 1024L)
+                                sprintf(tmp, "%u Mb", (unsigned int)size);
+                            else {
+                                size >>= 10;
+                                sprintf(tmp, "%u Gb", (unsigned int)size);
+                            }
+                        }
                         mainPrint(win, i == selFile ? shdgc : txtgc, mw-fns-14, y+4, (mw-ds) - (mw-fns) - 1, 3, tmp);
                     }
                     diff = now - files[i].time;
@@ -1005,8 +1029,9 @@ int main(int argc, char **argv)
     char colorName[16];
     int i;
 
-    if(argc > 1 && argv[1] && argv[1][0] == '-' && argv[1][1] == 'v')
-        verbose = 1;
+    if(argc > 1 && argv[1] && argv[1][0] == '-')
+        for(i = 1; argv[1][i]; i++)
+            if(argv[1][1] == 'v') verbose++;
 
     dpy = XOpenDisplay(NULL);
     if(!dpy) { fprintf(stderr, "Unable to open display\n"); return 1; }

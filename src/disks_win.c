@@ -79,8 +79,8 @@ void disks_refreshlist() {
             szLbText[0] = (TCHAR)letter; szLbText[1] = (TCHAR)':';
             j = 2;
             if (totalNumberOfBytes > 0) {
-                ULONG sizeInGbTimes10 = (ULONG)(10 * (totalNumberOfBytes + 1024L*1024L*1024L-1L) / 1024L / 1024L / 1024L);
-                sprintf(siz, " [%lu.%lu GiB]", (ULONG)(sizeInGbTimes10 / 10), (ULONG)(sizeInGbTimes10 % 10));
+                int sizeInGbTimes10 = (int)((ULONG)(10 * (totalNumberOfBytes + 1024L*1024L*1024L-1L)) >> 30L);
+                sprintf(siz, " [%d.%d GiB]", sizeInGbTimes10 / 10, sizeInGbTimes10 % 10);
                 for(c = siz; *c; c++, j++) szLbText[j] = (TCHAR)*c;
             }
             if (DeviceIoControl(hTargetDevice, IOCTL_STORAGE_QUERY_PROPERTY, &Query, 

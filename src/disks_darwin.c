@@ -152,8 +152,8 @@ void disks_refreshlist()
                 size = st.st_blocks ? st.st_blocks * 512 : st.st_size;
         }
         if(size) {
-            long int sizeInGbTimes10 = (long int)(10 * (size + 1024L*1024L*1024L-1L) / 1024L / 1024L / 1024L);
-            snprintf(str, sizeof(str)-1, "%s [%ld.%ld GiB] %s %s", deviceName,
+            int sizeInGbTimes10 = (int)((long int)(10 * (size + 1024L*1024L*1024L-1L)) >> 30L);
+            snprintf(str, sizeof(str)-1, "%s [%d.%d GiB] %s %s", deviceName,
                 sizeInGbTimes10 / 10, sizeInGbTimes10 % 10, vendorName, productName);
         } else
             snprintf(str, sizeof(str)-1, "%s %s %s", deviceName, vendorName, productName);

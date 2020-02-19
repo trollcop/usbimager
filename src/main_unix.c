@@ -231,9 +231,11 @@ int main(int argc, char **argv)
     const char *err;
     uiGrid *grid;
     uiBox *vbox;
+    int i;
 
-    if(argc > 1 && argv[1] && argv[1][0] == '-' && argv[1][1] == 'v')
-        verbose = 1;
+    if(argc > 1 && argv[1] && argv[1][0] == '-')
+        for(i = 1; argv[1][i]; i++)
+            if(argv[1][1] == 'v') verbose++;
 
     pthread_attr_init(&tha);
     memset(&thrd, 0, sizeof(pthread_t));

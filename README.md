@@ -8,7 +8,7 @@ Available platforms: Windows, MacOSX and Linux. Its interface is as simple as it
 Installation
 ------------
 
-1. download one of the `usbimager-*.zip` archives above for your dekstop (approx. 192 Kilobytes each)
+1. download one of the `usbimager-*.zip` archives above for your dekstop (approx. 128 Kilobytes each)
 2. extract to: `C:\Program Files` (Windows), `/Applications` (MacOSX) or `/usr` (Linux)
 3. Enjoy!
 
@@ -70,19 +70,26 @@ Dependencies: libc, libX11 and standard GNU toolchain.
 2. to create the archive, run `make package`
 3. to install, run `sudo make install`
 
-This uses only low-level X11 (no Xft, Xmu nor any other extensions), so it should be trivial to port to other POSIX systems (like BSD or Minix). It does not
-handle locales, but it does use UTF-8 encoding in file names (this only matters for displaying, the file operations can handle any encoding). If you don't
-want this, set the `USEUTF8` define to 0 in the beginning of the main_x11.c file.
-
 You can also compile for GTK+ by using `USE_LIBUI=yes make`. That'll use libui (included), which in turn relies on hell a lot of libraries (pthread, X11,
 wayland, gdk, harfbuzz, pango, cairo, freetype2 etc.) Also note that the GTK version cannot be installed with setgid bit, so that write access to disk
 devices cannot be guaranteed. The X11 version gains "disk" group membership on execution automatically. For GTK you'll have to add your user to that group
 manually, otherwise you'll get "permission denied" errors.
 
+Hacking the Source
+------------------
+
+To compile with debugging, use `DEBUG=yes make`. This will add extra debugging symbols to the executable.
+
+Editing Makefile and changing `DISKS_TEST` to 1 will add a special `test.bin` "device" to the list. You can test the decompressors with this.
+
+X11 uses only low-level X11 (no Xft, Xmu nor any other extensions), so it should be trivial to port to other POSIX systems (like BSD or Minix). It does not
+handle locales, but it does use UTF-8 encoding in file names (this only matters for displaying, the file operations can handle any encoding). If you don't
+want this, set the `USEUTF8` define to 0 in the beginning of the main_x11.c file.
+
 Known Issues
 ------------
 
-Needs lots of testing. For MacOSX it would be nice to have a full native main_cocoa.m in Obj-C.
+Needs lots of testing. For MacOSX it would be nice to have a full native main_cocoa.m in Obj-C, because in libui the progress bar is lagging.
 
 Authors
 -------

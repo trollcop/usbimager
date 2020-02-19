@@ -52,9 +52,9 @@ void disks_refreshlist()
     DIR *dir;
     struct dirent *de;
     char str[1024], vendorName[128], productName[128], path[512];
-    uint64_t size, sizeInGbTimes10;
+    uint64_t size;
     size_t s;
-    int i = 0;
+    int i = 0, sizeInGbTimes10;
 
     memset(disks_targets, 0xff, sizeof(disks_targets));
 #if DISKS_TEST
@@ -65,42 +65,48 @@ void disks_refreshlist()
     if(dir) {
         while((de = readdir(dir))) {
             if(de->d_name[0] != 's' || de->d_name[1] != 'd') continue;
+            if(verbose > 1) { printf("\n  de %p\n", (void*)de); fflush(stdout); printf("  d_name '%s'\n", de->d_name); }
             sprintf(path, "/sys/block/%s/removable", de->d_name);
             f = fopen(path, "r"); if(f) { fread(path, 1, 1, f); fclose(f); }
             if(path[0] != '1') continue;
             sprintf(path, "/sys/block/%s/ro", de->d_name);
             f = fopen(path, "r"); if(f) { fread(path, 1, 1, f); fclose(f); }
             if(path[0] != '0') continue;
+            if(verbose > 1) printf("  removable and read-write\n");
             size = 0;
             sprintf(path, "/sys/block/%s/size", de->d_name);
             f = fopen(path, "r");
             if(f) {
                 memset(path, 0, 32);
                 fread(path, 31, 1, f);
-                size = (uint64_t)atoll(path) * 512L;
                 fclose(f);
+                size = (uint64_t)atoll(path) * 512UL;
+                if(verbose > 1) printf("  size '%s' size %llu\n", path, (unsigned long long int)size);
             }
             memset(vendorName, 0, sizeof(vendorName));
             sprintf(path, "/sys/block/%s/device/vendor", de->d_name);
             f = fopen(path, "r");
             if(f) {
                 fread(vendorName, sizeof(vendorName) - 1, 1, f);
+                fclose(f);
                 for(s = 0; s < sizeof(vendorName) && vendorName[s]; s++)
                     if(vendorName[s] == '\n') { vendorName[s] = 0; break; }
-                fclose(f);
+                if(verbose > 1) printf("  vendor '%s'\n", vendorName);
             }
             memset(productName, 0, sizeof(productName));
             sprintf(path, "/sys/block/%s/device/model", de->d_name);
             f = fopen(path, "r");
             if(f) {
                 fread(productName, sizeof(productName) - 1, 1, f);
+                fclose(f);
                 for(s = 0; s < sizeof(productName) && productName[s]; s++)
                     if(productName[s] == '\n') { productName[s] = 0; break; }
-                fclose(f);
+                if(verbose > 1) printf("  product '%s'\n", productName);
             }
+            str[0] = 0;
             if(size) {
-                sizeInGbTimes10 = (uint64_t)(10 * (size + 1024L*1024L*1024L-1L) / 1024L / 1024L / 1024L);
-                snprintf(str, sizeof(str)-1, "%s [%ld.%ld GiB] %s %s", de->d_name,
+                sizeInGbTimes10 = (int)((uint64_t)(10 * (size + 1024L*1024L*1024L-1L)) >> 30L);
+                snprintf(str, sizeof(str)-1, "%s [%d.%d GiB] %s %s", de->d_name,
                     sizeInGbTimes10 / 10, sizeInGbTimes10 % 10, vendorName, productName);
             } else
                 snprintf(str, sizeof(str)-1, "%s %s %s", de->d_name, vendorName, productName);

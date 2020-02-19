@@ -33,18 +33,23 @@
 #include <unistd.h>
 #include <string.h>
 #include <time.h>
+#include <inttypes.h>   /* for PRI* defines */
 #include "zlib.h"
 #include "bzlib.h"
 #define XZ_USE_CRC64
 #define XZ_DEC_ANY_CHECK
 #include "xz.h"
 
-/* for debug messages */
-#if __WORDSIZE == 64 && !defined(MACOSX)
-#define SPFLG "l"
+#ifndef PRIu64
+#if __WORDSIZE == 64
+#define PRIu64 "lu"
+#define PRId64 "ld"
 #else
-#define SPFLG "ll"
+#define PRId64 "llu"
+#define PRIu64 "lld"
 #endif
+#endif
+
 extern int verbose;
 
 /* the overall buffer size. Will write in BUFFER_SIZE chunks */
