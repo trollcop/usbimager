@@ -15,8 +15,9 @@ Installation
 You can use the executable in the archive as-is, the other files only provide integration with your desktop (icons and such).
 
 If you can't write to the target device (you get "permission denied" errors), then use the "Run As Administrator" option under Windows, and add your
-user to the "disk" (Linux) or "operator" (MacOSX) group. __No need__ for *sudo /usr/bin/usbimager*, just make sure your user has write access to the
-block devices (see "ls -la /dev|grep -e ^b" to find out which group they belong to). This should not be needed, as USBImager comes with setgid bit set.
+user to the "disk" (Linux) or "operator" (MacOSX) group (see "ls -la /dev|grep -e ^b" to find out which group your OS is using). __No need__ for
+*sudo /usr/bin/usbimager*, just make sure your user has write access to the block devices, that's the Principle of Least Privilege. This should not be
+an issue by the way, as USBImager comes with setgid bit set.
 
 Features
 --------
