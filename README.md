@@ -8,14 +8,15 @@ Available platforms: Windows, MacOSX and Linux. Its interface is as simple as it
 Installation
 ------------
 
-1. download one of the `usbimager-*.zip` archives above for your operating system (approx. 128 kilobytes each)
+1. download one of the `usbimager-*.zip` archives above for your dekstop (approx. 192 Kilobytes each)
 2. extract to: `C:\Program Files` (Windows), `/Applications` (MacOSX) or `/usr` (Linux)
 3. Enjoy!
 
 You can use the executable in the archive as-is, the other files only provide integration with your desktop (icons and such).
 
-If you can't seem to write the target device (you get "permission denied" errors), then use the "Run As Administrator" option under Windows, and add your
-user to the "disk" (Linux) or "operator" (MacOSX) group. __No need__ for *sudo /usr/bin/usbimager*, just make sure your user has write access to the device.
+If you can't write to the target device (you get "permission denied" errors), then use the "Run As Administrator" option under Windows, and add your
+user to the "disk" (Linux) or "operator" (MacOSX) group. __No need__ for *sudo /usr/bin/usbimager*, just make sure your user has write access to the
+block devices (see "ls -la /dev|grep -e ^b" to find out which group they belong to). This should not be needed, as USBImager comes with setgid bit set.
 
 Features
 --------
@@ -52,19 +53,30 @@ Dependencies: just standard Win32 DLLs, and MinGW for compilation.
 
 ### MacOSX
 
-Dependencies: just standard core frameworks, libui for Cocoa (included) and command line XCode tools.
+Dependencies: just standard core frameworks, and command line XCode tools (no need for XCode, just the CLI tools).
 
 1. in a Terminal, run `xcode-select --install` and in the pop-up window click "Install". This will give you "gcc" and "make" under MacOSX.
 2. in the src directory, run `make`
 3. to create the archive, run `make package`
 
+By default USBImager is compiled for native Cocoa with libui (included). You can also compile for X11 (but with Cocoa modals) by using `USE_X11=yes make`.
+
 ### Linux
 
-Dependencies: libc, libui for GTK+-3.0 (included) and GNU toolchain. Libui relies on hell lot of a gtk libraries though.
+Dependencies: libc, libX11 and standard GNU toolchain.
 
 1. in the src directory, run `make`
 2. to create the archive, run `make package`
 3. to install, run `sudo make install`
+
+This uses only low-level X11 (no Xft, Xmu nor any other extensions), so it should be trivial to port to other POSIX systems (like BSD or Minix). It does not
+handle locales, but it does use UTF-8 encoding in file names (this only matters for displaying, the file operations can handle any encoding). If you don't
+want this, set the `USEUTF8` define to 0 in the beginning of the main_x11.c file.
+
+You can also compile for GTK+ by using `USE_LIBUI=yes make`. That'll use libui (included), which in turn relies on hell a lot of libraries (pthread, X11,
+wayland, gdk, harfbuzz, pango, cairo, freetype2 etc.) Also note that the GTK version cannot be installed with setgid bit, so that write access to disk
+devices cannot be guaranteed. The X11 version gains "disk" group membership on execution automatically. For GTK you'll have to add your user to that group
+manually, otherwise you'll get "permission denied" errors.
 
 Known Issues
 ------------

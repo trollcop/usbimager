@@ -104,6 +104,15 @@ void disks_refreshlist() {
 }
 
 /**
+ * Return mount points and bookmarks file
+ */
+char *disks_volumes(int *num, char ***mounts)
+{
+    /* nothing to do, we always use the OpenFile dialog box */
+    return NULL;
+}
+
+/**
  * Lock, umount and open the target disk for writing
  */
 void *disks_open(int targetId)

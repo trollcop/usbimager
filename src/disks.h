@@ -45,6 +45,11 @@ void main_getErrorMessage();
 void disks_refreshlist();
 
 /**
+ * Return mount points and bookmarks file
+ */
+char *disks_volumes(int *num, char ***mounts);
+
+/**
  * Lock, umount and open the target disk for writing
  * this returns FD on unices, and HANDLE on Windows
  */

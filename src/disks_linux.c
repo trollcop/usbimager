@@ -36,7 +36,10 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <sys/mount.h>
+#include <sys/stat.h>
 #include "disks.h"
+
+extern int fdatasync(int);
 
 int disks_targets[DISKS_MAX];
 
@@ -108,6 +111,67 @@ void disks_refreshlist()
         }
         closedir(dir);
     }
+}
+
+/**
+ * Return mount points and bookmarks file
+ */
+char *disks_volumes(int *num, char ***mounts)
+{
+    FILE *m;
+    int k;
+    char buf[1024], *c, *path, *recent = NULL;
+    char *env = getenv("HOME"), fn[1024];
+    struct stat st;
+
+    *mounts = (char**)realloc(*mounts, ((*num) + 3) * sizeof(char*));
+    if(!*mounts) return NULL;
+    
+    if(env) {
+        snprintf(fn, sizeof(fn)-1, "%s/.local/share/recently-used.xbel", env);
+        if(!stat(fn, &st)) {
+            (*mounts)[*num] = recent = (char*)malloc(strlen(fn)+1);
+            if((*mounts)[*num]) { strcpy((*mounts)[*num], fn); (*num)++; }
+        }
+        (*mounts)[*num] = (char*)malloc(strlen(env)+1);
+        if((*mounts)[*num]) { strcpy((*mounts)[*num], env); (*num)++; }
+    } else {
+        env = getenv("LOGNAME");
+        if(env) {
+            snprintf(fn, sizeof(fn)-1, "/home/%s", env);
+            if(!stat(fn, &st)) {
+                (*mounts)[*num] = (char*)malloc(strlen(fn)+1);
+                if((*mounts)[*num]) { strcpy((*mounts)[*num], fn); (*num)++; }
+            }
+        }
+    }
+
+    (*mounts)[*num] = (char*)malloc(2);
+    if((*mounts)[*num]) { strcpy((*mounts)[*num], "/"); (*num)++; }
+
+    m = fopen("/proc/self/mountinfo", "r");
+    if(m) {
+        while(!feof(m)) {
+            if(fgets(buf, sizeof(buf), m)) {
+                for(k = 0, c = buf, path = NULL; k < 11 && *c && *c != '\n';) {
+                    if(k == 5) *c++ = 0;
+                    while(*c == ' ' || *c == '\t') c++;
+                    if(k == 4) path = c;
+                    k++;
+                    while(*c && *c != ' ' && *c != '\t' && *c != '\n') c++;
+                }
+                if(!path[0] || !memcmp(path, "/dev", 4) || !memcmp(path, "/sys", 4) ||
+                    !memcmp(path, "/run", 4) || !memcmp(path, "/proc", 5) || !strcmp(path, "/")) continue;
+                *mounts = (char**)realloc(*mounts, ((*num) + 1) * sizeof(char*));
+                if(*mounts) {
+                    (*mounts)[*num] = (char*)malloc(strlen(path)+1);
+                    if((*mounts)[*num]) { strcpy((*mounts)[*num], path); (*num)++; }
+                }
+            }
+        }
+        fclose(m);
+    }
+    return recent;
 }
 
 /**

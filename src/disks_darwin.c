@@ -172,6 +172,54 @@ void disks_refreshlist()
 }
 
 /**
+ * Return mount points and bookmarks file
+ */
+void disks_volumes(int *num, char ***mounts)
+{
+    struct statfs *buf;
+    int i, n;
+    char *env = getenv("HOME"), fn[1024];
+    struct stat st;
+
+    *mounts = (char**)realloc(*mounts, ((*num) + 2) * sizeof(char*));
+    if(!*mounts) return NULL;
+    
+    if(env) {
+        (*mounts)[*num] = (char*)malloc(strlen(env)+1);
+        if((*mounts)[*num]) { strcpy((*mounts)[*num], env); (*num)++; }
+    } else {
+        env = getenv("LOGNAME");
+        if(env) {
+            snprintf(fn, sizeof(fn)-1, "/home/%s", env);
+            if(!stat(fn, &st)) {
+                (*mounts)[*num] = (char*)malloc(strlen(fn)+1);
+                if((*mounts)[*num]) { strcpy((*mounts)[*num], fn); (*num)++; }
+            }
+        }
+    }
+
+    (*mounts)[*num] = (char*)malloc(2);
+    if((*mounts)[*num]) { strcpy((*mounts)[*num], "/"); (*num)++; }
+
+    n = getfsstat(NULL, 0, MNT_NOWAIT);
+    if(n > 0) {
+        buf = (struct statfs *)malloc(n * sizeof(struct statfs));
+        *mounts = (char**)realloc(*mounts, ((*num) + n) * sizeof(char*));
+        if(buf && *mounts) {
+            n = getfsstat(buf, n * sizeof(struct statfs), MNT_NOWAIT);
+            for (i = 0; i < n; i++) {
+                if(!buf[i].f_mntfromname[0] || !memcmp(buf[i].f_mntfromname, "/dev", 4) ||
+                    !strcmp(buf[i].f_mntonname, "/")) continue;
+                (*mounts)[*num] = (char*)malloc(strlen(buf[i].f_mntonname)+1);
+                if((*mounts)[*num]) { strcpy((*mounts)[*num], buf[i].f_mntonname); (*num)++; }
+            }
+            free(buf);
+        }
+    }
+    return NULL;
+}
+
+/**
  * Lock, umount and open the target disk for writing
  */
 void *disks_open(int targetId)

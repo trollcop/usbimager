@@ -33,12 +33,12 @@ CC = gcc
 LD = gcc
 STRIP = strip
 # setting DISKS_TEST to 1 will add a test.bin "device" to the target disks list
-CFLAGS = -DDISKS_TEST=0 -Wall -Wextra -pedantic --std=c99 -O3 -fvisibility=hidden -I./zlib -I./bzip2 -I./xz
+CFLAGS = -DDISKS_TEST=0 -Wall -Wextra -pedantic --std=c99 -O3 -fvisibility=hidden -I./zlib -I./bzip2 -I./xz -g
 LDFLAGS =
 LIBS =
 DECOMPRESSORS = zlib/libz.a bzip2/libbz2.a xz/libxz.a
 
-SRC = $(filter-out main_win.c main_unix.c disks_linux.c disks_darwin.c disks_win.c,$(wildcard *.c))
+SRC = $(filter-out $(wildcard main_*.c) $(wildcard disks_*.c),$(wildcard *.c))
 OBJ =
 
 ####### detect operating system and platform #######
@@ -52,20 +52,40 @@ LDFLAGS += -mwindows -static -static-libgcc
 TARGET = usbimager.exe
 OBJ += resource.o
 WINDRES = windres
+ARCH = i686
+FRM = win-gdi
 else
 ifneq ("$(wildcard /Library/Frameworks)","")
 # MacOSX
 MACOSX = 1
-SRC += main_unix.c disks_darwin.c
-CFLAGS += -DMACOSX=1 -pthread -x objective-c -fobjc-exceptions
-LDFLAGS += -macosx_version_min 10.14 -framework CoreFoundation -framework Foundation -framework IOKit -framework DiskArbitration -framework Cocoa
+CFLAGS += -DMACOSX=1 -x objective-c -fobjc-exceptions
+LDFLAGS += -macosx_version_min 10.14 -framework CoreFoundation -framework IOKit -framework DiskArbitration
+ifneq ($(USE_X11),)
+SRC += main_x11.c
+CFLAGS += -I/usr/include/X11
+LIBS += -lX11
+FRM = macosx-x11
+else
+SRC += main_unix.c
+CFLAGS += -pthread
+LDFLAGS += -framework Foundation -framework Cocoa
 LIBS += libui/darwin.a -lc -lobjc -lpthread
+FRM = macosx-cocoa
+endif
+SRC += disks_darwin.c
 LD = ld
 GRP = operator
+ARCH = intel
 else
 # Linux
 LINUX = 1
-SRC += main_unix.c disks_linux.c
+ifeq ($(USE_LIBUI),)
+SRC += main_x11.c
+CFLAGS += -I/usr/include/X11
+LIBS += -lX11
+FRM = linux-x11
+else
+SRC += main_unix.c
 CFLAGS += -pthread
 LDFLAGS += -pthread
 LIBS += libui/linux.a
@@ -76,6 +96,10 @@ LIBS += -lgtk-3 -lgdk-3 -lgobject-2.0 -lglib-2.0
 endif
 # don't use. GTK will refuse to start...
 #GRP = disk
+FRM = linux-gtk
+endif
+SRC += disks_linux.c
+ARCH = x86_64
 endif
 endif
 
@@ -105,7 +129,7 @@ resource.o: misc/resource.rc
 
 $(TARGET): $(DECOMPRESSORS) $(OBJ)
 	$(LD) $(LDFLAGS) -o $@ $(OBJ) $(DECOMPRESSORS) $(LIBS)
-	$(STRIP) $(TARGET)
+	#$(STRIP) $(TARGET)
 ifneq ($(GRP),)
 	@chgrp $(GRP) $(TARGET)
 	@chmod g+s $(TARGET)
@@ -125,8 +149,8 @@ package: $(TARGET)
 ifneq ($(WIN),)
 	@mkdir USBImager
 	@cp $(TARGET) USBImager
-	@rm ../usbimager-i686-win.zip 2>/dev/null || true
-	zip -r -9 ../usbimager-i686-win.zip USBImager
+	@rm ../usbimager-$(ARCH)-$(FRM).zip 2>/dev/null || true
+	zip -r -9 ../usbimager-$(ARCH)-$(FRM).zip USBImager
 	@rm -rf USBImager
 else
 ifneq ($(MACOSX),)
@@ -134,8 +158,8 @@ ifneq ($(MACOSX),)
 	@cp $(TARGET) USBImager.app/Contents/MacOS
 	@cp misc/Info.plist USBImager.app/Contents
 	@cp misc/usbimager.icns USBImager.app/Contents/Resources
-	@rm ../usbimager-intel-macosx.zip 2>/dev/null || true
-	zip -r -9 ../usbimager-intel-macosx.zip USBImager.app
+	@rm ../usbimager-$(ARCH)-$(FRM).zip 2>/dev/null || true
+	zip -r -9 ../usbimager-$(ARCH)-$(FRM).zip USBImager.app
 	@rm -rf USBImager.app
 else
 	@mkdir bin share share/applications share/icons share/icons/hicolor share/icons/hicolor/16x16 share/icons/hicolor/16x16/apps share/icons/hicolor/32x32 share/icons/hicolor/32x32/apps share/icons/hicolor/64x64 share/icons/hicolor/64x64/apps share/icons/hicolor/128x128 share/icons/hicolor/128x128/apps
@@ -145,8 +169,8 @@ else
 	@cp misc/icon64.png share/icons/hicolor/64x64/apps/usbimager.png
 	@cp misc/icon32.png share/icons/hicolor/32x32/apps/usbimager.png
 	@cp misc/icon16.png share/icons/hicolor/16x16/apps/usbimager.png
-	@rm ../usbimager-x86_64-linux.zip 2>/dev/null || true
-	zip -r -9 ../usbimager-x86_64-linux.zip bin share
+	@rm ../usbimager-$(ARCH)-$(FRM).zip 2>/dev/null || true
+	zip -r -9 ../usbimager-$(ARCH)-$(FRM).zip bin share
 	@rm -rf bin share
 endif
 endif
