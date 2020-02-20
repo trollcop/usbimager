@@ -29,7 +29,14 @@
 
 #include <time.h>
 #include <errno.h>
+#include "lang.h"
 #include "input.h"
+
+#ifdef __MINGW__
+extern wchar_t **lang;
+#else
+extern char **lang;
+#endif
 
 int verbose = 0;
 
@@ -40,7 +47,7 @@ int input_status(input_t *ctx, char *str)
 {
     time_t t = time(NULL);
     uint64_t d;
-    int h,m,s;
+    int h,m;
     char rem[64];
 
     str[0] = 0;
@@ -49,19 +56,32 @@ int input_status(input_t *ctx, char *str)
             d = (t - ctx->start) * (ctx->fileSize - ctx->readSize) / ctx->readSize;
         else
             d = (t - ctx->start) * (ctx->compSize - ctx->cmrdSize) / ctx->cmrdSize;
-        h = d / 3600; d %= 3600; m = d / 60; s = d % 60;
-        if(h > 0) sprintf(rem, "%d hour%s and %d min%s left",
-            h, h>1?"s":"", m, m>1?"s":"");
-        else if(m > 0) sprintf(rem, "%d min%s and %d sec%s left",
-            m, m>1?"s":"", s, s>1?"s":"");
-        else sprintf(rem, "%d sec%s left", s, s>1?"s":"");
+        h = d / 3600; d %= 3600; m = d / 60;
+#ifdef __MINGW__
+        if(h > 0) wsprintf(rem, lang[h>1 && m>1 ? L_STATHSMS : (h>1 && m<2 ? L_STATHSM :
+                (h<2 && m>0 ? L_STATHMS : L_STATHM))], h, m);
+        else if(m > 0) wsprintf(rem, lang[m>1 ? L_STATMS : L_STATM], m);
+        else wsprintf(rem, lang[L_STATLM]);
+        if(ctx->fileSize)
+            wsprintf((wchar_t*)str, "%6" PRIu64 " MiB / %" PRIu64 " MiB, %s",
+                (ctx->readSize >> 20),
+                (ctx->fileSize >> 20), rem);
+        else
+            wsprintf((wchar_t*)str, "%6" PRIu64 " MiB %s, %s",
+                (ctx->readSize >> 20), lang[L_SOFAR], rem);
+#else
+        if(h > 0) sprintf(rem, lang[h>1 && m>1 ? L_STATHSMS : (h>1 && m<2 ? L_STATHSM :
+                (h<2 && m>0 ? L_STATHMS : L_STATHM))], h, m);
+        else if(m > 0) sprintf(rem, lang[m>1 ? L_STATMS : L_STATM], m);
+        else strcpy(rem, lang[L_STATLM]);
         if(ctx->fileSize)
             sprintf(str, "%6" PRIu64 " MiB / %" PRIu64 " MiB, %s",
                 (ctx->readSize >> 20),
                 (ctx->fileSize >> 20), rem);
         else
-            sprintf(str, "%6" PRIu64 " MiB so far, %s",
-                (ctx->readSize >> 20), rem);
+            sprintf(str, "%6" PRIu64 " MiB %s, %s",
+                (ctx->readSize >> 20), lang[L_SOFAR], rem);
+#endif
     }
     return ctx->fileSize ? (ctx->readSize * 100) / ctx->fileSize :
         (ctx->cmrdSize * 100) / (ctx->compSize+1);

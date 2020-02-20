@@ -28,10 +28,12 @@
  */
 
 #include <windows.h>
+#include <winnls.h>
 #include <winioctl.h>
 #include <commctrl.h>
 #include <io.h>
 #include <fcntl.h>
+#include "lang.h"
 #include "resource.h"
 #include "input.h"
 #include "disks.h"
@@ -45,14 +47,20 @@
 
 _CRTIMP __cdecl __MINGW_NOTHROW  FILE * _fdopen (int, const char *);
 
+wchar_t **lang;
+extern char *dict[NUMLANGS][NUMTEXTS + 1];
+
 static HWND mainHwndDlg;
 
-char *main_errorMessage;
+wchar_t *main_errorMessage;
 
 void main_addToCombobox(char *option)
 {
-    /* option is actually a TCHAR* in Win */
-    SendDlgItemMessage(mainHwndDlg, IDC_MAINDLG_TARGET_LIST, CB_ADDSTRING, 0, (LPARAM) option);
+    wchar_t msg[128];
+    int i = 0;
+    for(; *option; i++, option++)
+        msg[i] = (wchar_t)*option;
+    SendDlgItemMessageW(mainHwndDlg, IDC_MAINDLG_TARGET_LIST, CB_ADDSTRING, 0, (LPARAM)&msg);
 }
 
 void main_getErrorMessage()
@@ -62,22 +70,22 @@ void main_getErrorMessage()
         main_errorMessage = NULL;
     }
     if(GetLastError())
-        FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL,
-            GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR) &main_errorMessage, 0, NULL);
+        FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL,
+            GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPWSTR)&main_errorMessage, 0, NULL);
 }
 
-static void MainDlgMsgBox(HWND hwndDlg, char *message)
+static void MainDlgMsgBox(HWND hwndDlg, wchar_t *message)
 {
-    TCHAR msg[1024], *err = (TCHAR*)main_errorMessage;
+    wchar_t msg[1024], *err = main_errorMessage;
     int i = 0;
     if(main_errorMessage && *main_errorMessage) {
         for(; err[i]; i++) msg[i] = err[i];
-        msg[i++] = (TCHAR)'\r';
-        msg[i++] = (TCHAR)'\n';
+        msg[i++] = (wchar_t)'\r';
+        msg[i++] = (wchar_t)'\n';
     }
     for(; *message; i++, message++)
-        msg[i] = (TCHAR)*message;
-    MessageBox(hwndDlg, msg, TEXT("Error"), MB_ICONERROR);
+        msg[i] = *message;
+    MessageBoxW(hwndDlg, msg, lang[L_ERROR], MB_ICONERROR);
 }
 
 static DWORD WINAPI writerRoutine(LPVOID lpParam) {
@@ -130,7 +138,7 @@ static DWORD WINAPI writerRoutine(LPVOID lpParam) {
                                 SetFilePointerEx(hTargetDevice, totalNumberOfBytesWritten, NULL, FILE_BEGIN);
                                 if(!ReadFile(hTargetDevice, lpVerifyBuf, numberOfBytesWritten, &numberOfBytesVerify, NULL) ||
                                     numberOfBytesWritten != numberOfBytesVerify || memcmp(lpBuffer, lpVerifyBuf, numberOfBytesWritten)) {
-                                    MessageBox(hwndDlg, TEXT("Write verification failed."), TEXT("Error"), MB_ICONERROR);
+                                    MessageBoxW(hwndDlg, lang[L_VRFYERR], lang[L_ERROR], MB_ICONERROR);
                                     break;
                                 }
                                 if(verbose) printf("  numberOfBytesVerify %lu\n", numberOfBytesVerify);
@@ -144,30 +152,30 @@ static DWORD WINAPI writerRoutine(LPVOID lpParam) {
                             ShowWindow(GetDlgItem(hwndDlg, IDC_MAINDLG_STATUS), SW_SHOW);
                         } else {
                             main_getErrorMessage();
-                            MainDlgMsgBox(hwndDlg, "An error occurred while writing to the target device.");
+                            MainDlgMsgBox(hwndDlg, lang[L_WRTRGERR]);
                             break;
                         }
                     }
                 } else {
-                    MainDlgMsgBox(hwndDlg, "An error occurred while reading the source file.");
+                    MainDlgMsgBox(hwndDlg, lang[L_RDSRCERR]);
                     break;
                 }
             }
             disks_close((void*)hTargetDevice);
         } else {
-            MainDlgMsgBox(hwndDlg,
-                hTargetDevice == (HANDLE)-1 ? "Please select a valid target." :
-                (hTargetDevice == (HANDLE)-2 ? "Unable to dismount volume or lock the target device" :
-                (hTargetDevice == (HANDLE)-3 ? "Unable to open target volume" :
-                "An error occurred while opening the target device.")));
+            MainDlgMsgBox(hwndDlg, lang[
+                hTargetDevice == (HANDLE)-1 ? L_TRGERR :
+                (hTargetDevice == (HANDLE)-2 ? L_DISMOUNTERR :
+                (hTargetDevice == (HANDLE)-3 ? L_OPENVOLERR :
+                L_OPENTRGERR))]);
         }
         input_close(&ctx);
     } else {
         main_getErrorMessage();
-        MainDlgMsgBox(hwndDlg, ret == 2 ? "Encrypted ZIP not supported" :
-            (ret == 3 ? "Unsupported compression method in ZIP" :
-            (ret == 4 ? "Decompressor error" :
-            "Please select a readable source file.")));
+        MainDlgMsgBox(hwndDlg, lang[ret == 2 ? L_ENCZIPERR :
+            (ret == 3 ? L_CMPZIPERR :
+            (ret == 4 ? L_CMPERR :
+            L_SRCERR))]);
     }
     if(main_errorMessage) {
         LocalFree(main_errorMessage);
@@ -180,8 +188,8 @@ static DWORD WINAPI writerRoutine(LPVOID lpParam) {
     EnableWindow(GetDlgItem(hwndDlg, IDC_MAINDLG_VERIFY), TRUE);
     EnableWindow(GetDlgItem(hwndDlg, IDC_MAINDLG_BUTTON), TRUE);
     SendDlgItemMessage(hwndDlg, IDC_MAINDLG_PROGRESSBAR, PBM_SETPOS, 0, 0);
-    SetWindowText(GetDlgItem(hwndDlg, IDC_MAINDLG_STATUS),
-        ctx.fileSize && ctx.readSize == ctx.fileSize ? "Done. Image written successfully." : "");
+    SetWindowTextW(GetDlgItem(hwndDlg, IDC_MAINDLG_STATUS),
+        ctx.fileSize && ctx.readSize == ctx.fileSize ? lang[L_DONE] : L"");
     ShowWindow(GetDlgItem(hwndDlg, IDC_MAINDLG_STATUS), SW_HIDE);
     ShowWindow(GetDlgItem(hwndDlg, IDC_MAINDLG_STATUS), SW_SHOW);
     return 0;
@@ -224,7 +232,7 @@ INT_PTR MainDlgSelectClick(HWND hwndDlg) {
 
     ofn.lStructSize = sizeof ofn;
     ofn.hwndOwner = hwndDlg;
-    ofn.lpstrFilter = TEXT("All files (*.*)\0*.*\0\0");
+    ofn.lpstrFilter = TEXT("(*.*)\0*.*\0\0");
     ofn.lpstrFile = lpstrFile;
     ofn.nMaxFile = MAX_PATH;
     ofn.Flags = OFN_FILEMUSTEXIST;
@@ -242,6 +250,8 @@ static INT_PTR CALLBACK MainDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
         case WM_INITDIALOG:
             mainHwndDlg = hwndDlg;
             SendMessage(hwndDlg, WM_SETICON, ICON_SMALL, (LPARAM) LoadIcon((HINSTANCE) lParam, MAKEINTRESOURCE(IDI_APP_ICON)));
+            SetDlgItemTextW(hwndDlg, IDC_MAINDLG_BUTTON, lang[L_WRITE]);
+            SetWindowTextW(GetDlgItem(hwndDlg, IDC_MAINDLG_VERIFY), lang[L_VERIFY]);
             MainDlgRefreshTarget(hwndDlg);
             return TRUE;
     
@@ -284,6 +294,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszArgum
     UNREFERENCED_PARAMETER(hPrevInstance);
     UNREFERENCED_PARAMETER(lpszArgument);
     UNREFERENCED_PARAMETER(nCmdShow);
+    int i, j, ret;
+    unsigned int c;
+    char *s;
+    wchar_t *d;
 
     char *cmdline = GetCommandLine();
     for(; cmdline && cmdline[0] && cmdline[1] && cmdline[2] && !verbose; cmdline++)
@@ -303,5 +317,51 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszArgum
             }
         }
 
-    return DialogBoxParam(hInstance, MAKEINTRESOURCE(IDC_MAINDLG), NULL, MainDlgProc, (LPARAM) hInstance);
+    char *loc;
+    int lid = GetUserDefaultLangID();
+    /* see https://docs.microsoft.com/en-us/windows/win32/intl/language-identifier-constants-and-strings */
+    switch(lid & 0xFF) {
+        case 0x04: loc = "ch"; break;
+        case 0x07: loc = "de"; break;
+        case 0x08: loc = "el"; break;
+        case 0x0A: loc = "es"; break;
+        case 0x0C: loc = "fr"; break;
+        case 0x0D: loc = "he"; break;
+        case 0x0E: loc = "hu"; break;
+        case 0x10: loc = "it"; break;
+        case 0x11: loc = "jp"; break;
+        case 0x15: loc = "pl"; break;
+        case 0x16: loc = "pt"; break;
+        case 0x19: loc = "ru"; break;
+        case 0x39: loc = "hu"; break;
+        case 0x09: default: loc = "en"; break;
+    }
+    if(verbose) printf("GetUserDefaultLangID %04x, locale %s\r\n", lid, loc);
+    lang=(wchar_t**)malloc(NUMTEXTS * sizeof(wchar_t*));
+    if(!lang) return 1;
+    for(i = 0; i < NUMLANGS; i++)
+        if(!strcmp(loc, dict[i][0])) {
+            for(j = 0; j < NUMTEXTS; j++) {
+                lang[j] = (wchar_t*)malloc((strlen(dict[i][j+1])+1)*sizeof(wchar_t));
+                if(!lang[j]) return 1;
+                for(s = dict[i][j+1], d = lang[j]; *s; d++) {
+                    if((*s & 128) != 0) {
+                        if(!(*s & 32)) { c = ((*s & 0x1F)<<6)|(*(s+1) & 0x3F); s++; } else
+                        if(!(*s & 16)) { c = ((*s & 0xF)<<12)|((*(s+1) & 0x3F)<<6)|(*(s+2) & 0x3F); s += 2; } else
+                        if(!(*s & 8)) { c = ((*s & 0x7)<<18)|((*(s+1) & 0x3F)<<12)|((*(s+2) & 0x3F)<<6)|(*(s+3) & 0x3F); *s += 3; }
+                        else c = 0;
+                    } else c = *s;
+                    s++;
+                    *d = (wchar_t)c;
+                }
+                *d = 0;
+            }
+            break;
+        }
+    ret = DialogBoxParam(hInstance, MAKEINTRESOURCE(IDC_MAINDLG), NULL, MainDlgProc, (LPARAM) hInstance);
+
+    for(j = 0; j < NUMTEXTS; j++)
+        free(lang[j]);
+    free(lang);
+    return ret;
 }

@@ -32,9 +32,13 @@
 #endif
 #include <pthread.h>
 #include <errno.h>
+#include "lang.h"
 #include "input.h"
 #include "disks.h"
 #include "libui/ui.h"
+
+char **lang = NULL;
+extern char *dict[NUMLANGS][NUMTEXTS + 1];
 
 static uiWindow *mainwin;
 static uiButton *sourceButton;
@@ -87,7 +91,7 @@ static void onProgress(void *data)
 
 static void onThreadError(void *data)
 {
-    uiMsgBoxError(mainwin, main_errorMessage && *main_errorMessage ? main_errorMessage : "Error", (char*)data);
+    uiMsgBoxError(mainwin, main_errorMessage && *main_errorMessage ? main_errorMessage : lang[L_ERROR], (char*)data);
 }
 
 static void *writerRoutine(void *data)
@@ -119,43 +123,32 @@ static void *writerRoutine(void *data)
                                 if(verbose) printf("  numberOfBytesVerify %d\n", numberOfBytesVerify);
                                 if(numberOfBytesVerify != numberOfBytesWritten ||
                                     memcmp(buffer, verifyBuf, numberOfBytesWritten)) {
-                                        uiQueueMain(onThreadError,
-                                            "Write verification failed.");
+                                        uiQueueMain(onThreadError, lang[L_VRFYERR]);
                                     break;
                                 }
                             }
                             uiQueueMain(onProgress, &ctx);
                         } else {
                             if(errno) main_errorMessage = strerror(errno);
-                            uiQueueMain(onThreadError,
-                                "An error occurred while writing to the target device.");
+                            uiQueueMain(onThreadError, lang[L_WRTRGERR]);
                             break;
                         }
                     }
                 } else {
-                    uiQueueMain(onThreadError,
-                        "An error occurred while reading the source file.");
+                    uiQueueMain(onThreadError, lang[L_RDSRCERR]);
                     break;
                 }
             }
             disks_close((void*)((long int)dst));
         } else {
-            uiQueueMain(onThreadError,
-                dst == -1 ? "Please select a valid target." :
-                (dst == -2 ? "Unable to umount volumes on target device" :
-                "An error occurred while opening the target device."));
+            uiQueueMain(onThreadError, lang[dst == -1 ? L_TRGERR : (dst == -2 ? L_UMOUNTERR : L_OPENTRGERR)]);
         }
         input_close(&ctx);
     } else {
         if(errno) main_errorMessage = strerror(errno);
-        uiQueueMain(onThreadError,
-            dst == 2 ? "Encrypted ZIP not supported" :
-            (dst == 3 ? "Unsupported compression method in ZIP" :
-            (dst == 4 ? "Decompressor error" :
-            "Please select a readable source file.")));
+        uiQueueMain(onThreadError, lang[dst == 2 ? L_ENCZIPERR : (dst == 3 ? L_CMPZIPERR : (dst == 4 ? L_CMPERR : L_SRCERR))]);
     }
-    uiQueueMain(onDone, !errno && ctx.fileSize && ctx.readSize >= ctx.fileSize ?
-        "Done. Image written successfully." : "");
+    uiQueueMain(onDone, !errno && ctx.fileSize && ctx.readSize >= ctx.fileSize ? lang[L_DONE] : "");
     if(verbose) printf("Worker thread finished.\r\n");
     return NULL;
 }
@@ -232,10 +225,20 @@ int main(int argc, char **argv)
     uiGrid *grid;
     uiBox *vbox;
     int i;
+    char *lc = getenv("LANG");
 
     if(argc > 1 && argv[1] && argv[1][0] == '-')
         for(i = 1; argv[1][i]; i++)
             if(argv[1][1] == 'v') verbose++;
+
+    if(!lc) lc = "en";
+    for(i = 0; i < NUMLANGS; i++) {
+        if(!strcmp(lc, dict[i][0])) {
+            lang = &dict[i][1];
+            break;
+        }
+    }
+    if(!lang) lang = &dict[0][1];
 
     pthread_attr_init(&tha);
     memset(&thrd, 0, sizeof(pthread_t));
@@ -270,10 +273,10 @@ int main(int argc, char **argv)
     uiComboboxOnSelected(target, refreshTarget, NULL);
     refreshTarget(target, NULL);
 
-    verify = uiNewCheckbox("Verify");
+    verify = uiNewCheckbox(lang[L_VERIFY]);
     uiGridAppend(grid, uiControl(verify), 0, 3, 2, 1, 0, uiAlignStart, 0, uiAlignFill);
 
-    button = uiNewButton("Write");
+    button = uiNewButton(lang[L_WRITE]);
     uiButtonOnClicked(button, onWriteButtonClicked, NULL);
     uiGridAppend(grid, uiControl(button), 2, 3, 6, 1, 0, uiAlignFill, 0, uiAlignFill);
 

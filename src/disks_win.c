@@ -59,7 +59,7 @@ void disks_refreshlist() {
     memset(disks_targets, 0xff, sizeof(disks_targets));
 #if DISKS_TEST
     disks_targets[i++] = 'T';
-    sprintf(siz, "T: Testfile .\\test.bin");
+    sprintf(siz, "T: .\\test.bin");
     for(j = 0, c = siz; *c; c++, j++) szLbText[j] = (TCHAR)*c;
     main_addToCombobox((char*)szLbText);
 #endif
@@ -109,6 +109,8 @@ void disks_refreshlist() {
 char *disks_volumes(int *num, char ***mounts)
 {
     /* nothing to do, we always use the OpenFile dialog box */
+	(void)num;
+	(void)mounts;
     return NULL;
 }
 

@@ -65,7 +65,7 @@ CFLAGS += -DMACOSX=1 -x objective-c -fobjc-exceptions
 LDFLAGS += -macosx_version_min 10.14 -framework CoreFoundation -framework IOKit -framework DiskArbitration
 ifneq ($(USE_X11),)
 SRC += main_x11.c
-CFLAGS += -I/usr/include/X11
+CFLAGS += -I/usr/include/X11 -I/opt/X11/include
 LIBS += -lX11
 FRM = macosx-x11
 else

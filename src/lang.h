@@ -1,5 +1,5 @@
 /*
- * usbimager/disks.h
+ * usbimager/lang.h
  *
  * Copyright (C) 2020 bzt (bztsrc@gitlab)
  *
@@ -23,39 +23,57 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
  *
- * @brief Disk iteration and umount routines
+ * @brief Multilanguage definitions
  *
  */
 
-#include <stdio.h>
+#define NUMLANGS         12
 
-#define DISKS_MAX 32
+enum {
+    /* user interface */
+    L_VERIFY,
+    L_WRITE,
+    /* messages */
+    L_ERROR,
+    L_VRFYERR,
+    L_WRTRGERR,
+    L_RDSRCERR,
+    L_TRGERR,
+    L_DISMOUNTERR,
+    L_UMOUNTERR,
+    L_OPENVOLERR,
+    L_OPENTRGERR,
+    L_ENCZIPERR,
+    L_CMPZIPERR,
+    L_CMPERR,
+    L_SRCERR,
+    L_DONE,
+    L_STATHSMS,
+    L_STATHSM,
+    L_STATHMS,
+    L_STATHM,
+    L_STATMS,
+    L_STATM,
+    L_STATLM,
+    L_SOFAR,
+    /* X11 only */
+    L_OK,
+    L_WDAY0, L_WDAY1, L_WDAY2, L_WDAY3, L_WDAY4, L_WDAY5, L_WDAY6,
+    L_YESTERDAY,
+    L_NOW,
+    L_MSAGO,
+    L_HSAGO,
+    L_HAGO,
+    L_OPEN,
+    L_CANCEL,
+    L_RECENT,
+    L_HOME,
+    L_ROOTFS,
+    L_NAME,
+    L_SIZE,
+    L_MODIFIED,
+    L_ALLFILES,
 
-/*** External resources ***/
-extern int verbose;
-extern int disks_targets[DISKS_MAX];
-void main_addToCombobox(char *option);
-void main_getErrorMessage();
-
-/**
- * Refresh target device list in the combobox
- * Should set disks_targets[] and call main_addToCombobox()
- */
-void disks_refreshlist();
-
-/**
- * Return mount points and bookmarks file
- */
-char *disks_volumes(int *num, char ***mounts);
-
-/**
- * Lock, umount and open the target disk for writing
- * this returns FD on unices, and HANDLE on Windows
- */
-void *disks_open(int targetId);
-
-/**
- * Close the target disk
- * Receives FD or HANDLE
- */
-void disks_close(void *ctx);
+    /* must be the last */
+    NUMTEXTS
+};

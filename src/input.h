@@ -45,8 +45,8 @@
 #define PRIu64 "lu"
 #define PRId64 "ld"
 #else
-#define PRId64 "llu"
-#define PRIu64 "lld"
+#define PRIu64 "llu"
+#define PRId64 "lld"
 #endif
 #endif
 

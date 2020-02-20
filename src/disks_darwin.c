@@ -82,7 +82,7 @@ void disks_refreshlist()
     memset(disks_targets, 0xff, sizeof(disks_targets));
 #if DISKS_TEST
     disks_targets[i++] = 999;
-    main_addToCombobox("disk999 Testfile ./test.bin");
+    main_addToCombobox("disk999 ./test.bin");
 #endif
     k_result = IOMasterPort(MACH_PORT_NULL, &master_port);
     if (KERN_SUCCESS != k_result) return;
@@ -174,7 +174,7 @@ void disks_refreshlist()
 /**
  * Return mount points and bookmarks file
  */
-void disks_volumes(int *num, char ***mounts)
+char *disks_volumes(int *num, char ***mounts)
 {
     struct statfs *buf;
     int i, n;

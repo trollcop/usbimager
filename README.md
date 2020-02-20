@@ -18,7 +18,8 @@ Installation
 2. extract to: `C:\Program Files` (Windows), `/Applications` (MacOSX) or `/usr` (Linux)
 3. Enjoy!
 
-You can use the executable in the archive as-is, the other files only provide integration with your desktop (icons and such).
+You can use the executable in the archive as-is, the other files only provide integration with your desktop (icons and such). It will autodetect your
+operating system's language, and if dictionary found, it will greet you in your language.
 
 If you can't write to the target device (you get "permission denied" errors), then use the "Run As Administrator" option under Windows, and add your
 user to the "disk" (Linux) or "operator" (MacOSX) group (see "ls -la /dev|grep -e ^b" to find out which group your OS is using). __No need__ for

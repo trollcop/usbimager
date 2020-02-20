@@ -59,7 +59,7 @@ void disks_refreshlist()
     memset(disks_targets, 0xff, sizeof(disks_targets));
 #if DISKS_TEST
     disks_targets[i++] = 'T';
-    main_addToCombobox("sdT Testfile ./test.bin");
+    main_addToCombobox("sdT ./test.bin");
 #endif
     dir = opendir("/sys/block");
     if(dir) {

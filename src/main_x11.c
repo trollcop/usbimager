@@ -39,6 +39,7 @@
 #include <unistd.h>
 #include <dirent.h>
 #include <sys/stat.h>
+#include "lang.h"
 #include "input.h"
 #include "disks.h"
 #include "misc/icons.xbm"       /* get icons for the Open File dialog */
@@ -79,6 +80,9 @@ static unsigned long int palette[NUM_COLOR] = {
     0xEFC8C1, 0xE49E90, 0xDDA398, 0xD47E6A,
     0x919191, 0x777777, 0x707070, 0x303030
 };
+
+char **lang = NULL;
+extern char *dict[NUMLANGS][NUMTEXTS + 1];
 
 static Display* dpy;
 static int scr;
@@ -406,8 +410,8 @@ static void mainRedraw()
     XDrawLine(dpy, mainwin, txtgc, wa.width - 21, 30+fonth+fonth/2, wa.width - 19, 30+fonth+fonth/2);
     XDrawLine(dpy, mainwin, txtgc, wa.width - 20, 31+fonth+fonth/2, wa.width - 20, 31+fonth+fonth/2);
     mainCheckbox(mainwin, 10, 44+2*fonth, mainsel==2, needVerify);
-    mainPrint(mainwin, txtgc, 15 + fonth, 44+2*fonth, half - 10 - fonth, 0, "Verify");
-    mainButton(mainwin, half, 40+2*fonth, half - 10, mainsel==3, pressedBtn == 3 ? 3 : 2, 5, "Write");
+    mainPrint(mainwin, txtgc, 15 + fonth, 44+2*fonth, half - 10 - fonth, 0, lang[L_VERIFY]);
+    mainButton(mainwin, half, 40+2*fonth, half - 10, mainsel==3, pressedBtn == 3 ? 3 : 2, 5, lang[L_WRITE]);
     mainProgress(mainwin, 10, 55+3*fonth, wa.width - 20, progress);
     XSetForeground(dpy, gc, colors[color_winbg].pixel);
     XFillRectangle(dpy, mainwin, gc, 10, 65+3*fonth, wa.width - 20, fonth);
@@ -472,8 +476,8 @@ static void onProgress(void *data)
 
 static void onThreadError(void *data)
 {
-    char *err = main_errorMessage && *main_errorMessage ? main_errorMessage : "Error";
-#ifdef MACOSX
+    char *err = main_errorMessage && *main_errorMessage ? main_errorMessage : lang[L_ERROR];
+#if MACOSX && 0
     int el = strlen(err), dl = data ? strlen(data) : 0;
     NSAutoreleasePool * pool = [[NSAutoreleasePool alloc] init];
     NSApplication *app = [NSApplication] sharedApplication];
@@ -527,7 +531,7 @@ static void onThreadError(void *data)
             mainPrint(win, txtgc, 10, 10, mw-20, 2, err);
             XSetForeground(dpy, txtgc, colors[color_fg].pixel);
             mainPrint(win, txtgc, 10, 20+fonth, mw-20, 2, (char*)data);
-            mainButton(win, mw/2 - 25, mh-fonth-20, 50, 1, pressed, 5, "OK");
+            mainButton(win, mw/2 - 25, mh-fonth-20, 50, 1, pressed, 5, lang[L_OK]);
             inactive = old;
             mainRedraw();
             XFlush(dpy);
@@ -569,38 +573,32 @@ static void *writerRoutine()
                                 if(verbose) printf("  numberOfBytesVerify %d\n", numberOfBytesVerify);
                                 if(numberOfBytesVerify != numberOfBytesWritten ||
                                     memcmp(buffer, verifyBuf, numberOfBytesWritten)) {
-                                    onThreadError("Write verification failed.");
+                                    onThreadError(lang[L_VRFYERR]);
                                     break;
                                 }
                             }
                             onProgress(&ctx);
                         } else {
                             if(errno) main_errorMessage = strerror(errno);
-                            onThreadError("An error occurred while writing to the target device.");
+                            onThreadError(lang[L_WRTRGERR]);
                             break;
                         }
                     }
                 } else {
-                    onThreadError("An error occurred while reading the source file.");
+                    onThreadError(lang[L_RDSRCERR]);
                     break;
                 }
             }
             disks_close((void*)((long int)dst));
         } else {
-            onThreadError(dst == -1 ? "Please select a valid target." :
-                (dst == -2 ? "Unable to umount volumes on target device" :
-                "An error occurred while opening the target device."));
+            onThreadError(lang[dst == -1 ? L_TRGERR : (dst == -2 ? L_UMOUNTERR : L_OPENTRGERR)]);
         }
         input_close(&ctx);
     } else {
         if(errno) main_errorMessage = strerror(errno);
-        onThreadError(dst == 2 ? "Encrypted ZIP not supported" :
-            (dst == 3 ? "Unsupported compression method in ZIP" :
-            (dst == 4 ? "Decompressor error" :
-            "Please select a readable source file.")));
+        onThreadError(lang[dst == 2 ? L_ENCZIPERR : (dst == 3 ? L_CMPZIPERR : (dst == 4 ? L_CMPERR : L_SRCERR))]);
     }
-    strcpy(status, !errno && ctx.fileSize && ctx.readSize >= ctx.fileSize ?
-        "Done. Image written successfully." : "");
+    strcpy(status, !errno && ctx.fileSize && ctx.readSize >= ctx.fileSize ? lang[L_DONE] : "");
     if(verbose) printf("Worker thread finished.\r\n");
     return NULL;
 }
@@ -631,7 +629,7 @@ static void refreshTarget()
 
 static void onSelectClicked(int byKey)
 {
-#ifdef MACOSX
+#if MACOSX && 0
     NSAutoreleasePool * pool = [[NSAutoreleasePool alloc] init];
     NSOpenPanel *o = [NSOpenPanel openPanel];
     NSApplication *app = [[NSApplication] sharedApplication];
@@ -657,9 +655,9 @@ static void onSelectClicked(int byKey)
     KeySym k;
     Window win;
     char *s, *t, fn[PATH_MAX], path[PATH_MAX/FILENAME_MAX][FILENAME_MAX], **mounts = NULL, *recent;
-    char tmp[PATH_MAX+FILENAME_MAX+1], *days[] = { "Sunday", "Monday", "Tuesday", "Wendesday", "Thursday", "Friday", "Saturday" };
+    char tmp[PATH_MAX+FILENAME_MAX+1];
     int i, j, x, y, mw = 800, mh = 600, pathlen = 0, pathX[PATH_MAX/FILENAME_MAX+1], numMounts = 0;
-    int refresh = 1, pressedPath = -1, pressedBtn = -1, allfiles = 0, fns = 200, ds = 100, sel = -1;
+    int refresh = 1, pressedPath = -1, pressedBtn = -1, allfiles = 0, fns = 220, ds = 120, sel = -1;
     int scrollMounts = 0, overMount = -1, numFiles = 0, scrollFiles = 0, selFile = -1, lastFile = -2;
     filelist_t *files = NULL;
     uint64_t size;
@@ -828,7 +826,7 @@ selmnt:                 if(mounts[overMount] != recent) {
             }
             if(e.xbutton.x >= 10 && e.xbutton.y >=10 && e.xbutton.y <= 20+fonth) {
                 for(i = 0; i < pathlen; i++)
-                    if(e.xbutton.x >= pathX[i] && e.xbutton.x < pathX[i+1]) {
+                    if(e.xbutton.x >= pathX[i] && e.xbutton.x < pathX[i+1] - 2) {
                         pressedPath = i;
                         selFile = -1;
                         lastFile = -2;
@@ -917,8 +915,8 @@ ok:             if(selFile >=0 && selFile < numFiles) {
         if(e.type == Expose && !e.xexpose.count) {
             XSetForeground(dpy, gc, colors[color_inpbrd2].pixel);
             XFillRectangle(dpy, win, gc, mw-15, 26+2*fonth, 5, mh-3*fonth-51);
-            mainButton(win, mw-110, mh-fonth-20, 100, sel==4, pressedBtn == 0, 1, "Open");
-            mainButton(win, mw-200, mh-fonth-20, 80, sel==3, pressedBtn == 1, 1, "Cancel");
+            mainButton(win, mw-110, mh-fonth-20, 100, sel==4, pressedBtn == 0, 1, lang[L_OPEN]);
+            mainButton(win, mw-200, mh-fonth-20, 80, sel==3, pressedBtn == 1, 1, lang[L_CANCEL]);
             mainCheckbox(win, 15, mh-fonth-16, sel==2, allfiles);
             y = 20+fonth;
             if(mounts) {
@@ -926,9 +924,9 @@ ok:             if(selFile >=0 && selFile < numFiles) {
                     if(mounts[i]) {
                         XSetForeground(dpy, gc, colors[i == overMount ? color_inpdrk : color_inputbg].pixel);
                         XFillRectangle(dpy, win, gc, 10, y, 190, fonth+8);
-                        if(mounts[i] == recent) { s = "Recently Used"; j = 0; } else
-                        if(!memcmp(mounts[i], "/home/", 6)) { s = "Home"; j = 1; } else
-                        if(!strcmp(mounts[i], "/")) { s = "Filesystem"; j = 2; } else
+                        if(mounts[i] == recent) { s = lang[L_RECENT]; j = 0; } else
+                        if(!memcmp(mounts[i], "/home/", 6)) { s = lang[L_HOME]; j = 1; } else
+                        if(!strcmp(mounts[i], "/")) { s = lang[L_ROOTFS]; j = 2; } else
                             { s = mounts[i]; j = 3; }
                         XCopyArea(dpy, i == overMount ? icons_act : icons_ina, win, gc, 0, j*16, 16, 16, 14, y-4+fonth/2);
                         mainPrint(win, i == overMount ? shdgc : txtgc, 34, y+4, 162, 2, s);
@@ -976,15 +974,15 @@ ok:             if(selFile >=0 && selFile < numFiles) {
                     pathX[i] = x;
                     y = mainPrint(win, txtgc, 0, 0, 0, 0, path[i]);
                     mainBox(win, x, 10, y+10, pressedPath == i, path[i]);
-                    x += y+20;
+                    x += y+12;
                 }
                 pathX[i] = x;
                 if(!pathlen)
-                    mainPrint(win, txtgc, 10, 8, mw-20, 1, "Recently Used Files");
+                    mainPrint(win, txtgc, 10, 8, mw-20, 1, lang[L_RECENT]);
                 mainBox(win, 205, 20+fonth, 20, 0, "");
-                mainBox(win, 226, 20+fonth, mw - 237 - fns, pressedBtn == 2, "Name");
-                mainBox(win, mw-fns-10, 20+fonth, (mw-ds) - (mw-fns) - 1, pressedBtn == 3, "Size");
-                mainBox(win, mw-ds-10, 20+fonth, ds, pressedBtn == 4, "Modified");
+                mainBox(win, 226, 20+fonth, mw - 237 - fns, pressedBtn == 2, lang[L_NAME]);
+                mainBox(win, mw-fns-10, 20+fonth, (mw-ds) - (mw-fns) - 1, pressedBtn == 3, lang[L_SIZE]);
+                mainBox(win, mw-ds-10, 20+fonth, ds, pressedBtn == 4, lang[L_MODIFIED]);
                 switch(sorting) {
                     case 0: x = mw-fns-20; i = 0; break;
                     case 1: x = mw-fns-20; i = 1; break;
@@ -1005,7 +1003,7 @@ ok:             if(selFile >=0 && selFile < numFiles) {
                     XDrawLine(dpy, win, txtgc, x - 1, 23+fonth+fonth/2, x + 1, 23+fonth+fonth/2);
                     XDrawLine(dpy, win, txtgc, x - 0, 24+fonth+fonth/2, x + 0, 24+fonth+fonth/2);
                 }
-                mainPrint(win, txtgc, 20 + fonth, mh-fonth-16, mw - 220 - fonth, 0, "All Files");
+                mainPrint(win, txtgc, 20 + fonth, mh-fonth-16, mw - 220 - fonth, 0, lang[L_ALLFILES]);
                 XSetForeground(dpy, gc, colors[color_inputbg].pixel);
                 XFillRectangle(dpy, win, gc, 205, 26+2*fonth, mw-220, mh-3*fonth-51);
                 XDefineCursor(dpy, mainwin, loading);
@@ -1102,12 +1100,13 @@ ok:             if(selFile >=0 && selFile < numFiles) {
                         mainPrint(win, i == selFile ? shdgc : txtgc, mw-fns-14, y+4, (mw-ds) - (mw-fns) - 1, 3, tmp);
                     }
                     diff = now - files[i].time;
-                    if(diff < 60) strcpy(tmp, "Just now"); else
-                    if(diff < 3600) sprintf(tmp, "%d minute%s ago", (int)(diff/60), diff >= 120 ? "s" : ""); else
-                    if(diff < 24*3600) sprintf(tmp, "%d hour%s ago", (int)(diff/3600), diff >= 7200 ? "s" : ""); else
-                    if(diff < 48*3600) strcpy(tmp, "Yesterday"); else {
+                    if(diff < 120) strcpy(tmp, lang[L_NOW]); else
+                    if(diff < 3600) sprintf(tmp, lang[L_MSAGO], (int)(diff/60)); else
+                    if(diff < 7200) sprintf(tmp, lang[L_HAGO], (int)(diff/60)); else
+                    if(diff < 24*3600) sprintf(tmp, lang[L_HSAGO], (int)(diff/3600)); else
+                    if(diff < 48*3600) strcpy(tmp, lang[L_YESTERDAY]); else {
                         lt = localtime(&files[i].time);
-                        if(diff < 7*24*3600) strcpy(tmp, days[lt->tm_wday]); else
+                        if(diff < 7*24*3600) strcpy(tmp, lang[L_WDAY0 + lt->tm_wday]); else
                             sprintf(tmp, "%04d-%02d-%02d", lt->tm_year+1900, lt->tm_mon+1, lt->tm_mday);
                     }
                     mainPrint(win, i == selFile ? shdgc : txtgc, mw-ds-6, y+4, ds-12, 2, tmp);
@@ -1227,10 +1226,20 @@ int main(int argc, char **argv)
     XTextProperty title_property;
     char colorName[16], *title = "USBImager";
     int i;
+    char *lc = getenv("LANG");
 
     if(argc > 1 && argv[1] && argv[1][0] == '-')
         for(i = 1; argv[1][i]; i++)
             if(argv[1][1] == 'v') verbose++;
+
+    if(!lc) lc = "en";
+    for(i = 0; i < NUMLANGS; i++) {
+        if(!strcmp(lc, dict[i][0])) {
+            lang = &dict[i][1];
+            break;
+        }
+    }
+    if(!lang) lang = &dict[0][1];
 
     dpy = XOpenDisplay(NULL);
     if(!dpy) { fprintf(stderr, "Unable to open display\n"); return 1; }

@@ -1,4 +1,4 @@
-﻿#include "../resource.h"
+#include "../resource.h"
 #include <windows.h>
 #include <commctrl.h>
 
@@ -22,9 +22,9 @@ BEGIN
       VALUE "FileDescription", "USB image writer"
       VALUE "FileVersion", "0.0.1"
       VALUE "InternalName", "Win32App"
-      VALUE "LegalCopyright", "©2020 bzt@gitlab"
+      VALUE "LegalCopyright", "�2020 bzt@gitlab"
       VALUE "OriginalFilename", "usbimager.exe"
-      VALUE "ProductName", "USBImager"
+      VALUE "ProductName", "USBImager by bzt"
       VALUE "ProductVersion", "0.0.1"
     END
   END
@@ -40,7 +40,7 @@ FONT 8, "MS Shell Dlg"
 CAPTION "USBImager"
 BEGIN
     EDITTEXT IDC_MAINDLG_SOURCE, 5, 5, 275, 12, ES_AUTOHSCROLL
-    PUSHBUTTON "...", IDC_MAINDLG_SELECT, 285, 3, 30, 14
+    PUSHBUTTON "...", IDC_MAINDLG_SELECT, 285, 4, 30, 14
     COMBOBOX IDC_MAINDLG_TARGET_LIST, 5, 20, 310, 71, CBS_DROPDOWNLIST | WS_TABSTOP
     CHECKBOX "&Verify", IDC_MAINDLG_VERIFY, 5, 40, 100, 14
     PUSHBUTTON "&Write", IDC_MAINDLG_BUTTON, 155, 40, 160, 14
