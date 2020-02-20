@@ -11,7 +11,7 @@ Installation
 | Platform | Frontend     | Description                  |
 |----------|--------------|------------------------------|
 | Windows  | GDI          | the only choice              |
-| MacOSX   | Cocoa<br>X11 | recommended<br>compatibility |
+| MacOSX   | Cocoa        | the only choice              |
 | Linux    | X11<br>GTK+  | recommended<br>compatibility (has security issues with accessing raw disks) |
 
 1. download one of the `usbimager-*.zip` archives above for your desktop (approx. 128 Kilobytes each)
@@ -97,6 +97,12 @@ Editing Makefile and changing `DISKS_TEST` to 1 will add a special `test.bin` "d
 X11 uses only low-level X11 (no Xft, Xmu nor any other extensions), so it should be trivial to port to other POSIX systems (like BSD or Minix). It does not
 handle locales, but it does use UTF-8 encoding in file names (this only matters for displaying, the file operations can handle any encoding). If you don't
 want this, set the `USEUTF8` define to 0 in the beginning of the main_x11.c file.
+
+The source is clearly separated into 4 layers:
+- input.c / input.h is responsible for reading in and uncompressing the data
+- disks_*.c / disks.h is the layer that writes out data to disks, separated for each platform
+- main_*.c is where you can find main() (or WinMain), the user interface stuff
+- lang.c / lang.h provides the internacionalization and language dictionaries for all platform
 
 Known Issues
 ------------
