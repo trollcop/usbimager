@@ -69,7 +69,7 @@ CFLAGS += -I/usr/include/X11
 LIBS += -lX11
 FRM = macosx-x11
 else
-SRC += main_unix.c
+SRC += main_libui.c
 CFLAGS += -pthread
 LDFLAGS += -framework Foundation -framework Cocoa
 LIBS += libui/darwin.a -lc -lobjc -lpthread
@@ -88,7 +88,7 @@ CFLAGS += -I/usr/include/X11
 LIBS += -lX11
 FRM = linux-x11
 else
-SRC += main_unix.c
+SRC += main_libui.c
 CFLAGS += -pthread
 LDFLAGS += -pthread
 LIBS += libui/linux.a

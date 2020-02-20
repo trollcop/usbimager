@@ -1,5 +1,5 @@
 /*
- * usbimager/main_unix.c
+ * usbimager/main_libui.c
  *
  * Copyright (C) 2020 bzt (bztsrc@gitlab)
  *
@@ -23,7 +23,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
  *
- * @brief User interface for Linux and MacOSX
+ * @brief User interface for Linux and MacOSX using libui
  *
  */
 

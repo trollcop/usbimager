@@ -20,7 +20,7 @@ STATIC_RW_DATA uint64_t xz_crc64_table[256];
 
 XZ_EXTERN void xz_crc64_init(void)
 {
-	const uint64_t poly = UINT64_C(0xC96C5795D7870F42);
+	const uint64_t poly = (uint64_t)0xC96C5795D7870F42;
 
 	uint32_t i;
 	uint32_t j;

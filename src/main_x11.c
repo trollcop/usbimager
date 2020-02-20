@@ -32,6 +32,7 @@
 
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
+#include <X11/cursorfont.h>
 #include <errno.h>
 #include <limits.h>
 #include <stdlib.h>
@@ -40,7 +41,8 @@
 #include <sys/stat.h>
 #include "input.h"
 #include "disks.h"
-#include "misc/icons.xbm"
+#include "misc/icons.xbm"       /* get icons for the Open File dialog */
+#include "misc/wm_icon.h"       /* window manager icon */
 
 /* some defines and prototypes if not defined in limit.h or unistd.h */
 #ifndef PATH_MAX
@@ -86,11 +88,12 @@ static XFontStruct *font = NULL;
 static GC txtgc, shdgc, statgc, gc;
 static Atom delAtom;
 static Pixmap icons_act, icons_ina;
+static Cursor loading, pointer;
 
 static char source[PATH_MAX], targetList[DISKS_MAX][128], status[128];
 static int fonth = 0, fonta = 0, inactive = 0, pressedBtn = 0, half;
 static int needVerify = 0, progress = 0, numTargetList = 0, targetId = -1;
-static int sorting = 0;
+static int mainsel = -1, sorting = 0, shift = 0;
 
 char *main_errorMessage = NULL;
 
@@ -178,28 +181,34 @@ static int mainPrint(Window win, GC gc, int x, int y, int w, int style, char *s)
     return tw;
 }
 
-static void mainInputBox(Window win, int x, int y, int w, char *txt)
+static void mainInputBox(Window win, int x, int y, int w, int sel, char *txt)
 {
     XPoint points[8] = {
         { x, y }, { x + 1, y + 1 }, { x + w, y }, { x + w -1, y + 1 },
         { x, y + fonth + 8 }, { x + 1, y + fonth + 7 },
         { x + w, y + fonth + 8 }, { x + w - 1, y + fonth + 7 }};
     if(w < 1) return;
-    XSetForeground(dpy, gc, colors[color_inpbrd1].pixel);
+    XSetForeground(dpy, gc, colors[sel ? color_inplght : color_winbg].pixel);
+    XDrawLine(dpy, win, gc, x, y-1, x+w, y-1);
+    XDrawLine(dpy, win, gc, x-1, y, x-1, y+fonth+8);
+    XDrawLine(dpy, win, gc, x+w+1, y, x+w+1, y+fonth+8);
+    XDrawLine(dpy, win, gc, x, y+fonth+9, x+w, y+fonth+9);
+
+    XSetForeground(dpy, gc, colors[sel ? color_inpdrk : color_inpbrd1].pixel);
     XDrawLine(dpy, win, gc, x+1, y, x+w-1, y);
-    XSetForeground(dpy, gc, colors[color_inpbrd2].pixel);
+    XSetForeground(dpy, gc, colors[sel ? color_inpdrk : color_inpbrd2].pixel);
     XDrawLine(dpy, win, gc, x, y+1, x, y+fonth+7);
     XDrawLine(dpy, win, gc, x+w, y+1, x+w, y+fonth+7);
-    XSetForeground(dpy, gc, colors[color_inpbrd3].pixel);
+    XSetForeground(dpy, gc, colors[sel ? color_inpdrk : color_inpbrd3].pixel);
     XDrawLine(dpy, win, gc, x+1, y+fonth+8, x+w-1, y+fonth+8);
     XSetForeground(dpy, gc, colors[inactive ? color_winbg : color_inputbg].pixel);
     XFillRectangle(dpy, win, gc, x+1, y+1, w-1, fonth+7);
-    XSetForeground(dpy, gc, colors[color_inpbrd0].pixel);
+    XSetForeground(dpy, gc, colors[sel ? color_inplght : color_inpbrd0].pixel);
     XDrawPoints(dpy, win, gc, points, 8, CoordModeOrigin);
     mainPrint(win, txtgc, x+4, y+4, w-8, 2, txt);
 }
 
-static void mainButton(Window win, int x, int y, int w, int pressed, int style, char *txt)
+static void mainButton(Window win, int x, int y, int w, int sel, int pressed, int style, char *txt)
 {
     int bg0 = color_btnbg0, bg1 = color_btnbg1, bg2 = color_btnbg2, bg3 = color_btnbg3;
     XSegment border1[4] = {
@@ -236,6 +245,12 @@ static void mainButton(Window win, int x, int y, int w, int pressed, int style, 
             bg0 = color_wbtnbg2; bg1 = color_wbtnbg3; bg2 = color_wbtnbg0; bg3 = color_wbtnbg1;
         break;
     }
+    XSetForeground(dpy, gc, colors[sel ? color_inplght : color_winbg].pixel);
+    XDrawLine(dpy, win, gc, x+1, y-1, x+w-1, y-1);
+    XDrawLine(dpy, win, gc, x-1, y+1, x-1, y+fonth+7);
+    XDrawLine(dpy, win, gc, x+w+1, y+1, x+w+1, y+fonth+7);
+    XDrawLine(dpy, win, gc, x+1, y+fonth+9, x+w-1, y+fonth+9);
+
     XSetForeground(dpy, gc, colors[bg1].pixel);
     XFillRectangle(dpy, win, gc, x+2, y+2, w-2, fonta);
     XDrawPoints(dpy, win, gc, border6, 4, CoordModeOrigin);
@@ -254,11 +269,11 @@ static void mainButton(Window win, int x, int y, int w, int pressed, int style, 
 
     mainPrint(win, txtgc, x+7, y+5, w-10, style, txt);
 
-    XSetForeground(dpy, gc, colors[color_btnbrd2].pixel);
+    XSetForeground(dpy, gc, colors[sel ? color_inpdrk : color_btnbrd2].pixel);
     XDrawSegments(dpy, win, gc, border1, 4);
-    XSetForeground(dpy, gc, colors[color_btnbrd1].pixel);
+    XSetForeground(dpy, gc, colors[sel ? color_inpdrk : color_btnbrd1].pixel);
     XDrawPoints(dpy, win, gc, border4, 8, CoordModeOrigin);
-    XSetForeground(dpy, gc, colors[color_btnbrd0].pixel);
+    XSetForeground(dpy, gc, colors[sel ? color_inpdrk : color_btnbrd0].pixel);
     XDrawPoints(dpy, win, gc, border5, 12, CoordModeOrigin);
 
 }
@@ -278,10 +293,16 @@ static void mainBox(Window win, int x, int y, int w, int pressed, char *txt)
     XDrawLine(dpy, win, gc, x, y+4+fonth, x+w, y+4+fonth);
 }
 
-static void mainCheckbox(Window win, int x, int y, int checked)
+static void mainCheckbox(Window win, int x, int y, int sel, int checked)
 {
-    XSetForeground(dpy, gc, colors[color_btnbrd2].pixel);
+    XSetForeground(dpy, gc, colors[sel ? color_inpdrk : color_btnbrd2].pixel);
     XDrawRectangle(dpy, win, gc, x, y, fonth, fonth);
+
+    XSetForeground(dpy, gc, colors[sel ? color_inplght : color_winbg].pixel);
+    XDrawLine(dpy, win, gc, x, y-1, x+fonth, y-1);
+    XDrawLine(dpy, win, gc, x-1, y, x-1, y+fonth);
+    XDrawLine(dpy, win, gc, x+fonth+1, y, x+fonth+1, y+fonth);
+    XDrawLine(dpy, win, gc, x, y+fonth+1, x+fonth, y+fonth+1);
 
     XSetForeground(dpy, gc, colors[color_inpbrd1].pixel);
     XDrawLine(dpy, win, gc, x+2, y+2, x+fonth-2, y+2);
@@ -376,17 +397,17 @@ static void mainRedraw()
     XGetWindowAttributes(dpy, mainwin, &wa);
     half = wa.width/2;
     XSetForeground(dpy, txtgc, colors[inactive ? color_btnbrd2 : color_fg].pixel);
-    mainInputBox(mainwin, 10,10, wa.width-55, source);
-    mainButton(mainwin, wa.width>50?wa.width-40:10,10, 30, pressedBtn == 1 ? 1 : 0, 5, "...");
-    mainButton(mainwin, 10, 25+fonth, wa.width>30?wa.width-20:10, pressedBtn == 2 ? 1 : 0, 4,
+    mainInputBox(mainwin, 10,10, wa.width-55, mainsel==0, source);
+    mainButton(mainwin, wa.width>50?wa.width-40:10,10, 30, mainsel==0, pressedBtn == 1 ? 1 : 0, 5, "...");
+    mainButton(mainwin, 10, 25+fonth, wa.width>30?wa.width-20:10, mainsel==1, pressedBtn == 2 ? 1 : 0, 4,
         targetId >= 0 && targetId < numTargetList ? targetList[targetId] : "");
     XDrawLine(dpy, mainwin, txtgc, wa.width - 23, 28+fonth+fonth/2, wa.width - 17, 28+fonth+fonth/2);
     XDrawLine(dpy, mainwin, txtgc, wa.width - 22, 29+fonth+fonth/2, wa.width - 18, 29+fonth+fonth/2);
     XDrawLine(dpy, mainwin, txtgc, wa.width - 21, 30+fonth+fonth/2, wa.width - 19, 30+fonth+fonth/2);
     XDrawLine(dpy, mainwin, txtgc, wa.width - 20, 31+fonth+fonth/2, wa.width - 20, 31+fonth+fonth/2);
-    mainCheckbox(mainwin, 10, 44+2*fonth, needVerify);
+    mainCheckbox(mainwin, 10, 44+2*fonth, mainsel==2, needVerify);
     mainPrint(mainwin, txtgc, 15 + fonth, 44+2*fonth, half - 10 - fonth, 0, "Verify");
-    mainButton(mainwin, half, 40+2*fonth, half - 10, pressedBtn == 3 ? 3 : 2, 5, "Write");
+    mainButton(mainwin, half, 40+2*fonth, half - 10, mainsel==3, pressedBtn == 3 ? 3 : 2, 5, "Write");
     mainProgress(mainwin, 10, 55+3*fonth, wa.width - 20, progress);
     XSetForeground(dpy, gc, colors[color_winbg].pixel);
     XFillRectangle(dpy, mainwin, gc, 10, 65+3*fonth, wa.width - 20, fonth);
@@ -415,6 +436,8 @@ static void onQuit()
     XFreeGC(dpy, statgc);
     XFreePixmap(dpy, icons_act);
     XFreePixmap(dpy, icons_ina);
+    XFreeCursor(dpy, loading);
+    XFreeCursor(dpy, pointer);
     XDestroyWindow(dpy, mainwin);
     XCloseDisplay(dpy);
 }
@@ -504,7 +527,7 @@ static void onThreadError(void *data)
             mainPrint(win, txtgc, 10, 10, mw-20, 2, err);
             XSetForeground(dpy, txtgc, colors[color_fg].pixel);
             mainPrint(win, txtgc, 10, 20+fonth, mw-20, 2, (char*)data);
-            mainButton(win, mw/2 - 25, mh-fonth-20, 50, pressed, 5, "OK");
+            mainButton(win, mw/2 - 25, mh-fonth-20, 50, 1, pressed, 5, "OK");
             inactive = old;
             mainRedraw();
             XFlush(dpy);
@@ -512,6 +535,8 @@ static void onThreadError(void *data)
     }
     XDestroyWindow(dpy, win);
 #endif
+    mainsel = -1;
+    XDefineCursor(dpy, mainwin, pointer);
     mainRedraw();
     XRaiseWindow(dpy, mainwin);
 }
@@ -584,10 +609,13 @@ static void onWriteButtonClicked()
 {
     inactive = 1;
     progress = 0;
+    mainsel = -1;
+    XDefineCursor(dpy, mainwin, loading);
     mainRedraw();
     XFlush(dpy);
     writerRoutine();
     inactive = progress = 0;
+    XDefineCursor(dpy, mainwin, pointer);
     mainRedraw();
     main_errorMessage = NULL;
     memset(status, 0, sizeof(status));
@@ -601,7 +629,7 @@ static void refreshTarget()
     disks_refreshlist();
 }
 
-static void onSelectClicked()
+static void onSelectClicked(int byKey)
 {
 #ifdef MACOSX
     NSAutoreleasePool * pool = [[NSAutoreleasePool alloc] init];
@@ -626,11 +654,12 @@ static void onSelectClicked()
     [pool release];
 #else
     XEvent e;
+    KeySym k;
     Window win;
     char *s, *t, fn[PATH_MAX], path[PATH_MAX/FILENAME_MAX][FILENAME_MAX], **mounts = NULL, *recent;
     char tmp[PATH_MAX+FILENAME_MAX+1], *days[] = { "Sunday", "Monday", "Tuesday", "Wendesday", "Thursday", "Friday", "Saturday" };
     int i, j, x, y, mw = 800, mh = 600, pathlen = 0, pathX[PATH_MAX/FILENAME_MAX+1], numMounts = 0;
-    int refresh = 1, pressedPath = -1, pressedBtn = -1, allfiles = 0, fns = 200, ds = 100;
+    int refresh = 1, pressedPath = -1, pressedBtn = -1, allfiles = 0, fns = 200, ds = 100, sel = -1;
     int scrollMounts = 0, overMount = -1, numFiles = 0, scrollFiles = 0, selFile = -1, lastFile = -2;
     filelist_t *files = NULL;
     uint64_t size;
@@ -645,17 +674,134 @@ static void onSelectClicked()
     recent = disks_volumes(&numMounts, &mounts);
     strcpy(fn, source);
     if(!source[0] && !sorting && recent) sorting = 5;
+    if(byKey) { sel = 1; selFile = 0; }
 
     while(1) {
         XNextEvent(dpy, &e);
         if(e.type == MotionNotify) {
-            i = overMount; overMount = -1;
+            i = overMount; overMount = sel = -1;
             if(e.xbutton.x >= 10 && e.xbutton.x < 190 &&
                 e.xbutton.y >=20+fonth && e.xbutton.y <= mw-fonth-25) {
                     overMount = (e.xbutton.y - 20-fonth) / (fonth+8) + scrollMounts;
                     if(overMount < 0 || overMount >= numMounts) overMount = -1;
             }
             if(i != overMount) { e.type = Expose; e.xexpose.count = 0; }
+        }
+        if(e.type == KeyPress) {
+            k = XLookupKeysym(&e.xkey, 0);
+            switch(k) {
+                case XK_Shift_L:
+                case XK_Shift_R: shift |= 1; break;
+                case XK_Tab:
+                    if(sel == -1) sel = 0;
+                    else {
+                        if(shift) { if(sel > 0) sel--; else sel = 4; }
+                        else { if(sel < 4) sel++; else sel = 0; }
+                    }
+                break;
+                case XK_Up:
+                    switch(sel) {
+                        case 0:
+                            if(overMount > 0) overMount--; else overMount = 0;
+                        break;
+                        case 1:
+                            if(shift) {
+                                if(sorting > 0) sorting--; else sorting = 5;
+                                refresh = 1;
+                            } else {
+                                if(selFile > 0) selFile--; else selFile = 0;
+                            }
+                        break;
+                    }
+                break;
+                case XK_Down:
+                    switch(sel) {
+                        case 0:
+                            if(overMount + 1 < numMounts) overMount++; else overMount = numMounts-1;
+                        break;
+                        case 1:
+                            if(shift) {
+                                if(sorting < 5) sorting++; else sorting = 0;
+                                refresh = 1;
+                            } else {
+                                if(selFile + 1 < numFiles) selFile++; else selFile = numFiles-1;
+                            }
+                        break;
+                    }
+                break;
+                case XK_Home:
+                    switch(sel) {
+                        case 0: overMount = 0; break;
+                        case 1: selFile = 0; break;
+                    }
+                break;
+                case XK_End:
+                    switch(sel) {
+                        case 0: overMount = numMounts - 1; break;
+                        case 1: selFile = numFiles - 1; break;
+                    }
+                break;
+                case XK_Page_Up:
+                    if(sel == 1)
+                        selFile -= ((mh - 3 * fonth - 51) / (fonth + 8)) - 1;
+                break;
+                case XK_Page_Down:
+                    if(sel == 1)
+                        selFile += ((mh - 3 * fonth - 51) / (fonth + 8)) - 1;
+                break;
+                case XK_BackSpace:
+                case XK_Left:
+                    if(sel == 1) {
+                        if(pathlen < 2) sel = 0;
+                        else {
+                            for(i = 0, fn[0] = 0; i < pathlen - 1; i++)
+                                strcat(fn, path[i]);
+                            refresh = 1;
+                        }
+                    }
+                break;
+                case XK_space:
+                case XK_Right:
+                case XK_Return:
+                    switch(sel) {
+                        case 0:
+                            sel++;
+                            e.type = Expose; e.xexpose.count = 0;
+                            goto selmnt;
+                        case 1: case 4: pressedBtn = 0; break;
+                        case 2: allfiles ^= 1; break;
+                        case 3: pressedBtn = 1; break;
+                    }
+                break;
+            }
+            if(sel == 0) {
+                selFile = -1;
+                if(overMount < 0) overMount = 0;
+                if(overMount >= numMounts) overMount = numMounts-1;
+                if(scrollMounts > overMount) scrollMounts = overMount;
+                i = (mh - 2 * fonth - 45) / (fonth + 8) - 1;
+                if(scrollMounts + i < overMount) scrollMounts = overMount - i;
+            }
+            if(sel == 1) {
+                overMount = -1;
+                if(selFile < 0) selFile = 0;
+                if(selFile >= numFiles) selFile = numFiles-1;
+                if(scrollFiles > selFile) scrollFiles = selFile;
+                i = (mh - 3 * fonth - 51) / (fonth + 8) - 1;
+                if(scrollFiles + i < selFile) scrollFiles = selFile - i;
+            }
+            e.type = Expose; e.xexpose.count = 0;
+        }
+        if(e.type == KeyRelease) {
+            k = XLookupKeysym(&e.xkey, 0);
+            if(k == XK_Escape || ((k == XK_space || k == XK_Return) && sel == 3)) break;
+            switch(k) {
+                case XK_Shift_L:
+                case XK_Shift_R: shift &= ~1; break;
+                case XK_space:
+                case XK_Right:
+                case XK_Return: e.type = ButtonRelease; break;
+            }
         }
         if(e.type == ButtonPress) {
             pressedPath = pressedBtn = -1;
@@ -664,12 +810,17 @@ static void onSelectClicked()
                     if(e.xbutton.button == 4 && scrollMounts > 0) scrollMounts--;
                     if(e.xbutton.button == 5 && scrollMounts < numMounts-1) scrollMounts++;
                     if(e.xbutton.button < 4 && overMount >=0 && overMount < numMounts) {
-                        if(mounts[overMount] != recent) {
+selmnt:                 if(mounts[overMount] != recent) {
                             strcpy(fn, mounts[overMount]);
                             if(mounts[overMount][1]) strcat(fn, "/");
                         } else fn[0] = 0;
                         if(!source[0] && sorting == 5 && recent) sorting = 0;
-                        selFile = -1;
+                        if(sel != -1) {
+                            overMount = -1;
+                            selFile = 0;
+                        } else
+                            selFile = -1;
+                        scrollFiles = 0;
                         lastFile = -2;
                         refresh = 1;
                     }
@@ -735,8 +886,13 @@ ok:             if(selFile >=0 && selFile < numFiles) {
                         strcpy(fn, tmp);
                         strcat(fn, "/");
                         refresh = 1;
-                        selFile = -1;
+                        scrollFiles = 0;
                         lastFile = -2;
+                        if(sel != -1) {
+                            selFile = 0;
+                            sel = 1;
+                        } else
+                            selFile = -1;
                     } else { strcpy(source, tmp); break; }
                 }
             }
@@ -761,8 +917,9 @@ ok:             if(selFile >=0 && selFile < numFiles) {
         if(e.type == Expose && !e.xexpose.count) {
             XSetForeground(dpy, gc, colors[color_inpbrd2].pixel);
             XFillRectangle(dpy, win, gc, mw-15, 26+2*fonth, 5, mh-3*fonth-51);
-            mainButton(win, mw-110, mh-fonth-20, 100, pressedBtn == 0, 1, "Open");
-            mainButton(win, mw-200, mh-fonth-20, 80, pressedBtn == 1, 1, "Cancel");
+            mainButton(win, mw-110, mh-fonth-20, 100, sel==4, pressedBtn == 0, 1, "Open");
+            mainButton(win, mw-200, mh-fonth-20, 80, sel==3, pressedBtn == 1, 1, "Cancel");
+            mainCheckbox(win, 15, mh-fonth-16, sel==2, allfiles);
             y = 20+fonth;
             if(mounts) {
                 for(i = scrollMounts; i < numMounts && y+fonth+8 < mh-fonth-20; i++)
@@ -778,12 +935,37 @@ ok:             if(selFile >=0 && selFile < numFiles) {
                         y += fonth + 8;
                     }
             }
+            XSetForeground(dpy, gc, colors[sel==0 ? color_inplght : color_winbg].pixel);
+            XDrawLine(dpy, win, gc, 9, 18+fonth, 201, 18+fonth);
+            XDrawLine(dpy, win, gc, 8, 20+fonth, 8, mh-fonth-25);
+            XDrawLine(dpy, win, gc, 202, 21+fonth, 202, mh-fonth-26);
+            XDrawLine(dpy, win, gc, 9, mh-fonth-23, 201, mh-fonth-23);
+            XSetForeground(dpy, gc, colors[sel==0 ? color_inpdrk : color_inpbrd1].pixel);
+            XDrawLine(dpy, win, gc, 9, 19+fonth, 201, 19+fonth);
+            XDrawLine(dpy, win, gc, 9, 20+fonth, 9, mh-fonth-25);
+            XSetForeground(dpy, gc, colors[sel==0 ? color_inpdrk : color_inpbrd3].pixel);
+            XDrawLine(dpy, win, gc, 201, 20+fonth, 201, mh-fonth-25);
+            XDrawLine(dpy, win, gc, 9, mh-fonth-24, 201, mh-fonth-24);
+
+            XSetForeground(dpy, gc, colors[sel==1 ? color_inplght : color_winbg].pixel);
+            XDrawLine(dpy, win, gc, 204, 18+fonth, mw-10, 18+fonth);
+            XDrawLine(dpy, win, gc, 203, 20+fonth, 203, mh-fonth-25);
+            XDrawLine(dpy, win, gc, mw-8, 21+fonth, mw-8, mh-fonth-26);
+            XDrawLine(dpy, win, gc, 204, mh-fonth-23, mw-9, mh-fonth-23);
+
+            XSetForeground(dpy, gc, colors[sel==1 ? color_inpdrk : color_inpbrd1].pixel);
+            XDrawLine(dpy, win, gc, 204, 19+fonth, mw-10, 19+fonth);
+            XDrawLine(dpy, win, gc, 204, 20+fonth, 204, mh-fonth-25);
+            XSetForeground(dpy, gc, colors[sel==1 ? color_inpdrk : color_inpbrd3].pixel);
+            XDrawLine(dpy, win, gc, mw-9, 20+fonth, mw-9, mh-fonth-25);
+            XDrawLine(dpy, win, gc, 204, mh-fonth-24, mw-9, mh-fonth-24);
+
             XSetForeground(dpy, gc, colors[color_inputbg].pixel);
             XFillRectangle(dpy, win, gc, 10, y, 190, mh-fonth-25-y);
             if(refresh || pressedPath != -1 || pressedBtn > 1) {
                 refresh = 0;
                 XSetForeground(dpy, gc, colors[color_winbg].pixel);
-                XFillRectangle(dpy, win, gc, 10, 10, mw-20, 10+fonth);
+                XFillRectangle(dpy, win, gc, 10, 8, mw-20, 10+fonth);
                 memset(path, 0, sizeof(path));
                 for(x = y = pathlen = 0, s = fn; *s; s++) {
                     if(y < FILENAME_MAX-1) path[pathlen][y++] = *s;
@@ -793,22 +975,12 @@ ok:             if(selFile >=0 && selFile < numFiles) {
                 for(i = 0, x = 10; i < pathlen; i++) {
                     pathX[i] = x;
                     y = mainPrint(win, txtgc, 0, 0, 0, 0, path[i]);
-                    mainBox(win, x, 10, y+12, pressedPath == i, path[i]);
+                    mainBox(win, x, 10, y+10, pressedPath == i, path[i]);
                     x += y+20;
                 }
                 pathX[i] = x;
                 if(!pathlen)
-                    mainPrint(win, txtgc, 10, 10, mw-20, 1, "Recently Used Files");
-                XSetForeground(dpy, gc, colors[color_inpbrd1].pixel);
-                XDrawLine(dpy, win, gc, 9, 19+fonth, 201, 19+fonth);
-                XDrawLine(dpy, win, gc, 204, 19+fonth, mw-10, 19+fonth);
-                XDrawLine(dpy, win, gc, 9, 20+fonth, 9, mh-fonth-25);
-                XDrawLine(dpy, win, gc, 204, 20+fonth, 204, mh-fonth-25);
-                XSetForeground(dpy, gc, colors[color_inpbrd3].pixel);
-                XDrawLine(dpy, win, gc, 201, 21+fonth, 201, mh-fonth-26);
-                XDrawLine(dpy, win, gc, mw-9, 21+fonth, mw-9, mh-fonth-26);
-                XDrawLine(dpy, win, gc, 9, mh-fonth-24, 201, mh-fonth-24);
-                XDrawLine(dpy, win, gc, 204, mh-fonth-24, mw-9, mh-fonth-24);
+                    mainPrint(win, txtgc, 10, 8, mw-20, 1, "Recently Used Files");
                 mainBox(win, 205, 20+fonth, 20, 0, "");
                 mainBox(win, 226, 20+fonth, mw - 237 - fns, pressedBtn == 2, "Name");
                 mainBox(win, mw-fns-10, 20+fonth, (mw-ds) - (mw-fns) - 1, pressedBtn == 3, "Size");
@@ -834,9 +1006,9 @@ ok:             if(selFile >=0 && selFile < numFiles) {
                     XDrawLine(dpy, win, txtgc, x - 0, 24+fonth+fonth/2, x + 0, 24+fonth+fonth/2);
                 }
                 mainPrint(win, txtgc, 20 + fonth, mh-fonth-16, mw - 220 - fonth, 0, "All Files");
-                mainCheckbox(win, 15, mh-fonth-16, allfiles);
                 XSetForeground(dpy, gc, colors[color_inputbg].pixel);
                 XFillRectangle(dpy, win, gc, 205, 26+2*fonth, mw-220, mh-3*fonth-51);
+                XDefineCursor(dpy, mainwin, loading);
                 XFlush(dpy);
                 if(files) {
                     for(i = 0; i < numFiles; i++)
@@ -902,6 +1074,7 @@ ok:             if(selFile >=0 && selFile < numFiles) {
                     }
                 }
                 qsort(files, numFiles, sizeof(filelist_t), fncmp);
+                XDefineCursor(dpy, mainwin, pointer);
             }
             y = 26+2*fonth;
             for(i = scrollFiles; i < numFiles && y+fonth+8 < mh-fonth-20; i++)
@@ -977,6 +1150,7 @@ static void onTargetClicked()
     XWindowAttributes  wa;
     XSetWindowAttributes swa;
     XEvent e;
+    KeySym k;
     Window win, child, root = RootWindow(dpy, scr);
     int x, y, sel;
 
@@ -1002,8 +1176,31 @@ static void onTargetClicked()
             x = e.xmotion.y / (fonth+8);
             if(x != targetId) {
                 sel = x;
-                e.type = Expose;
-                e.xexpose.count = 0;
+                e.type = Expose; e.xexpose.count = 0;
+            }
+        }
+        if(e.type == KeyPress) {
+            k = XLookupKeysym(&e.xkey, 0);
+            switch(k) {
+                case XK_Shift_L:
+                case XK_Shift_R: shift |= 1; break;
+                case XK_Up:
+                    if(sel > 0) sel--;
+                break;
+                case XK_Down:
+                    if(sel + 1 < numTargetList) sel++;
+                break;
+            }
+            e.type = Expose; e.xexpose.count = 0;
+        }
+        if(e.type == KeyRelease) {
+            k = XLookupKeysym(&e.xkey, 0);
+            if(k == XK_Escape) break;
+            switch(k) {
+                case XK_Shift_L:
+                case XK_Shift_R: shift &= ~1; break;
+                case XK_space:
+                case XK_Return: e.type = ButtonRelease; break;
             }
         }
         if(e.type == Expose && !e.xexpose.count) {
@@ -1026,7 +1223,9 @@ static void onTargetClicked()
 int main(int argc, char **argv)
 {
     XEvent e;
-    char colorName[16];
+    KeySym k;
+    XTextProperty title_property;
+    char colorName[16], *title = "USBImager";
     int i;
 
     if(argc > 1 && argv[1] && argv[1][0] == '-')
@@ -1061,12 +1260,24 @@ int main(int argc, char **argv)
     fonth = font->max_bounds.ascent + font->max_bounds.descent;
     fonta = font->max_bounds.ascent;
 
+    loading = XCreateFontCursor(dpy, XC_watch);
+    pointer = XCreateFontCursor(dpy, XC_left_ptr);
+
     mainwin = XCreateSimpleWindow(dpy, RootWindow(dpy, scr), 0, 0,
         320, 75+4*fonth, 0, 0, colors[color_winbg].pixel);
-    XSelectInput(dpy, mainwin, ExposureMask | ButtonPressMask | ButtonReleaseMask | KeyPressMask);
-    XStoreName(dpy, mainwin, "USBImager");
+    XSelectInput(dpy, mainwin, ExposureMask | ButtonPressMask | ButtonReleaseMask |
+        KeyPressMask | KeyReleaseMask);
+    XStoreName(dpy, mainwin, title);
+    if(XStringListToTextProperty(&title, 1, &title_property)) {
+        XSetWMName(dpy, mainwin, &title_property);
+        XSetWMIconName(dpy, mainwin, &title_property);
+    }
     delAtom= XInternAtom(dpy, "WM_DELETE_WINDOW", False);
     XSetWMProtocols(dpy, mainwin, &delAtom, 1);
+    XChangeProperty(dpy, mainwin, XInternAtom(dpy, "_NET_WM_ICON", False),
+        XInternAtom(dpy, "CARDINAL", False), 32, PropModeReplace, (unsigned char *)wm_icon,
+        sizeof(wm_icon)/sizeof(wm_icon[0]));
+
     XMapWindow(dpy, mainwin);
     XRaiseWindow(dpy, mainwin);
     shdgc = XCreateGC(dpy, mainwin, 0, NULL);
@@ -1083,15 +1294,51 @@ int main(int argc, char **argv)
 
     memset(source, 0, sizeof(source));
     memset(status, 0, sizeof(status));
+    refreshTarget();
 
     while(1) {
         XNextEvent(dpy, &e);
+        k = 0;
         if((e.type == ClientMessage && (Atom)(e.xclient.data.l[0]) == delAtom) ||
            (e.type == KeyPress && XLookupKeysym(&e.xkey,0) == XK_Escape))
             break;
+        if(e.type == KeyPress) {
+            k = XLookupKeysym(&e.xkey, 0);
+            switch(k) {
+                case XK_Shift_L:
+                case XK_Shift_R: shift |= 1; break;
+                case XK_Tab:
+                    if(mainsel == -1) mainsel = 0;
+                    else {
+                        if(shift) { if(mainsel > 0) mainsel--; else mainsel = 3; }
+                        else { if(mainsel < 3) mainsel++; else mainsel = 0; }
+                    }
+                break;
+                case XK_space:
+                case XK_Return:
+                    switch(mainsel) {
+                        case -1: mainsel = 0; pressedBtn = 1; break;
+                        case 0: pressedBtn = 1; break;
+                        case 1: pressedBtn = 2; break;
+                        case 2: needVerify ^= 1; break;
+                        case 3: pressedBtn = 3; break;
+                    }
+                break;
+            }
+            mainRedraw();
+        }
+        if(e.type == KeyRelease) {
+            k = XLookupKeysym(&e.xkey, 0);
+            switch(k) {
+                case XK_Shift_L:
+                case XK_Shift_R: shift &= ~1; break;
+                case XK_space:
+                case XK_Return: e.type = ButtonRelease; break;
+            }
+        }
         if(e.type == Expose && !e.xexpose.count) mainRedraw();
         if(e.type == ButtonPress && !inactive) {
-            pressedBtn = 0;
+            pressedBtn = 0; mainsel = -1;
             if(e.xbutton.y >=10 && e.xbutton.y < 10 + fonth + 8) pressedBtn = 1; else
             if(e.xbutton.y >=25 + fonth && e.xbutton.y < 25 + 2*fonth + 8) pressedBtn = 2; else
             if(e.xbutton.y >=40 + 2*fonth && e.xbutton.y < 40 + 3*fonth + 8) {
@@ -1104,7 +1351,7 @@ int main(int argc, char **argv)
             i = pressedBtn; pressedBtn = 0;
             mainRedraw();
             switch(i) {
-                case 1: onSelectClicked(); break;
+                case 1: onSelectClicked(k != 0); break;
                 case 2: onTargetClicked(); break;
                 case 3: onWriteButtonClicked(); break;
             }
