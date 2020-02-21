@@ -27,7 +27,7 @@
  *
  */
 
-#define NUMLANGS         12
+#define NUMLANGS         16
 
 enum {
     /* user interface */
@@ -56,7 +56,7 @@ enum {
     L_STATM,
     L_STATLM,
     L_SOFAR,
-    /* X11 only */
+    /* X11 only (Open File dialog) */
     L_OK,
     L_WDAY0, L_WDAY1, L_WDAY2, L_WDAY3, L_WDAY4, L_WDAY5, L_WDAY6,
     L_YESTERDAY,

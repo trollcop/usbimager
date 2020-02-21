@@ -1239,7 +1239,7 @@ int main(int argc, char **argv)
 
     if(!lc) lc = "en";
     for(i = 0; i < NUMLANGS; i++) {
-        if(!strcmp(lc, dict[i][0])) {
+        if(!memcmp(lc, dict[i][0], strlen(dict[i][0]))) {
             lang = &dict[i][1];
             break;
         }
