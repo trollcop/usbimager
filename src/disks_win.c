@@ -80,7 +80,9 @@ void disks_refreshlist() {
             j = 2;
             if (totalNumberOfBytes > 0) {
                 int sizeInGbTimes10 = (int)((ULONG)(10 * (totalNumberOfBytes + 1024L*1024L*1024L-1L)) >> 30L);
-                sprintf(siz, " [%d.%d GiB]", sizeInGbTimes10 / 10, sizeInGbTimes10 % 10);
+                char unit = 'G';
+                if(!sizeInGbTimes10) { unit = 'M'; sizeInGbTimes10 = (int)((ULONG)(10 * (totalNumberOfBytes + 1024L*1024L-1L)) >> 20L); }
+                sprintf(siz, " [%d.%d %ciB]", sizeInGbTimes10 / 10, sizeInGbTimes10 % 10, unit);
                 for(c = siz; *c; c++, j++) szLbText[j] = (TCHAR)*c;
             }
             if (DeviceIoControl(hTargetDevice, IOCTL_STORAGE_QUERY_PROPERTY, &Query, 
@@ -109,8 +111,8 @@ void disks_refreshlist() {
 char *disks_volumes(int *num, char ***mounts)
 {
     /* nothing to do, we always use the OpenFile dialog box */
-	(void)num;
-	(void)mounts;
+    (void)num;
+    (void)mounts;
     return NULL;
 }
 

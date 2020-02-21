@@ -56,10 +56,15 @@ wchar_t *main_errorMessage;
 
 void main_addToCombobox(char *option)
 {
+/* this is tricky under Windows:
+ *  char - always 1 byte. Because this is a multiplatform function, the prototype has this
+ *  TCHAR - either 1 byte or 2 bytes, this is what we actually got in "option"
+ *  wchar_t - always 2 bytes */
+    TCHAR *topt = (TCHAR*)option;
     wchar_t msg[128];
     int i = 0;
-    for(; *option; i++, option++)
-        msg[i] = (wchar_t)*option;
+    for(; *topt; i++, topt++)
+        msg[i] = (wchar_t)*topt;
     SendDlgItemMessageW(mainHwndDlg, IDC_MAINDLG_TARGET_LIST, CB_ADDSTRING, 0, (LPARAM)&msg);
 }
 
