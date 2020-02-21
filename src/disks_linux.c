@@ -55,9 +55,9 @@ void filegetcontent(char *fn, char *buf, int maxlen)
         memset(tmp, 0, sizeof(tmp));
         fread(tmp, maxlen - 1, 1, f);
         fclose(f);
-        for(s = tmp; *s == ' ' || *s == '\t' || *s == '\n'; s++);
+        for(s = tmp; *s && *s <= ' '; s++);
         for(o = buf; *s && *s != '\n';) *o++ = *s++;
-        while(o > buf && (*(o-1) == ' ' || *(o-1) == '\t')) o--;
+        while(o > buf && *(o-1) <= ' ') o--;
         *o = 0;
         if(verbose > 1) {
             printf(" %s: ", fn);
