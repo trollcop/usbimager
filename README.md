@@ -46,7 +46,7 @@ Features
 For X11 I made everything from scratch to avoid dependencies. Clicking and keyboard navigation works as expected: <kbd>Tab</kbd> and <kbd>Shift</kbd> +
 <kbd>Tab</kbd> switches the input field, <kbd>Enter</kbd> selects. Plus in Open File dialog <kbd>Left</kbd> / <kbd>BackSpace</kbd> goes one directory up,
 <kbd>Right</kbd> / <kbd>Enter</kbd> goes one directory down (or selects it if it's not a directory). You can use <kbd>Shift</kbd> + <kbd>Up</kbd> /
-<kbd>Down</kbd> to change the sorting order. "Recently Used" files also supported (through freedesktop.org's Desktop Bookmarks Standard).
+<kbd>Down</kbd> to change the sorting order. "Recently Used" files also supported (through freedesktop.org's [Desktop Bookmarks](https://freedesktop.org/wiki/Specifications/desktop-bookmark-spec/) Standard).
 
 Screenshots
 -----------
