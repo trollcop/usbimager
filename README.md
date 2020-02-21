@@ -102,7 +102,7 @@ The source is clearly separated into 4 layers:
 - input.c / input.h is responsible for reading in and uncompressing the data
 - disks_*.c / disks.h is the layer that writes out data to disks, separated for each platform
 - main_*.c is where you can find main() (or WinMain), the user interface stuff
-- lang.c / lang.h provides the internacionalization and language dictionaries for all platform
+- lang.c / lang.h provides the internationalization and language dictionaries for all platform
 
 Known Issues
 ------------
