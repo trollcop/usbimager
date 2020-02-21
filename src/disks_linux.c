@@ -43,17 +43,40 @@ extern int fdatasync(int);
 
 int disks_targets[DISKS_MAX];
 
+/* helper to read a string from a file */
+void filegetcontent(char *fn, char *buf, int maxlen)
+{
+    FILE *f;
+    char *s, *o, tmp[1024];
+
+    memset(buf, 0, maxlen);
+    f = fopen(fn, "r");
+    if(f) {
+        memset(tmp, 0, sizeof(tmp));
+        fread(tmp, maxlen - 1, 1, f);
+        fclose(f);
+        for(s = tmp; *s == ' ' || *s == '\t' || *s == '\n'; s++);
+        for(o = buf; *s && *s != '\n';) *o++ = *s++;
+        while(o > buf && (*(o-1) == ' ' || *(o-1) == '\t')) o--;
+        *o = 0;
+        if(verbose > 1) {
+            printf(" %s: ", fn);
+            for(s = tmp; s < tmp + maxlen && *s; s++)
+                printf("%02x ", *s);
+            printf("trim() = '%s'\n", buf);
+        }
+    }
+}
+
 /**
  * Refresh target device list in the combobox
  */
 void disks_refreshlist()
 {
-    FILE *f;
     DIR *dir;
     struct dirent *de;
     char str[1024], vendorName[128], productName[128], path[512];
     uint64_t size;
-    size_t s;
     int i = 0, sizeInGbTimes10;
 
     memset(disks_targets, 0xff, sizeof(disks_targets));
@@ -65,44 +88,22 @@ void disks_refreshlist()
     if(dir) {
         while((de = readdir(dir))) {
             if(de->d_name[0] != 's' || de->d_name[1] != 'd') continue;
-            if(verbose > 1) { printf("\n  de %p\n", (void*)de); fflush(stdout); printf("  d_name '%s'\n", de->d_name); }
+            if(verbose > 1) printf("\n");
             sprintf(path, "/sys/block/%s/removable", de->d_name);
-            f = fopen(path, "r"); if(f) { fread(path, 1, 1, f); fclose(f); }
-            if(path[0] != '1') continue;
+            filegetcontent(path, vendorName, 2);
+            if(vendorName[0] != '1') continue;
             sprintf(path, "/sys/block/%s/ro", de->d_name);
-            f = fopen(path, "r"); if(f) { fread(path, 1, 1, f); fclose(f); }
-            if(path[0] != '0') continue;
-            if(verbose > 1) printf("  removable and read-write\n");
+            filegetcontent(path, vendorName, 2);
+            if(vendorName[0] != '0') continue;
             size = 0;
             sprintf(path, "/sys/block/%s/size", de->d_name);
-            f = fopen(path, "r");
-            if(f) {
-                memset(path, 0, 32);
-                fread(path, 31, 1, f);
-                fclose(f);
-                size = (uint64_t)atoll(path) * 512UL;
-                if(verbose > 1) printf("  size '%s' size %llu\n", path, (unsigned long long int)size);
-            }
+            filegetcontent(path, vendorName, sizeof(vendorName));
+            size = (uint64_t)atoll(vendorName) * 512UL;
             memset(vendorName, 0, sizeof(vendorName));
             sprintf(path, "/sys/block/%s/device/vendor", de->d_name);
-            f = fopen(path, "r");
-            if(f) {
-                fread(vendorName, sizeof(vendorName) - 1, 1, f);
-                fclose(f);
-                for(s = 0; s < sizeof(vendorName) && vendorName[s]; s++)
-                    if(vendorName[s] == '\n') { vendorName[s] = 0; break; }
-                if(verbose > 1) printf("  vendor '%s'\n", vendorName);
-            }
-            memset(productName, 0, sizeof(productName));
+            filegetcontent(path, vendorName, sizeof(vendorName));
             sprintf(path, "/sys/block/%s/device/model", de->d_name);
-            f = fopen(path, "r");
-            if(f) {
-                fread(productName, sizeof(productName) - 1, 1, f);
-                fclose(f);
-                for(s = 0; s < sizeof(productName) && productName[s]; s++)
-                    if(productName[s] == '\n') { productName[s] = 0; break; }
-                if(verbose > 1) printf("  product '%s'\n", productName);
-            }
+            filegetcontent(path, productName, sizeof(productName));
             str[0] = 0;
             if(size) {
                 sizeInGbTimes10 = (int)((uint64_t)(10 * (size + 1024L*1024L*1024L-1L)) >> 30L);

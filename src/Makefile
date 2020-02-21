@@ -87,6 +87,7 @@ SRC += main_x11.c
 CFLAGS += -I/usr/include/X11
 LIBS += -lX11
 FRM = linux-x11
+GRP = disk
 else
 SRC += main_libui.c
 CFLAGS += -pthread
@@ -97,8 +98,6 @@ LIBS += $(shell pkg-config --libs gtk+-3.0)
 else
 LIBS += -lgtk-3 -lgdk-3 -lgobject-2.0 -lglib-2.0
 endif
-# don't use. GTK will refuse to start...
-#GRP = disk
 FRM = linux-gtk
 endif
 SRC += disks_linux.c
@@ -136,8 +135,7 @@ ifeq ($(DEBUG),)
 	$(STRIP) $(TARGET)
 endif
 ifneq ($(GRP),)
-	@chgrp $(GRP) $(TARGET)
-	@chmod g+s $(TARGET)
+	./misc/setgid.sh $(GRP) $(TARGET)
 endif
 
 ####### install and package creation #######
