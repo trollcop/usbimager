@@ -5,14 +5,14 @@ USBImager
 [USBImager](https://gitlab.com/bztsrc/usbimager) is a really really simple GUI application that writes compressed disk images to USB drives.
 Available platforms: Windows, MacOSX and Linux. Its interface is as simple as it gets, totally bloat-free.
 
-Installation
-------------
-
 | Platform | Frontend     | Description                  |
 |----------|--------------|------------------------------|
-| Windows  | GDI          | the only choice              |
-| MacOSX   | Cocoa        | the only choice              |
-| Linux    | X11<br>GTK+  | recommended<br>compatibility (has security issues with accessing raw disks) |
+| Windows  | [GDI](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager-i686-win-gdi.zip) | native interface |
+| MacOSX   | [Cocoa](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager-intel-macosx-cocoa.zip) | native interface|
+| Linux    | [X11](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager-x86_64-linux-x11.zip)<br>[GTK+](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager-x86_64-linux-gtk.zip)  | recommended<br>compatibility (has security issues with accessing raw disks) |
+
+Installation
+------------
 
 1. download one of the `usbimager-*.zip` archives above for your desktop (approx. 128 Kilobytes each)
 2. extract to: `C:\Program Files` (Windows), `/Applications` (MacOSX) or `/usr` (Linux)
