@@ -68,6 +68,7 @@ enum {
     L_CANCEL,
     L_RECENT,
     L_HOME,
+    L_DOWNLOADS,
     L_ROOTFS,
     L_NAME,
     L_SIZE,

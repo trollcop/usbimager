@@ -129,30 +129,40 @@ void disks_refreshlist()
 char *disks_volumes(int *num, char ***mounts)
 {
     FILE *m;
-    int k;
+    int k = 1;
     char buf[1024], *c, *path, *recent = NULL;
-    char *env = getenv("HOME"), fn[1024];
+    char *env, fn[1024];
     struct stat st;
 
-    *mounts = (char**)realloc(*mounts, ((*num) + 3) * sizeof(char*));
+    *mounts = (char**)realloc(*mounts, ((*num) + 4) * sizeof(char*));
     if(!*mounts) return NULL;
     
-    if(env) {
-        snprintf(fn, sizeof(fn)-1, "%s/.local/share/recently-used.xbel", env);
-        if(!stat(fn, &st)) {
+    if((env = getenv("XDG_USER_DATA"))) {
+        snprintf(fn, sizeof(fn)-1, "%s/recently-used.xbel", env);
+        if(!(k = stat(fn, &st))) {
             (*mounts)[*num] = recent = (char*)malloc(strlen(fn)+1);
             if((*mounts)[*num]) { strcpy((*mounts)[*num], fn); (*num)++; }
         }
-        (*mounts)[*num] = (char*)malloc(strlen(env)+1);
-        if((*mounts)[*num]) { strcpy((*mounts)[*num], env); (*num)++; }
-    } else {
-        env = getenv("LOGNAME");
-        if(env) {
-            snprintf(fn, sizeof(fn)-1, "/home/%s", env);
+        fn[0] = 0;
+    }
+    if((env = getenv("HOME"))) {
+        if(k) {
+            snprintf(fn, sizeof(fn)-1, "%s/.local/share/recently-used.xbel", env);
             if(!stat(fn, &st)) {
-                (*mounts)[*num] = (char*)malloc(strlen(fn)+1);
+                (*mounts)[*num] = recent = (char*)malloc(strlen(fn)+1);
                 if((*mounts)[*num]) { strcpy((*mounts)[*num], fn); (*num)++; }
             }
+        }
+        strncpy(fn, env, sizeof(fn)-1);
+    } else if((env = getenv("LOGNAME")))
+        snprintf(fn, sizeof(fn)-1, "/home/%s", env);
+    if(fn[0] && !stat(fn, &st)) {
+        (*mounts)[*num] = (char*)malloc(strlen(fn)+1);
+        if((*mounts)[*num]) { strcpy((*mounts)[*num], fn); (*num)++; }
+        strncat(fn, "/Downloads", sizeof(fn)-1);
+        if(!stat(fn, &st)) {
+            (*mounts)[*num] = (char*)malloc(strlen(fn)+1);
+            if((*mounts)[*num]) { strcpy((*mounts)[*num], fn); (*num)++; }
         }
     }
 

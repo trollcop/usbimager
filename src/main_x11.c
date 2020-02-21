@@ -925,9 +925,14 @@ ok:             if(selFile >=0 && selFile < numFiles) {
                         XSetForeground(dpy, gc, colors[i == overMount ? color_inpdrk : color_inputbg].pixel);
                         XFillRectangle(dpy, win, gc, 10, y, 190, fonth+8);
                         if(mounts[i] == recent) { s = lang[L_RECENT]; j = 0; } else
-                        if(!memcmp(mounts[i], "/home/", 6)) { s = lang[L_HOME]; j = 1; } else
-                        if(!strcmp(mounts[i], "/")) { s = lang[L_ROOTFS]; j = 2; } else
-                            { s = mounts[i]; j = 3; }
+                        if(!memcmp(mounts[i], "/home/", 6)) {
+                            for(t = mounts[i] + 6, j = 0; *t; t++) if(*t=='/') j = 1;
+                            if(!j) { s = lang[L_HOME]; j = 1; }
+                            else if(t - mounts[i] > 6 + 9 && !strcmp(t - 9, "Downloads")) { s = lang[L_DOWNLOADS]; j = 2; }
+                            else { s = mounts[i]; j = 4; }
+                        } else
+                        if(!strcmp(mounts[i], "/")) { s = lang[L_ROOTFS]; j = 3; } else
+                            { s = mounts[i]; j = 4; }
                         XCopyArea(dpy, i == overMount ? icons_act : icons_ina, win, gc, 0, j*16, 16, 16, 14, y-4+fonth/2);
                         mainPrint(win, i == overMount ? shdgc : txtgc, 34, y+4, 162, 2, s);
                         y += fonth + 8;
@@ -1080,7 +1085,7 @@ ok:             if(selFile >=0 && selFile < numFiles) {
                     if(selFile == -1 && path[pathlen][0] && !strcmp(files[i].name, path[pathlen])) selFile = i;
                     XSetForeground(dpy, gc, colors[i == selFile ? color_inpdrk : color_inputbg].pixel);
                     XFillRectangle(dpy, win, gc, 205, y, mw-220, fonth+8);
-                    XCopyArea(dpy, i == selFile ? icons_act : icons_ina, win, gc, 0, (files[i].type+3)*16, 16, 16, 209, y-4+fonth/2);
+                    XCopyArea(dpy, i == selFile ? icons_act : icons_ina, win, gc, 0, (files[i].type+4)*16, 16, 16, 209, y-4+fonth/2);
                     s = strrchr(files[i].name,'/');
                     if(s) s++; else s = files[i].name;
                     mainPrint(win, i == selFile ? shdgc : txtgc, 230, y+4, mw-241-fns, 2, s);
