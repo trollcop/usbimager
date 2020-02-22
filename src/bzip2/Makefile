@@ -21,7 +21,7 @@ RANLIB=ranlib
 LDFLAGS=
 
 BIGFILES=-D_FILE_OFFSET_BITS=64
-CFLAGS=-Wall -Winline -O2 $(BIGFILES) -DBZ_NO_STDIO
+CFLAGS=-Wall -Winline -O2 $(BIGFILES)
 
 # Where you want it installed when you do 'make install'
 PREFIX=/usr/local
@@ -32,6 +32,7 @@ OBJS= blocksort.o  \
       crctable.o   \
       randtable.o  \
       decompress.o \
+      compress.o \
       bzlib.o
 
 all: libbz2.a bzip2 bzip2recover test

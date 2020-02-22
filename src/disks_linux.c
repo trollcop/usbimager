@@ -37,11 +37,13 @@
 #include <fcntl.h>
 #include <sys/mount.h>
 #include <sys/stat.h>
+#include "main.h"
 #include "disks.h"
 
 extern int fdatasync(int);
 
 int disks_targets[DISKS_MAX];
+uint64_t disks_capacity[DISKS_MAX];
 
 /* helper to read a string from a file */
 void filegetcontent(char *fn, char *buf, int maxlen)
@@ -81,6 +83,7 @@ void disks_refreshlist()
     char unit;
 
     memset(disks_targets, 0xff, sizeof(disks_targets));
+    memset(disks_capacity, 0, sizeof(disks_capacity));
 #if DISKS_TEST
     disks_targets[i++] = 'T';
     main_addToCombobox("sdT ./test.bin");
@@ -115,6 +118,7 @@ void disks_refreshlist()
             } else
                 snprintf(str, sizeof(str)-1, "%s %s %s", de->d_name, vendorName, productName);
             str[128] = 0;
+            disks_capacity[i] = size;
             disks_targets[i++] = de->d_name[2];
             main_addToCombobox(str);
             if(i >= DISKS_MAX) break;
@@ -130,13 +134,13 @@ char *disks_volumes(int *num, char ***mounts)
 {
     FILE *m;
     int k = 1;
-    char buf[1024], *c, *path, *recent = NULL;
-    char *env, fn[1024];
+    char buf[PATH_MAX], *c, *path, *recent = NULL;
+    char *env, fn[PATH_MAX];
     struct stat st;
 
-    *mounts = (char**)realloc(*mounts, ((*num) + 4) * sizeof(char*));
+    *mounts = (char**)realloc(*mounts, ((*num) + 5) * sizeof(char*));
     if(!*mounts) return NULL;
-    
+
     if((env = getenv("XDG_USER_DATA"))) {
         snprintf(fn, sizeof(fn)-1, "%s/recently-used.xbel", env);
         if(!(k = stat(fn, &st))) {
@@ -159,6 +163,13 @@ char *disks_volumes(int *num, char ***mounts)
     if(fn[0] && !stat(fn, &st)) {
         (*mounts)[*num] = (char*)malloc(strlen(fn)+1);
         if((*mounts)[*num]) { strcpy((*mounts)[*num], fn); (*num)++; }
+        k = strlen(fn);
+        strncat(fn, "/Desktop", sizeof(fn)-1);
+        if(!stat(fn, &st)) {
+            (*mounts)[*num] = (char*)malloc(strlen(fn)+1);
+            if((*mounts)[*num]) { strcpy((*mounts)[*num], fn); (*num)++; }
+        }
+        fn[k] = 0;
         strncat(fn, "/Downloads", sizeof(fn)-1);
         if(!stat(fn, &st)) {
             (*mounts)[*num] = (char*)malloc(strlen(fn)+1);

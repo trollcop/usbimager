@@ -1,5 +1,5 @@
 /*
- * usbimager/input.h
+ * usbimager/main.h
  *
  * Copyright (C) 2020 bzt (bztsrc@gitlab)
  *
@@ -23,39 +23,16 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
  *
- * @brief Input file functions
+ * @brief Main interface functions
  *
  */
-
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <string.h>
-#include <time.h>
-#include <inttypes.h>   /* for PRI* defines */
-#include "zlib.h"
-#include "bzlib.h"
-#define XZ_USE_CRC64
-#define XZ_DEC_ANY_CHECK
-#include "xz.h"
-
-#ifndef PRIu64
-#if __WORDSIZE == 64
-#define PRIu64 "lu"
-#define PRId64 "ld"
-#else
-#define PRIu64 "llu"
-#define PRId64 "lld"
-#endif
-#endif
 
 extern int verbose;
 
 /* the overall buffer size. Will write in BUFFER_SIZE chunks */
 #define BUFFER_SIZE (1024 * 1024)
 
-/* decompression filters */
+/* filters */
 enum {
     TYPE_PLAIN = 0,
     TYPE_DEFLATE,
@@ -63,38 +40,12 @@ enum {
     TYPE_XZ
 };
 
-/* input context */
-typedef struct {
-    FILE *f;
-    uint64_t fileSize;
-    uint64_t compSize;
-    uint64_t readSize;
-    uint64_t cmrdSize;
-    unsigned char compBuf[BUFFER_SIZE];
-    z_stream zstrm;
-    bz_stream bstrm;
-    struct xz_buf xstrm;
-    struct xz_dec *xz;
-    char type;
-    time_t start;
-} input_t;
+/**
+ * Add an option to the combobox
+ */
+void main_addToCombobox(char *option);
 
 /**
- * Returns progress percentage and the status string in str
+ * Get the last error message
  */
-int input_status(input_t *ctx, char *str);
-
-/**
- * Open file and determine the source's format
- */
-int input_open(input_t *ctx, char *fn);
-
-/**
- * Read no more than BUFFER_SIZE uncompressed bytes of source data
- */
-int input_read(input_t *ctx, char *buffer);
-
-/**
- * Close source descriptors
- */
-void input_close(input_t *ctx);
+void main_getErrorMessage();

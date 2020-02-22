@@ -16,12 +16,13 @@ RM = rm -f
 COMMON_SRCS = xz_crc32.c xz_crc64.c xz_dec_stream.c xz_dec_lzma2.c xz_dec_bcj.c
 COMMON_OBJS = $(COMMON_SRCS:.c=.o)
 XZ_HEADERS = xz.h xz_private.h xz_stream.h xz_lzma2.h xz_config.h
+ENC_HEADERS =
 
 ALL_CPPFLAGS = -I. $(BCJ_CPPFLAGS) $(CPPFLAGS)
 
 all: libxz.a
 
-%.o: %.c $(XZ_HEADERS)
+%.o: %.c $(XZ_HEADERS) $(ENC_HEADERS)
 	$(CC) $(ALL_CPPFLAGS) $(CFLAGS) -c -o $@ $<
 
 libxz.a: $(COMMON_OBJS)

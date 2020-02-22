@@ -34,28 +34,16 @@
 #include <X11/Xutil.h>
 #include <X11/cursorfont.h>
 #include <errno.h>
-#include <limits.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <dirent.h>
+#include <unistd.h>
 #include <sys/stat.h>
 #include "lang.h"
-#include "input.h"
+#include "stream.h"
 #include "disks.h"
 #include "misc/icons.xbm"       /* get icons for the Open File dialog */
 #include "misc/wm_icon.h"       /* window manager icon */
 
-/* some defines and prototypes if not defined in limit.h or unistd.h */
-#ifndef PATH_MAX
-# ifdef MAXPATHLEN
-#  define PATH_MAX MAXPATHLEN
-# else
-#  define PATH_MAX 65536
-# endif
-#endif
-#ifndef FILENAME_MAX
-# define FILENAME_MAX 256
-#endif
 int usleep(unsigned long int);
 
 typedef struct {
@@ -76,7 +64,7 @@ enum {
 static unsigned long int palette[NUM_COLOR] = {
     0xF2F2F2, 0xFFFFFF, 0x2065DE, 0xB4CDF8,
     0xE9ECF0, 0xABADB3, 0xE2E3EA, 0xE3E9EF,
-    0xFCFCFC, 0xF0F0F0, 0xF6F6F6, 0xD6D6D6,
+    0xFCFCFC, 0xECECEC, 0xF6F6F6, 0xDDDDDD,
     0xEFC8C1, 0xE49E90, 0xDDA398, 0xD47E6A,
     0x919191, 0x777777, 0x707070, 0x303030
 };
@@ -96,7 +84,7 @@ static Cursor loading, pointer;
 
 static char source[PATH_MAX], targetList[DISKS_MAX][128], status[128];
 static int fonth = 0, fonta = 0, inactive = 0, pressedBtn = 0, half;
-static int needVerify = 0, progress = 0, numTargetList = 0, targetId = -1;
+static int needVerify = 0, needCompress = 0, progress = 0, numTargetList = 0, targetId = -1;
 static int mainsel = -1, sorting = 0, shift = 0;
 
 char *main_errorMessage = NULL;
@@ -125,7 +113,7 @@ static int mainPrint(Window win, GC gc, int x, int y, int w, int style, char *s)
     int l, tw;
 #if USEUTF8 == 1
     unsigned int c;
-    XChar2b *str = NULL;
+    XChar2b str[PATH_MAX];
     int i;
 #endif
 
@@ -133,8 +121,6 @@ static int mainPrint(Window win, GC gc, int x, int y, int w, int style, char *s)
 
     l = strlen(s);
 #if USEUTF8 == 1
-    str = (XChar2b*)malloc(l * sizeof(XChar2b));
-    if(!str) return 0;
     for(i = 0; i < l && *s; i++) {
         if((*s & 128) != 0) {
             if(!(*s & 32)) { c = ((*s & 0x1F)<<6)|(*(s+1) & 0x3F); s++; } else
@@ -177,7 +163,6 @@ static int mainPrint(Window win, GC gc, int x, int y, int w, int style, char *s)
     XSetClipRectangles(dpy, gc, 0, 0, &clip, 1, Unsorted);
 #if USEUTF8 == 1
     XDrawString16(dpy, win, gc, x, y+fonta, str, i);
-    free(str);
 #else
     XDrawString(dpy, win, gc, x, y+fonta, s, l);
 #endif
@@ -397,25 +382,76 @@ static Window mainModal(int *mw, int *mh, int bgcolor)
 
 static void mainRedraw()
 {
+    XRectangle clip = { 17, 25+fonth, 0, fonth+8 };
+    int x;
+
     XWindowAttributes  wa;
     XGetWindowAttributes(dpy, mainwin, &wa);
-    half = wa.width/2;
+    half = clip.width = wa.width/2;
     XSetForeground(dpy, txtgc, colors[inactive ? color_btnbrd2 : color_fg].pixel);
     mainInputBox(mainwin, 10,10, wa.width-55, mainsel==0, source);
     mainButton(mainwin, wa.width>50?wa.width-40:10,10, 30, mainsel==0, pressedBtn == 1 ? 1 : 0, 5, "...");
-    mainButton(mainwin, 10, 25+fonth, wa.width>30?wa.width-20:10, mainsel==1, pressedBtn == 2 ? 1 : 0, 4,
+
+    mainButton(mainwin, 10, 25+fonth, half - 15, mainsel==1, pressedBtn == 2 ? 3 : 2, 5, lang[L_WRITE]);
+    x = mainPrint(mainwin, txtgc, 0, 0, 0, 0, lang[L_WRITE]);
+    if(x < half - 15) {
+        x = (half - 15 - x) / 2 - 6;
+        XSetClipRectangles(dpy, gc, 0, 0, &clip, 1, Unsorted);
+        XSetForeground(dpy, gc, colors[inactive ? color_btnbrd2 : color_btnbrd0].pixel);
+        XDrawLine(dpy, mainwin, gc, x, 25+fonth+fonth/2+2, x+11, 25+fonth+fonth/2+2);
+        XSetForeground(dpy, gc, colors[inactive ? color_btnbrd2 : color_wbtnbg0].pixel);
+        XDrawLine(dpy, mainwin, gc, x+1, 25+fonth+fonth/2+3, x+5, 25+fonth+fonth/2+7);
+        XSetForeground(dpy, gc, colors[inactive ? color_btnbrd2 : color_inputbg].pixel);
+        XDrawLine(dpy, mainwin, gc, x+6, 25+fonth+fonth/2+8, x+12, 25+fonth+fonth/2+2);
+        if(!inactive) {
+            XSetForeground(dpy, gc, colors[color_wbtnbg3].pixel);
+            XDrawLine(dpy, mainwin, gc, x+2, 25+fonth+fonth/2+3, x+10, 25+fonth+fonth/2+3);
+            XDrawLine(dpy, mainwin, gc, x+3, 25+fonth+fonth/2+4, x+9, 25+fonth+fonth/2+4);
+            XDrawLine(dpy, mainwin, gc, x+4, 25+fonth+fonth/2+5, x+8, 25+fonth+fonth/2+5);
+            XDrawLine(dpy, mainwin, gc, x+5, 25+fonth+fonth/2+6, x+7, 25+fonth+fonth/2+6);
+            XDrawPoint(dpy, mainwin, gc, x+6, 25+fonth+fonth/2+7);
+        }
+        XSetClipMask(dpy, gc, None);
+    }
+    mainButton(mainwin, half+5, 25+fonth, half - 15, mainsel==2, pressedBtn == 3 ? 1 : 0, 5, lang[L_READ]);
+    x = mainPrint(mainwin, txtgc, 0, 0, 0, 0, lang[L_READ]);
+    if(x < half - 15) {
+        x = (half - 15 - x) / 2 - 11 + half;
+        clip.x = half + 12;
+        XSetClipRectangles(dpy, gc, 0, 0, &clip, 1, Unsorted);
+        XSetForeground(dpy, gc, colors[inactive ? color_btnbrd2 : color_inputbg].pixel);
+        XDrawLine(dpy, mainwin, gc, x, 25+fonth+fonth/2+8, x+12, 25+fonth+fonth/2+8);
+        XSetForeground(dpy, gc, colors[inactive ? color_btnbrd2 : color_btnbrd2].pixel);
+        XDrawLine(dpy, mainwin, gc, x+1, 25+fonth+fonth/2+7, x+6, 25+fonth+fonth/2+2);
+        XSetForeground(dpy, gc, colors[inactive ? color_btnbrd2 : color_btnbrd0].pixel);
+        XDrawLine(dpy, mainwin, gc, x+7, 25+fonth+fonth/2+3, x+11, 25+fonth+fonth/2+7);
+        if(!inactive) {
+            XSetForeground(dpy, gc, colors[color_btnbg3].pixel);
+            XDrawPoint(dpy, mainwin, gc, x+6, 25+fonth+fonth/2+3);
+            XDrawLine(dpy, mainwin, gc, x+5, 25+fonth+fonth/2+4, x+7, 25+fonth+fonth/2+4);
+            XDrawLine(dpy, mainwin, gc, x+4, 25+fonth+fonth/2+5, x+8, 25+fonth+fonth/2+5);
+            XDrawLine(dpy, mainwin, gc, x+3, 25+fonth+fonth/2+6, x+9, 25+fonth+fonth/2+6);
+            XDrawLine(dpy, mainwin, gc, x+2, 25+fonth+fonth/2+7, x+10, 25+fonth+fonth/2+7);
+        }
+        XSetClipMask(dpy, gc, None);
+    }
+
+    mainButton(mainwin, 10, 40+2*fonth, wa.width>30?wa.width-20:10, mainsel==3, pressedBtn == 4 ? 1 : 0, 4,
         targetId >= 0 && targetId < numTargetList ? targetList[targetId] : "");
-    XDrawLine(dpy, mainwin, txtgc, wa.width - 23, 28+fonth+fonth/2, wa.width - 17, 28+fonth+fonth/2);
-    XDrawLine(dpy, mainwin, txtgc, wa.width - 22, 29+fonth+fonth/2, wa.width - 18, 29+fonth+fonth/2);
-    XDrawLine(dpy, mainwin, txtgc, wa.width - 21, 30+fonth+fonth/2, wa.width - 19, 30+fonth+fonth/2);
-    XDrawLine(dpy, mainwin, txtgc, wa.width - 20, 31+fonth+fonth/2, wa.width - 20, 31+fonth+fonth/2);
-    mainCheckbox(mainwin, 10, 44+2*fonth, mainsel==2, needVerify);
-    mainPrint(mainwin, txtgc, 15 + fonth, 44+2*fonth, half - 10 - fonth, 0, lang[L_VERIFY]);
-    mainButton(mainwin, half, 40+2*fonth, half - 10, mainsel==3, pressedBtn == 3 ? 3 : 2, 5, lang[L_WRITE]);
-    mainProgress(mainwin, 10, 55+3*fonth, wa.width - 20, progress);
+    XDrawLine(dpy, mainwin, txtgc, wa.width - 23, 43+2*fonth+fonth/2, wa.width - 17, 43+2*fonth+fonth/2);
+    XDrawLine(dpy, mainwin, txtgc, wa.width - 22, 44+2*fonth+fonth/2, wa.width - 18, 44+2*fonth+fonth/2);
+    XDrawLine(dpy, mainwin, txtgc, wa.width - 21, 45+2*fonth+fonth/2, wa.width - 19, 45+2*fonth+fonth/2);
+    XDrawLine(dpy, mainwin, txtgc, wa.width - 20, 46+2*fonth+fonth/2, wa.width - 20, 46+2*fonth+fonth/2);
+
+    mainCheckbox(mainwin, 15, 59+3*fonth, mainsel==4, needVerify);
+    mainPrint(mainwin, txtgc, 20 + fonth, 59+3*fonth, half - 15 - fonth, 0, lang[L_VERIFY]);
+    mainCheckbox(mainwin, half + 10, 59+3*fonth, mainsel==5, needCompress);
+    mainPrint(mainwin, txtgc, half + 15 + fonth, 59+3*fonth, half - 15 - fonth, 0, lang[L_COMPRESS]);
+
+    mainProgress(mainwin, 10, 70+4*fonth, wa.width - 20, progress);
     XSetForeground(dpy, gc, colors[color_winbg].pixel);
-    XFillRectangle(dpy, mainwin, gc, 10, 65+3*fonth, wa.width - 20, fonth);
-    mainPrint(mainwin, statgc, 10, 65+3*fonth, wa.width - 20, 0, status);
+    XFillRectangle(dpy, mainwin, gc, 10, 80+4*fonth, wa.width - 20, fonth);
+    mainPrint(mainwin, statgc, 10, 80+4*fonth, wa.width - 20, 0, status);
 }
 
 /* the usual high-level stuff */
@@ -448,14 +484,16 @@ static void onQuit()
 
 static void onProgress(void *data)
 {
+    stream_t *ctx = (stream_t*)data;
     XWindowAttributes  wa;
     XEvent e;
 
-    progress = input_status((input_t*)data, status);
+    progress = stream_status(ctx, status);
 
     if(XPending(dpy)) {
         XNextEvent(dpy, &e);
         if(e.type == ClientMessage && (Atom)(e.xclient.data.l[0]) == delAtom) {
+            if(ctx->b) stream_close(ctx);
             onQuit();
             exit(1);
         }
@@ -467,10 +505,10 @@ static void onProgress(void *data)
     }
     XGetWindowAttributes(dpy, mainwin, &wa);
     half = wa.width/2;
-    mainProgress(mainwin, 10, 55+3*fonth, wa.width - 20, progress);
+    mainProgress(mainwin, 10, 70+4*fonth, wa.width - 20, progress);
     XSetForeground(dpy, gc, colors[color_winbg].pixel);
-    XFillRectangle(dpy, mainwin, gc, 10, 65+3*fonth, wa.width - 20, fonth);
-    mainPrint(mainwin, statgc, 10, 65+3*fonth, wa.width - 20, 0, status);
+    XFillRectangle(dpy, mainwin, gc, 10, 80+4*fonth, wa.width - 20, fonth);
+    mainPrint(mainwin, statgc, 10, 80+4*fonth, wa.width - 20, 0, status);
     XFlush(dpy);
 }
 
@@ -545,34 +583,37 @@ static void onThreadError(void *data)
     XRaiseWindow(dpy, mainwin);
 }
 
+/**
+ * Function that reads from input and writes to disk
+ */
 static void *writerRoutine()
 {
     int dst, numberOfBytesRead;
     int numberOfBytesWritten, numberOfBytesVerify;
-    char buffer[BUFFER_SIZE], verifyBuf[BUFFER_SIZE];
-    input_t ctx;
+    static stream_t ctx;
 
-    dst = input_open(&ctx, source);
+    ctx.readSize = 0;
+    dst = stream_open(&ctx, source);
     if(!dst) {
         dst = (int)((long int)disks_open(targetId));
         if(dst > 0) {
             while(1) {
-                if((numberOfBytesRead = input_read(&ctx, buffer)) >= 0) {
+                if((numberOfBytesRead = stream_read(&ctx, ctx.buffer)) >= 0) {
                     if(numberOfBytesRead == 0) {
                         if(!ctx.fileSize) ctx.fileSize = ctx.readSize;
                         break;
                     } else {
                         errno = 0;
-                        numberOfBytesWritten = (int)write(dst, buffer, numberOfBytesRead);
+                        numberOfBytesWritten = (int)write(dst, ctx.buffer, numberOfBytesRead);
                         if(verbose) printf("writerRoutine() numberOfBytesRead %d numberOfBytesWritten %d errno=%d\n",
                             numberOfBytesRead, numberOfBytesWritten, errno);
                         if(numberOfBytesWritten == numberOfBytesRead) {
                             if(needVerify) {
                                 lseek(dst, -((off_t)numberOfBytesWritten), SEEK_CUR);
-                                numberOfBytesVerify = read(dst, verifyBuf, numberOfBytesWritten);
+                                numberOfBytesVerify = read(dst, ctx.verifyBuf, numberOfBytesWritten);
                                 if(verbose) printf("  numberOfBytesVerify %d\n", numberOfBytesVerify);
                                 if(numberOfBytesVerify != numberOfBytesWritten ||
-                                    memcmp(buffer, verifyBuf, numberOfBytesWritten)) {
+                                    memcmp(ctx.buffer, ctx.verifyBuf, numberOfBytesWritten)) {
                                     onThreadError(lang[L_VRFYERR]);
                                     break;
                                 }
@@ -593,7 +634,7 @@ static void *writerRoutine()
         } else {
             onThreadError(lang[dst == -1 ? L_TRGERR : (dst == -2 ? L_UMOUNTERR : L_OPENTRGERR)]);
         }
-        input_close(&ctx);
+        stream_close(&ctx);
     } else {
         if(errno) main_errorMessage = strerror(errno);
         onThreadError(lang[dst == 2 ? L_ENCZIPERR : (dst == 3 ? L_CMPZIPERR : (dst == 4 ? L_CMPERR : L_SRCERR))]);
@@ -612,6 +653,91 @@ static void onWriteButtonClicked()
     mainRedraw();
     XFlush(dpy);
     writerRoutine();
+    inactive = progress = 0;
+    XDefineCursor(dpy, mainwin, pointer);
+    mainRedraw();
+    main_errorMessage = NULL;
+    memset(status, 0, sizeof(status));
+    XSync(dpy, True);
+}
+
+/**
+ * Function that reads from disk and writes to output file
+ */
+static void *readerRoutine()
+{
+    int src, size, numberOfBytesRead;
+    static stream_t ctx;
+    char *env, fn[PATH_MAX];
+    struct stat st;
+    struct tm *lt;
+    time_t now = time(NULL);
+    int i;
+
+    ctx.readSize = 0;
+    src = (int)((long int)disks_open(targetId));
+    if(src > 0) {
+        fn[0] = 0;
+        if((env = getenv("HOME")))
+            strncpy(fn, env, sizeof(fn)-1);
+        else if((env = getenv("LOGNAME")))
+            snprintf(fn, sizeof(fn)-1, "/home/%s", env);
+        if(!fn[0]) strcpy(fn, "./");
+        i = strlen(fn);
+        strncpy(fn + i, "/Desktop", sizeof(fn)-1-i);
+        if(stat(fn, &st)) {
+            strncpy(fn + i, "/Downloads", sizeof(fn)-1-i);
+            if(stat(fn, &st)) fn[i] = 0;
+        }
+        i = strlen(fn);
+        lt = localtime(&now);
+        snprintf(fn + i, sizeof(fn)-1-i, "/usbimager-%04d%02d%02d%02d%02d.dd%s",
+            lt->tm_year+1900, lt->tm_mon+1, lt->tm_mday, lt->tm_hour, lt->tm_min,
+            needCompress ? ".bz2" : "");
+        strcpy(source, fn);
+        mainRedraw();
+        if(!stream_create(&ctx, fn, needCompress, disks_capacity[targetId])) {
+            while(ctx.readSize < ctx.fileSize) {
+                errno = 0;
+                size = ctx.fileSize - ctx.readSize < BUFFER_SIZE ? (int)(ctx.fileSize - ctx.readSize) : BUFFER_SIZE;
+                numberOfBytesRead = (int)read(src, ctx.buffer, size);
+                if(numberOfBytesRead == size) {
+                    if(stream_write(&ctx, ctx.buffer, size)) {
+                        onProgress(&ctx);
+                    } else {
+                        if(errno) main_errorMessage = strerror(errno);
+                        onThreadError(lang[L_WRIMGERR]);
+                        break;
+                    }
+                } else {
+                    if(errno) main_errorMessage = strerror(errno);
+                    onThreadError(lang[L_RDSRCERR]);
+                    break;
+                }
+            }
+            stream_close(&ctx);
+        } else {
+            if(errno) main_errorMessage = strerror(errno);
+            onThreadError(lang[L_OPENIMGERR]);
+        }
+        disks_close((void*)((long int)src));
+    } else {
+        onThreadError(lang[src == -1 ? L_TRGERR : (src == -2 ? L_UMOUNTERR : L_OPENTRGERR)]);
+    }
+    strcpy(status, !errno && ctx.fileSize && ctx.readSize >= ctx.fileSize ? lang[L_DONE] : "");
+    if(verbose) printf("Worker thread finished.\r\n");
+    return NULL;
+}
+
+static void onReadButtonClicked()
+{
+    inactive = 1;
+    progress = 0;
+    mainsel = -1;
+    XDefineCursor(dpy, mainwin, loading);
+    mainRedraw();
+    XFlush(dpy);
+    readerRoutine();
     inactive = progress = 0;
     XDefineCursor(dpy, mainwin, pointer);
     mainRedraw();
@@ -928,11 +1054,13 @@ ok:             if(selFile >=0 && selFile < numFiles) {
                         if(!memcmp(mounts[i], "/home/", 6)) {
                             for(t = mounts[i] + 6, j = 0; *t; t++) if(*t=='/') j = 1;
                             if(!j) { s = lang[L_HOME]; j = 1; }
-                            else if(t - mounts[i] > 6 + 9 && !strcmp(t - 9, "Downloads")) { s = lang[L_DOWNLOADS]; j = 2; }
+                            else if(t - mounts[i] > 6 + 9 && !strcmp(t - 9, "Desktop")) { s = lang[L_DESKTOP]; j = 2; }
+                            else if(t - mounts[i] > 6 + 9 && !strcmp(t - 9, "Downloads")) { s = lang[L_DOWNLOADS]; j = 3; }
                             else { s = mounts[i]; j = 4; }
-                        } else
-                        if(!strcmp(mounts[i], "/")) { s = lang[L_ROOTFS]; j = 3; } else
-                            { s = mounts[i]; j = 4; }
+                        } else {
+                            s = !strcmp(mounts[i], "/") ? lang[L_ROOTFS] : mounts[i];
+                            j = 4;
+                        }
                         XCopyArea(dpy, i == overMount ? icons_act : icons_ina, win, gc, 0, j*16, 16, 16, 14, y-4+fonth/2);
                         mainPrint(win, i == overMount ? shdgc : txtgc, 34, y+4, 162, 2, s);
                         y += fonth + 8;
@@ -1164,7 +1292,7 @@ static void onTargetClicked()
     XTranslateCoordinates(dpy, mainwin, root, 0, 0, &x, &y, &child);
     XGetWindowAttributes(dpy, mainwin, &wa);
     x -= wa.x - wa.border_width; y -= wa.y;
-    win = XCreateSimpleWindow(dpy, root, x+15, y+25+fonth+20-(targetId < 0 ? 0 : targetId)*(fonth+8),
+    win = XCreateSimpleWindow(dpy, root, x+15, y+40+2*fonth+20-(targetId < 0 ? 0 : targetId)*(fonth+8),
         wa.width-25, numTargetList*(fonth+8), 0, 0, colors[color_inputbg].pixel);
     XSelectInput(dpy, win, ExposureMask | ButtonPressMask | ButtonReleaseMask | PointerMotionMask |
         KeyPressMask | KeyReleaseMask | FocusChangeMask | LeaveWindowMask);
@@ -1278,7 +1406,7 @@ int main(int argc, char **argv)
     pointer = XCreateFontCursor(dpy, XC_left_ptr);
 
     mainwin = XCreateSimpleWindow(dpy, RootWindow(dpy, scr), 0, 0,
-        320, 75+4*fonth, 0, 0, colors[color_winbg].pixel);
+        320, 90+5*fonth, 0, 0, colors[color_winbg].pixel);
     XSelectInput(dpy, mainwin, ExposureMask | ButtonPressMask | ButtonReleaseMask |
         KeyPressMask | KeyReleaseMask);
     XStoreName(dpy, mainwin, title);
@@ -1325,17 +1453,16 @@ int main(int argc, char **argv)
                     if(mainsel == -1) mainsel = 0;
                     else {
                         if(shift) { if(mainsel > 0) mainsel--; else mainsel = 3; }
-                        else { if(mainsel < 3) mainsel++; else mainsel = 0; }
+                        else { if(mainsel < 5) mainsel++; else mainsel = 0; }
                     }
                 break;
                 case XK_space:
                 case XK_Return:
                     switch(mainsel) {
                         case -1: mainsel = 0; pressedBtn = 1; break;
-                        case 0: pressedBtn = 1; break;
-                        case 1: pressedBtn = 2; break;
-                        case 2: needVerify ^= 1; break;
-                        case 3: pressedBtn = 3; break;
+                        case 4: needVerify ^= 1; break;
+                        case 5: needCompress ^= 1; break;
+                        default: pressedBtn = mainsel + 1; break;
                     }
                 break;
             }
@@ -1354,10 +1481,14 @@ int main(int argc, char **argv)
         if(e.type == ButtonPress && !inactive) {
             pressedBtn = 0; mainsel = -1;
             if(e.xbutton.y >=10 && e.xbutton.y < 10 + fonth + 8) pressedBtn = 1; else
-            if(e.xbutton.y >=25 + fonth && e.xbutton.y < 25 + 2*fonth + 8) pressedBtn = 2; else
-            if(e.xbutton.y >=40 + 2*fonth && e.xbutton.y < 40 + 3*fonth + 8) {
-                if(e.xbutton.x < half) needVerify ^= 1;
+            if(e.xbutton.y >=26 + fonth && e.xbutton.y < 25 + 2*fonth + 8) {
+                if(e.xbutton.x < half) pressedBtn = 2;
                 else pressedBtn = 3;
+            } else
+            if(e.xbutton.y >=40 + 2*fonth && e.xbutton.y < 40 + 3*fonth + 8) pressedBtn = 4; else
+            if(e.xbutton.y >=55 + 3*fonth && e.xbutton.y < 55 + 4*fonth + 8) {
+                if(e.xbutton.x < half) needVerify ^= 1;
+                else needCompress ^= 1;
             }
             mainRedraw();
         }
@@ -1366,8 +1497,9 @@ int main(int argc, char **argv)
             mainRedraw();
             switch(i) {
                 case 1: onSelectClicked(k != 0); break;
-                case 2: onTargetClicked(); break;
-                case 3: onWriteButtonClicked(); break;
+                case 2: onWriteButtonClicked(); break;
+                case 3: onReadButtonClicked(); break;
+                case 4: onTargetClicked(); break;
             }
         }
         XFlush(dpy);

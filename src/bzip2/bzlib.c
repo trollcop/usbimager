@@ -112,8 +112,6 @@ void default_bzfree ( void* opaque, void* addr )
 }
 
 
-#if 0
-
 /*---------------------------------------------------*/
 static
 void prepare_new_block ( EState* s )
@@ -484,8 +482,6 @@ int BZ_API(BZ2_bzCompressEnd)  ( bz_stream *strm )
 
    return BZ_OK;
 }
-
-#endif /* 0 */
 
 
 /*---------------------------------------------------*/
@@ -881,6 +877,7 @@ int BZ_API(BZ2_bzDecompressEnd)  ( bz_stream *strm )
    return BZ_OK;
 }
 
+
 #ifndef BZ_NO_STDIO
 /*---------------------------------------------------*/
 /*--- File I/O stuff                              ---*/
@@ -1241,7 +1238,6 @@ void BZ_API(BZ2_bzReadGetUnused)
 }
 #endif
 
-#if 0
 
 /*---------------------------------------------------*/
 /*--- Misc convenience stuff                      ---*/
@@ -1297,6 +1293,7 @@ int BZ_API(BZ2_bzBuffToBuffCompress)
    BZ2_bzCompressEnd ( &strm );
    return ret;
 }
+
 
 /*---------------------------------------------------*/
 int BZ_API(BZ2_bzBuffToBuffDecompress) 
@@ -1370,8 +1367,6 @@ const char * BZ_API(BZ2_bzlibVersion)(void)
 {
    return BZ_VERSION;
 }
-
-#endif
 
 
 #ifndef BZ_NO_STDIO

@@ -28,14 +28,25 @@
  */
 
 #include <stdio.h>
+#include <stdint.h>
+#include <limits.h>
 
 #define DISKS_MAX 32
 
-/*** External resources ***/
-extern int verbose;
 extern int disks_targets[DISKS_MAX];
-void main_addToCombobox(char *option);
-void main_getErrorMessage();
+extern uint64_t disks_capacity[DISKS_MAX];
+
+/* some defines if not defined in limit.h */
+#ifndef PATH_MAX
+# ifdef MAXPATHLEN
+#  define PATH_MAX MAXPATHLEN
+# else
+#  define PATH_MAX 65536
+# endif
+#endif
+#ifndef FILENAME_MAX
+# define FILENAME_MAX 256
+#endif
 
 /**
  * Refresh target device list in the combobox

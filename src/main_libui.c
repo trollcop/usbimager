@@ -32,8 +32,9 @@
 #endif
 #include <pthread.h>
 #include <errno.h>
+#include <sys/stat.h>
 #include "lang.h"
-#include "input.h"
+#include "stream.h"
 #include "disks.h"
 #include "libui/ui.h"
 
@@ -46,7 +47,9 @@ static uiEntry *source;
 static uiBox *targetCont;
 static uiCombobox *target;
 static uiCheckbox *verify;
-static uiButton *button;
+static uiCheckbox *compr;
+static uiButton *writeButton;
+static uiButton *readButton;
 static uiProgressBar *pbar;
 static uiLabel *status;
 pthread_t thrd;
@@ -68,8 +71,10 @@ static void onDone(void *data)
     uiControlEnable(uiControl(source));
     uiControlEnable(uiControl(sourceButton));
     uiControlEnable(uiControl(target));
+    uiControlEnable(uiControl(writeButton));
+    uiControlEnable(uiControl(readButton));
     uiControlEnable(uiControl(verify));
-    uiControlEnable(uiControl(button));
+    uiControlEnable(uiControl(compr));
     uiProgressBarSetValue(pbar, 0);
     uiLabelSetText(status, (char*)data);
     main_errorMessage = NULL;
@@ -80,7 +85,7 @@ static void onProgress(void *data)
     char textstat[128];
     int pos;
 
-    pos = input_status((input_t*)data, textstat);
+    pos = stream_status((stream_t*)data, textstat);
     uiProgressBarSetValue(pbar, pos);
     uiLabelSetText(status, textstat);
 #ifdef MACOSX
@@ -94,35 +99,38 @@ static void onThreadError(void *data)
     uiMsgBoxError(mainwin, main_errorMessage && *main_errorMessage ? main_errorMessage : lang[L_ERROR], (char*)data);
 }
 
+/**
+ * Function that reads from input and writes to disk
+ */
 static void *writerRoutine(void *data)
 {
     int dst, needVerify = uiCheckboxChecked(verify), numberOfBytesRead;
     int numberOfBytesWritten, numberOfBytesVerify;
-    char buffer[BUFFER_SIZE], verifyBuf[BUFFER_SIZE];
-    input_t ctx;
+    static stream_t ctx;
     (void)data;
 
-    dst = input_open(&ctx, uiEntryText(source));
+    ctx.fileSize = 0;
+    dst = stream_open(&ctx, uiEntryText(source));
     if(!dst) {
         dst = (int)((long int)disks_open(uiComboboxSelected(target)));
         if(dst > 0) {
             while(1) {
-                if((numberOfBytesRead = input_read(&ctx, buffer)) >= 0) {
+                if((numberOfBytesRead = stream_read(&ctx, ctx.buffer)) >= 0) {
                     if(numberOfBytesRead == 0) {
                         if(!ctx.fileSize) ctx.fileSize = ctx.readSize;
                         break;
                     } else {
                         errno = 0;
-                        numberOfBytesWritten = (int)write(dst, buffer, numberOfBytesRead);
+                        numberOfBytesWritten = (int)write(dst, ctx.buffer, numberOfBytesRead);
                         if(verbose) printf("writerRoutine() numberOfBytesRead %d numberOfBytesWritten %d errno=%d\n",
                             numberOfBytesRead, numberOfBytesWritten, errno);
                         if(numberOfBytesWritten == numberOfBytesRead) {
                             if(needVerify) {
                                 lseek(dst, -((off_t)numberOfBytesWritten), SEEK_CUR);
-                                numberOfBytesVerify = read(dst, verifyBuf, numberOfBytesWritten);
+                                numberOfBytesVerify = read(dst, ctx.verifyBuf, numberOfBytesWritten);
                                 if(verbose) printf("  numberOfBytesVerify %d\n", numberOfBytesVerify);
                                 if(numberOfBytesVerify != numberOfBytesWritten ||
-                                    memcmp(buffer, verifyBuf, numberOfBytesWritten)) {
+                                    memcmp(ctx.buffer, ctx.verifyBuf, numberOfBytesWritten)) {
                                         uiQueueMain(onThreadError, lang[L_VRFYERR]);
                                     break;
                                 }
@@ -143,7 +151,7 @@ static void *writerRoutine(void *data)
         } else {
             uiQueueMain(onThreadError, lang[dst == -1 ? L_TRGERR : (dst == -2 ? L_UMOUNTERR : L_OPENTRGERR)]);
         }
-        input_close(&ctx);
+        stream_close(&ctx);
     } else {
         if(errno) main_errorMessage = strerror(errno);
         uiQueueMain(onThreadError, lang[dst == 2 ? L_ENCZIPERR : (dst == 3 ? L_CMPZIPERR : (dst == 4 ? L_CMPERR : L_SRCERR))]);
@@ -160,8 +168,10 @@ static void onWriteButtonClicked(uiButton *b, void *data)
     uiControlDisable(uiControl(source));
     uiControlDisable(uiControl(sourceButton));
     uiControlDisable(uiControl(target));
+    uiControlDisable(uiControl(writeButton));
+    uiControlDisable(uiControl(readButton));
     uiControlDisable(uiControl(verify));
-    uiControlDisable(uiControl(button));
+    uiControlDisable(uiControl(compr));
     uiProgressBarSetValue(pbar, 0);
     uiLabelSetText(status, "");
     main_errorMessage = NULL;
@@ -172,6 +182,98 @@ static void onWriteButtonClicked(uiButton *b, void *data)
 #else
     CFRunLoopRun();
     writerRoutine(NULL);
+#endif
+}
+
+/**
+ * Function that reads from disk and writes to output file
+ */
+static void *readerRoutine(void *data)
+{
+    int src, size, needCompress = uiCheckboxChecked(compr), numberOfBytesRead;
+    static stream_t ctx;
+    char *env, fn[PATH_MAX];
+    struct stat st;
+    struct tm *lt;
+    time_t now = time(NULL);
+    int i, targetId = uiComboboxSelected(target);
+    (void)data;
+
+    ctx.fileSize = 0;
+    src = (int)((long int)disks_open(targetId));
+    if(src > 0) {
+        fn[0] = 0;
+        if((env = getenv("HOME")))
+            strncpy(fn, env, sizeof(fn)-1);
+        else if((env = getenv("LOGNAME")))
+            snprintf(fn, sizeof(fn)-1, "/home/%s", env);
+        if(!fn[0]) strcpy(fn, "./");
+        i = strlen(fn);
+        strncpy(fn + i, "/Desktop", sizeof(fn)-1-i);
+        if(stat(fn, &st)) {
+            strncpy(fn + i, "/Downloads", sizeof(fn)-1-i);
+            if(stat(fn, &st)) fn[i] = 0;
+        }
+        i = strlen(fn);
+        lt = localtime(&now);
+        snprintf(fn + i, sizeof(fn)-1-i, "/usbimager-%04d%02d%02d%02d%02d.dd%s",
+            lt->tm_year+1900, lt->tm_mon+1, lt->tm_mday, lt->tm_hour, lt->tm_min,
+            needCompress ? ".bz2" : "");
+        uiEntrySetText(source, fn);
+
+        if(!stream_create(&ctx, fn, needCompress, disks_capacity[targetId])) {
+            while(ctx.readSize < ctx.fileSize) {
+                errno = 0;
+                size = ctx.fileSize - ctx.readSize < BUFFER_SIZE ? (int)(ctx.fileSize - ctx.readSize) : BUFFER_SIZE;
+                numberOfBytesRead = (int)read(src, ctx.buffer, size);
+                if(numberOfBytesRead == size) {
+                    if(stream_write(&ctx, ctx.buffer, size)) {
+                        uiQueueMain(onProgress, &ctx);
+                    } else {
+                        if(errno) main_errorMessage = strerror(errno);
+                        uiQueueMain(onThreadError, lang[L_WRIMGERR]);
+                    }
+                } else {
+                    if(errno) main_errorMessage = strerror(errno);
+                    uiQueueMain(onThreadError, lang[L_RDSRCERR]);
+                    break;
+                }
+            }
+            stream_close(&ctx);
+        } else {
+            if(errno) main_errorMessage = strerror(errno);
+            uiQueueMain(onThreadError, lang[L_OPENIMGERR]);
+        }
+        disks_close((void*)((long int)src));
+    } else {
+        uiQueueMain(onThreadError, lang[src == -1 ? L_TRGERR : (src == -2 ? L_UMOUNTERR : L_OPENTRGERR)]);
+    }
+    uiLabelSetText(status, !errno && ctx.fileSize && ctx.readSize >= ctx.fileSize ? lang[L_DONE] : "");
+    if(verbose) printf("Worker thread finished.\r\n");
+    return NULL;
+}
+
+static void onReadButtonClicked(uiButton *b, void *data)
+{
+    (void)b;
+    (void)data;
+
+    uiControlDisable(uiControl(source));
+    uiControlDisable(uiControl(sourceButton));
+    uiControlDisable(uiControl(target));
+    uiControlDisable(uiControl(writeButton));
+    uiControlDisable(uiControl(readButton));
+    uiControlDisable(uiControl(verify));
+    uiControlDisable(uiControl(compr));
+    uiProgressBarSetValue(pbar, 0);
+    uiLabelSetText(status, "");
+    main_errorMessage = NULL;
+    if(verbose) printf("Starting worker thread\r\n");
+#ifndef MACOSX
+    pthread_create(&thrd, &tha, readerRoutine, NULL);
+#else
+    CFRunLoopRun();
+    readerRoutine(NULL);
 #endif
 }
 
@@ -224,8 +326,10 @@ int main(int argc, char **argv)
     const char *err;
     uiGrid *grid;
     uiBox *vbox;
+    uiBox *bbox;
+    uiLabel *sep;
     int i;
-    char *lc = getenv("LANG");
+    char *lc = getenv("LANG"), btntext[256];
 
     if(argc > 1 && argv[1] && argv[1][0] == '-')
         for(i = 1; argv[1][i]; i++)
@@ -266,6 +370,22 @@ int main(int argc, char **argv)
     uiGridAppend(grid, uiControl(source), 0, 0, 7, 1, 1, uiAlignFill, 0, uiAlignFill);
     uiGridAppend(grid, uiControl(sourceButton), 7, 0, 1, 1, 0, uiAlignFill, 0, uiAlignFill);
 
+    bbox = uiNewHorizontalBox();
+
+    uiGridAppend(grid, uiControl(bbox), 0, 1, 8, 1, 0, uiAlignFill, 0, uiAlignFill);
+    snprintf(btntext, sizeof(btntext)-1, "▼ %s", lang[L_WRITE]);
+    writeButton = uiNewButton(btntext);
+    uiButtonOnClicked(writeButton, onWriteButtonClicked, NULL);
+    uiBoxAppend(bbox, uiControl(writeButton), 1);
+
+    sep = uiNewLabel(" ");
+    uiBoxAppend(bbox, uiControl(sep), 0);
+
+    snprintf(btntext, sizeof(btntext)-1, "▲ %s", lang[L_READ]);
+    readButton = uiNewButton(btntext);
+    uiButtonOnClicked(readButton, onReadButtonClicked, NULL);
+    uiBoxAppend(bbox, uiControl(readButton), 1);
+
     targetCont = uiNewHorizontalBox();
     uiGridAppend(grid, uiControl(targetCont), 0, 2, 8, 1, 0, uiAlignFill, 0, uiAlignFill);
     target = uiNewCombobox();
@@ -274,11 +394,10 @@ int main(int argc, char **argv)
     refreshTarget(target, NULL);
 
     verify = uiNewCheckbox(lang[L_VERIFY]);
-    uiGridAppend(grid, uiControl(verify), 0, 3, 2, 1, 0, uiAlignStart, 0, uiAlignFill);
+    uiGridAppend(grid, uiControl(verify), 0, 3, 4, 1, 0, uiAlignFill, 0, uiAlignFill);
 
-    button = uiNewButton(lang[L_WRITE]);
-    uiButtonOnClicked(button, onWriteButtonClicked, NULL);
-    uiGridAppend(grid, uiControl(button), 2, 3, 6, 1, 0, uiAlignFill, 0, uiAlignFill);
+    compr = uiNewCheckbox(lang[L_COMPRESS]);
+    uiGridAppend(grid, uiControl(compr), 4, 3, 4, 1, 0, uiAlignFill, 0, uiAlignFill);
 
     pbar = uiNewProgressBar();
     uiGridAppend(grid, uiControl(pbar), 0, 4, 8, 1, 0, uiAlignFill, 4, uiAlignFill);

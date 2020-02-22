@@ -31,10 +31,11 @@
 #include <winioctl.h>
 #include <commctrl.h>
 #include <ddk/ntdddisk.h>
-#include "resource.h"
+#include "main.h"
 #include "disks.h"
 
 int disks_targets[DISKS_MAX];
+uint64_t disks_capacity[DISKS_MAX];
 
 HANDLE hTargetVolume = NULL;
 
@@ -57,6 +58,7 @@ void disks_refreshlist() {
     Query.QueryType = PropertyStandardQuery;
 
     memset(disks_targets, 0xff, sizeof(disks_targets));
+    memset(disks_capacity, 0, sizeof(disks_capacity));
 #if DISKS_TEST
     disks_targets[i++] = 'T';
     sprintf(siz, "T: .\\test.bin");
@@ -85,7 +87,7 @@ void disks_refreshlist() {
                 sprintf(siz, " [%d.%d %ciB]", sizeInGbTimes10 / 10, sizeInGbTimes10 % 10, unit);
                 for(c = siz; *c; c++, j++) szLbText[j] = (TCHAR)*c;
             }
-            if (DeviceIoControl(hTargetDevice, IOCTL_STORAGE_QUERY_PROPERTY, &Query, 
+            if (DeviceIoControl(hTargetDevice, IOCTL_STORAGE_QUERY_PROPERTY, &Query,
                 sizeof(STORAGE_PROPERTY_QUERY), pDevDesc, pDevDesc->Size, &bytesReturned,  (LPOVERLAPPED)NULL)) {
                 if (pDevDesc->VendorIdOffset != 0) {
                     szLbText[j++] = (TCHAR)' ';
@@ -98,6 +100,7 @@ void disks_refreshlist() {
             }
             szLbText[j] = 0;
             CloseHandle(hTargetDevice);
+            disks_capacity[i] = (uint64_t)totalNumberOfBytes;
             disks_targets[i++] = letter;
             main_addToCombobox((char*)szLbText);
             if(i >= DISKS_MAX) break;

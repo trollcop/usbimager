@@ -1,5 +1,5 @@
 /*
- * usbimager/input.c
+ * usbimager/stream.c
  *
  * Copyright (C) 2020 bzt (bztsrc@gitlab)
  *
@@ -23,27 +23,21 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
  *
- * @brief Input file functions
+ * @brief Stream Input/Output file functions
  *
  */
 
 #include <time.h>
 #include <errno.h>
 #include "lang.h"
-#include "input.h"
-
-#ifdef __MINGW__
-extern wchar_t **lang;
-#else
-extern char **lang;
-#endif
+#include "stream.h"
 
 int verbose = 0;
 
 /**
  * Returns progress percentage and the status string in str
  */
-int input_status(input_t *ctx, char *str)
+int stream_status(stream_t *ctx, char *str)
 {
     time_t t = time(NULL);
     uint64_t d;
@@ -90,16 +84,16 @@ int input_status(input_t *ctx, char *str)
 /**
  * Open file and determine the source's format
  */
-int input_open(input_t *ctx, char *fn)
+int stream_open(stream_t *ctx, char *fn)
 {
     unsigned char hdr[65536], *buff;
     int x, y;
 
     errno = 0;
-    memset(ctx, 0, sizeof(input_t));
+    memset(ctx, 0, sizeof(stream_t));
     if(!fn || !*fn) return 1;
 
-    if(verbose) printf("input_open(%s)\r\n", fn);
+    if(verbose) printf("stream_open(%s)\r\n", fn);
 
     ctx->f = fopen(fn, "rb");
     if(!ctx->f) return 1;
@@ -204,7 +198,7 @@ int input_open(input_t *ctx, char *fn)
 /**
  * Read no more than BUFFER_SIZE uncompressed bytes of source data
  */
-int input_read(input_t *ctx, char *buffer)
+int stream_read(stream_t *ctx, char *buffer)
 {
     int ret = 0;
     int64_t size = 0, insiz;
@@ -214,10 +208,10 @@ int input_read(input_t *ctx, char *buffer)
     if(size < 1) { if(ctx->fileSize) return 0; size = 0; }
     if(size > BUFFER_SIZE) size = BUFFER_SIZE;
     if(verbose)
-        printf("input_read() readSize %" PRIu64 " / fileSize %" PRIu64 " (input size %"
+        printf("stream_read() readSize %" PRIu64 " / fileSize %" PRIu64 " (input size %"
             PRId64 "), cmrdSize %" PRIu64 " / compSize %" PRIu64 "u\r\n",
             ctx->readSize, ctx->fileSize, size, ctx->cmrdSize, ctx->compSize);
-    
+
     switch(ctx->type) {
         case TYPE_PLAIN:
             fread(buffer, size, 1, ctx->f);
@@ -297,20 +291,71 @@ int input_read(input_t *ctx, char *buffer)
         break;
     }
     while(size & 511) buffer[size++] = 0;
-    if(verbose) printf("input_read() output size %" PRId64 "\r\n", size);
+    if(verbose) printf("stream_read() output size %" PRId64 "\r\n", size);
     ctx->readSize += (uint64_t)size;
     return size;
 }
 
 /**
- * Close source descriptors
+ * Open file for writing
  */
-void input_close(input_t *ctx)
+int stream_create(stream_t *ctx, char *fn, int comp, uint64_t size)
+{
+    errno = 0;
+    memset(ctx, 0, sizeof(stream_t));
+    if(!fn || !*fn || !size) return 1;
+
+    if(verbose) printf("stream_open(%s)\r\n", fn);
+
+    if(comp) {
+        ctx->type = TYPE_BZIP2;
+        ctx->b = BZ2_bzopen(fn, "wb");
+        if(!ctx->b) return 1;
+    } else {
+        ctx->type = TYPE_PLAIN;
+        ctx->f = fopen(fn, "wb");
+        if(!ctx->f) return 1;
+    }
+
+    ctx->fileSize = size;
+    ctx->start = time(NULL);
+    return 0;
+}
+
+/**
+ * Compress and write out data
+ */
+int stream_write(stream_t *ctx, char *buffer, int size)
+{
+    if(verbose)
+        printf("stream_write() readSize %" PRIu64 " / fileSize %" PRIu64 " (output size %d)\r\n",
+            ctx->readSize, ctx->fileSize, size);
+    errno = 0;
+    ctx->readSize += (uint64_t)size;
+
+    switch(ctx->type) {
+        case TYPE_PLAIN:
+            if(!fwrite(buffer, size, 1, ctx->f))
+                size = 0;
+        break;
+        case TYPE_BZIP2:
+            if(BZ2_bzwrite(ctx->b, buffer, size) < 1)
+                size = 0;
+        break;
+    }
+    if(verbose) printf("stream_write() output size %d\r\n", size);
+    return size;
+}
+
+/**
+ * Close stream descriptors
+ */
+void stream_close(stream_t *ctx)
 {
     if(ctx->f) fclose(ctx->f);
     switch(ctx->type) {
         case TYPE_DEFLATE: inflateEnd(&ctx->zstrm); break;
-        case TYPE_BZIP2: BZ2_bzDecompressEnd(&ctx->bstrm); break;
+        case TYPE_BZIP2: if(ctx->b) BZ2_bzclose(ctx->b); else BZ2_bzDecompressEnd(&ctx->bstrm); break;
         case TYPE_XZ: xz_dec_end(ctx->xz); break;
     }
 }

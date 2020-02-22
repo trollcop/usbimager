@@ -46,9 +46,11 @@
 #import <IOKit/usb/IOUSBLib.h>
 #import <IOKit/IOBSD.h>
 
+#import "main.h"
 #import "disks.h"
 
 int disks_targets[DISKS_MAX], currTarget = 0;
+uint64_t disks_capacity[DISKS_MAX];
 
 static int numUmount = 0;
 void disks_umountDone(DADiskRef disk, DADissenterRef dis, void *context)
@@ -72,7 +74,7 @@ void disks_refreshlist()
     kern_return_t           k_result = KERN_FAILURE;
     io_iterator_t           iterator = 0;
     io_service_t            usb_device_ref;
-    CFMutableDictionaryRef  matching_dictionary = NULL; 
+    CFMutableDictionaryRef  matching_dictionary = NULL;
     long int size = 0;
     int i = 0, writ = 0;
     const char *deviceName = 0, *vendorName = NULL, *productName = NULL;
@@ -80,6 +82,7 @@ void disks_refreshlist()
     struct stat st;
 
     memset(disks_targets, 0xff, sizeof(disks_targets));
+    memset(disks_capacity, 0, sizeof(disks_capacity));
 #if DISKS_TEST
     disks_targets[i++] = 999;
     main_addToCombobox("disk999 ./test.bin");
@@ -160,6 +163,7 @@ void disks_refreshlist()
         } else
             snprintf(str, sizeof(str)-1, "%s %s %s", deviceName, vendorName, productName);
         str[128] = 0;
+        disks_capacity[i] = size;
         disks_targets[i++] = atoi(deviceName + (deviceName[0] == 'r' ? 5 : 4));
         main_addToCombobox(str);
 
@@ -185,7 +189,7 @@ char *disks_volumes(int *num, char ***mounts)
 
     *mounts = (char**)realloc(*mounts, ((*num) + 2) * sizeof(char*));
     if(!*mounts) return NULL;
-    
+
     if(env) {
         (*mounts)[*num] = (char*)malloc(strlen(env)+1);
         if((*mounts)[*num]) { strcpy((*mounts)[*num], env); (*num)++; }

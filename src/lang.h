@@ -32,17 +32,21 @@
 enum {
     /* user interface */
     L_VERIFY,
+    L_COMPRESS,
     L_WRITE,
+    L_READ,
     /* messages */
     L_ERROR,
     L_VRFYERR,
     L_WRTRGERR,
+    L_WRIMGERR,
     L_RDSRCERR,
     L_TRGERR,
     L_DISMOUNTERR,
     L_UMOUNTERR,
     L_OPENVOLERR,
     L_OPENTRGERR,
+    L_OPENIMGERR,
     L_ENCZIPERR,
     L_CMPZIPERR,
     L_CMPERR,
@@ -68,6 +72,7 @@ enum {
     L_CANCEL,
     L_RECENT,
     L_HOME,
+    L_DESKTOP,
     L_DOWNLOADS,
     L_ROOTFS,
     L_NAME,
@@ -78,3 +83,9 @@ enum {
     /* must be the last */
     NUMTEXTS
 };
+
+#ifdef WINVER
+extern wchar_t **lang;
+#else
+extern char **lang;
+#endif

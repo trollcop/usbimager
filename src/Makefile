@@ -37,9 +37,6 @@ CFLAGS = -DDISKS_TEST=0 -Wall -Wextra -pedantic --std=c99 -O3 -fvisibility=hidde
 LDFLAGS =
 LIBS =
 DECOMPRESSORS = zlib/libz.a bzip2/libbz2.a xz/libxz.a
-ifneq ($(DEBUG),)
-CFLAGS += -g
-endif
 
 SRC = $(filter-out $(wildcard main_*.c) $(wildcard disks_*.c),$(wildcard *.c))
 OBJ =
@@ -106,6 +103,10 @@ endif
 endif
 
 OBJ += $(SRC:.c=.o)
+ifneq ($(DEBUG),)
+CFLAGS += -g
+GRP =
+endif
 
 ####### rules to compile #######
 
