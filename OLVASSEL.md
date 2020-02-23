@@ -21,7 +21,7 @@ Telepítés
 
 A csomagban lévő futtathatót egyből használhatod, nem kell telepíteni, és a többi fájl is csak azért van, hogy beillessze az asztali
 környezetedbe (ikonok és hasonlók). Automatikusan érzékeli az operációs rendszered nyelvét, és ha talál hozzá szótárat, akkor
-a saját nyelveden köszönt (16 nyelven, többek között magyarul is tud).
+a saját nyelveden köszönt (természetesen tud magyarul).
 
 Fícsörök
 --------
