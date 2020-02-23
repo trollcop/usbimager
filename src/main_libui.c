@@ -68,11 +68,13 @@ void main_getErrorMessage()
 
 static void onDone(void *data)
 {
+    int targetId = uiComboboxSelected(target);
     uiControlEnable(uiControl(source));
     uiControlEnable(uiControl(sourceButton));
     uiControlEnable(uiControl(target));
     uiControlEnable(uiControl(writeButton));
-    uiControlEnable(uiControl(readButton));
+    if(targetId < 0 || targetId >= DISKS_MAX || disks_targets[targetId] < 1024)
+        uiControlEnable(uiControl(readButton));
     uiControlEnable(uiControl(verify));
     uiControlEnable(uiControl(compr));
     uiProgressBarSetValue(pbar, 0);
@@ -83,15 +85,22 @@ static void onDone(void *data)
 static void onProgress(void *data)
 {
     char textstat[128];
-    int pos;
+    int pos = 0;
 
-    pos = stream_status((stream_t*)data, textstat);
+    if(data)
+        pos = stream_status((stream_t*)data, textstat);
+
     uiProgressBarSetValue(pbar, pos);
-    uiLabelSetText(status, textstat);
+    uiLabelSetText(status, !data ? lang[L_WAITING] : textstat);
 #ifdef MACOSX
     uiMainStep(0);
     CFRunLoopRun();
 #endif
+}
+
+void main_onProgress(void *data)
+{
+    uiQueueMain(onProgress, data);
 }
 
 static void onThreadError(void *data)
@@ -105,14 +114,14 @@ static void onThreadError(void *data)
 static void *writerRoutine(void *data)
 {
     int dst, needVerify = uiCheckboxChecked(verify), numberOfBytesRead;
-    int numberOfBytesWritten, numberOfBytesVerify;
+    int numberOfBytesWritten, numberOfBytesVerify, targetId = uiComboboxSelected(target);
     static stream_t ctx;
     (void)data;
 
     ctx.fileSize = 0;
-    dst = stream_open(&ctx, uiEntryText(source));
+    dst = stream_open(&ctx, uiEntryText(source), targetId >= 0 && targetId < DISKS_MAX && disks_targets[targetId] >= 1024);
     if(!dst) {
-        dst = (int)((long int)disks_open(uiComboboxSelected(target)));
+        dst = (int)((long int)disks_open(targetId, ctx.fileSize));
         if(dst > 0) {
             while(1) {
                 if((numberOfBytesRead = stream_read(&ctx, ctx.buffer)) >= 0) {
@@ -199,8 +208,10 @@ static void *readerRoutine(void *data)
     int i, targetId = uiComboboxSelected(target);
     (void)data;
 
+    if(targetId >= 0 && targetId < DISKS_MAX && disks_targets[targetId] >= 1024) return NULL;
+
     ctx.fileSize = 0;
-    src = (int)((long int)disks_open(targetId));
+    src = (int)((long int)disks_open(targetId, 0));
     if(src > 0) {
         fn[0] = 0;
         if((env = getenv("HOME")))
@@ -280,6 +291,7 @@ static void onReadButtonClicked(uiButton *b, void *data)
 static void refreshTarget(uiCombobox *cb, void *data)
 {
     int current = uiComboboxSelected(target);
+    char btntext[256];
     (void)cb;
     (void)data;
     uiBoxDelete(targetCont, 0);
@@ -288,6 +300,15 @@ static void refreshTarget(uiCombobox *cb, void *data)
     uiComboboxOnSelected(target, refreshTarget, NULL);
     disks_refreshlist();
     uiComboboxSetSelected(target, current);
+    if(current >= 0 && current < DISKS_MAX && disks_targets[current] >= 1024) {
+        snprintf(btntext, sizeof(btntext)-1, "▼ %s", lang[L_SEND]);
+        uiControlDisable(uiControl(readButton));
+    } else {
+        snprintf(btntext, sizeof(btntext)-1, "▼ %s", lang[L_WRITE]);
+        uiButtonSetText(writeButton, lang[L_WRITE]);
+        uiControlEnable(uiControl(readButton));
+    }
+    uiButtonSetText(writeButton, btntext);
 }
 
 static void onSelectClicked(uiButton *b, void *data)
@@ -331,9 +352,19 @@ int main(int argc, char **argv)
     int i;
     char *lc = getenv("LANG"), btntext[256];
 
-    if(argc > 1 && argv[1] && argv[1][0] == '-')
+    if(argc > 1 && argv[1] && argv[1][0] == '-') {
+        if(!strcmp(argv[1], "--version")) {
+            printf("USBImager " USBIMAGER_VERSION " - MIT license, Copyright (C) 2020 bzt\r\n\r\n"
+                "https://gitlab.com/bztsrc/usbimager\r\n");
+            exit(0);
+        }
         for(i = 1; argv[1][i]; i++)
-            if(argv[1][1] == 'v') verbose++;
+            switch(argv[1][i]) {
+                case 'v': verbose++; break;
+                case 's': disks_serial = 1; break;
+                case 'S': disks_serial = 2; break;
+            }
+    }
 
     if(!lc) lc = "en";
     for(i = 0; i < NUMLANGS; i++) {
@@ -355,7 +386,7 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    mainwin = uiNewWindow("USBImager", 320, 160, 1);
+    mainwin = uiNewWindow("USBImager " USBIMAGER_VERSION, 320, 160, 1);
     uiWindowOnClosing(mainwin, onClosing, NULL);
     uiOnShouldQuit(onShouldQuit, mainwin);
     uiWindowSetMargined(mainwin, 1);

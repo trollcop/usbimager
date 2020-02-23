@@ -35,15 +35,20 @@
 #include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <termios.h>
 #include <sys/mount.h>
 #include <sys/stat.h>
+#include "lang.h"
 #include "main.h"
 #include "disks.h"
 
 extern int fdatasync(int);
+int usleep(unsigned long int);
 
-int disks_targets[DISKS_MAX];
+int disks_serial = 0, disks_targets[DISKS_MAX];
 uint64_t disks_capacity[DISKS_MAX];
+char *serials[DISKS_MAX];
+int serialdrivers = 0;
 
 /* helper to read a string from a file */
 void filegetcontent(char *fn, char *buf, int maxlen)
@@ -79,8 +84,9 @@ void disks_refreshlist()
     struct dirent *de;
     char str[1024], vendorName[128], productName[128], path[512];
     uint64_t size;
-    int i = 0, sizeInGbTimes10;
-    char unit;
+    int i = 0, k, sizeInGbTimes10;
+    char unit, *c, *p;
+    FILE *f;
 
     memset(disks_targets, 0xff, sizeof(disks_targets));
     memset(disks_capacity, 0, sizeof(disks_capacity));
@@ -124,6 +130,44 @@ void disks_refreshlist()
             if(i >= DISKS_MAX) break;
         }
         closedir(dir);
+    }
+    if(disks_serial) {
+        if(!serialdrivers) {
+            f = fopen("/proc/tty/drivers", "r");
+            if(f) {
+                while(!feof(f)) {
+                    if(fgets(str, sizeof(str), f)) {
+                        for(k = 0, c = str, p = NULL; k < 11 && *c && *c != '\n';) {
+                            if(k == 2) *c++ = 0;
+                            while(*c == ' ' || *c == '\t') c++;
+                            if(k == 1 && !memcmp(c, "/dev/", 5)) p = c + 5;
+                            if(k == 4 && memcmp(c, "serial\n", 7)) p = NULL;
+                            k++;
+                            while(*c && *c != ' ' && *c != '\t' && *c != '\n') c++;
+                        }
+                        if(p) {
+                            serials[serialdrivers] = (char*)malloc(strlen(p)+1);
+                            if(serials[serialdrivers]) strcpy(serials[serialdrivers], p);
+                            serialdrivers++;
+                        }
+                    }
+                }
+                fclose(f);
+            }
+        }
+        for(k = 0; k < serialdrivers; k++)
+            if(serials[k]) {
+                dir = opendir("/dev");
+                if(dir) {
+                    while((de = readdir(dir))) {
+                        if(memcmp(de->d_name, serials[k], strlen(serials[k]))) continue;
+                        disks_targets[i++] = 1024 + k*256 + atoi(de->d_name + strlen(serials[k]));
+                        sprintf(str, "%s %s", de->d_name, lang[L_SERIAL]);
+                        main_addToCombobox(str);
+                    }
+                    closedir(dir);
+                }
+            }
     }
 }
 
@@ -191,7 +235,7 @@ char *disks_volumes(int *num, char ***mounts)
                     k++;
                     while(*c && *c != ' ' && *c != '\t' && *c != '\n') c++;
                 }
-                if(!path[0] || !memcmp(path, "/dev", 4) || !memcmp(path, "/sys", 4) ||
+                if(!path || !path[0] || !memcmp(path, "/dev", 4) || !memcmp(path, "/sys", 4) ||
                     !memcmp(path, "/run", 4) || !memcmp(path, "/proc", 5) || !strcmp(path, "/")) continue;
                 *mounts = (char**)realloc(*mounts, ((*num) + 1) * sizeof(char*));
                 if(*mounts) {
@@ -208,13 +252,93 @@ char *disks_volumes(int *num, char ***mounts)
 /**
  * Lock, umount and open the target disk for writing
  */
-void *disks_open(int targetId)
+void *disks_open(int targetId, uint64_t size)
 {
+    struct termios termios;
     int ret = 0, l, k;
-    char deviceName[16], *c, buf[1024], *path, *device;
+    char deviceName[64], *c, buf[1024], *path, *device;
     FILE *m;
 
     if(targetId < 0 || targetId >= DISKS_MAX || disks_targets[targetId] == -1) return (void*)-1;
+
+    if(disks_targets[targetId] >= 1024) {
+        k = disks_targets[targetId] - 1024;
+        l = k & 255; k >>= 8;
+        if(k >= serialdrivers) return (void*)-1;
+        sprintf(deviceName, "/dev/%s%d", serials[k], l);
+        errno = 0;
+        ret = open(deviceName, O_RDWR | O_NOCTTY | O_NONBLOCK | O_EXCL);
+        if(verbose)
+            printf("disks_open(%s) serial\r\n  fd=%d errno=%d err=%s\r\n",
+                deviceName, ret, errno, strerror(errno));
+        if(ret < 0 || errno) {
+            main_getErrorMessage();
+            return NULL;
+        }
+        if(isatty(ret)) {
+            if(tcgetattr(ret, &termios) != -1) {
+                termios.c_cc[VTIME] = 0;
+                termios.c_cc[VMIN] = 0;
+                termios.c_iflag = 0;
+                termios.c_oflag = 0;
+                termios.c_cflag = CS8 | CREAD | CLOCAL;
+                termios.c_lflag = 0;
+                if((cfsetispeed(&termios, B115200) < 0) || (cfsetospeed(&termios, B115200) < 0))
+                {
+                    if(verbose)
+                        printf(" failed to set baud errno=%d err=%s\r\n", errno, strerror(errno));
+                    goto sererr;
+                }
+                if(tcsetattr(ret, TCSAFLUSH, &termios) == -1) {
+                    if(verbose)
+                        printf(" failed to set attr errno=%d err=%s\r\n", errno, strerror(errno));
+                    goto sererr;
+                }
+            } else {
+                if(verbose)
+                    printf(" tcgetattr error errno=%d err=%s\r\n", errno, strerror(errno));
+sererr:         main_getErrorMessage();
+                close(ret);
+                return NULL;
+            }
+            if(disks_serial == 2) {
+                /* Raspbootin Serial Protocol:
+                 *   \003\003\003 - client to server
+                 *   4 bytes little-endian, size of image - server to client
+                 *   'OK' or 'SE' (size error) - client to server
+                 *   image content - server to client
+                 */
+                if(verbose) printf("  awaiting client\r\n");
+                for(k = 0; k < 3;) {
+                    /* fd is non-blocking, give chance to process X11 window close events */
+                    main_onProgress(NULL);
+                    if(read(ret, &buf, 1)) {
+                        if(buf[0] == 3) k++;
+                        else {
+                            k = 0;
+                            if(verbose) printf("%c", buf[0]);
+                        }
+                    }
+                    usleep(1000);
+                }
+                fcntl(ret, F_SETFL, 0);
+                if(verbose) printf("\r\n  client connected\r\n");
+                if(write(ret, &size, 4) != 4) {
+                    if(verbose)
+                        printf(" unable to send size errno=%d err=%s\r\n", errno, strerror(errno));
+                    goto sererr;
+                }
+                if(read(ret, &buf, 2) != 2 || buf[0] != 'O' || buf[1] != 'K') {
+                    if(verbose)
+                        printf(" didn't received ACK from client, got '%c%c' errno=%d err=%s\r\n",
+                            buf[0], buf[1], errno, strerror(errno));
+                    goto sererr;
+                }
+            } else
+                fcntl(ret, F_SETFL, 0);
+        }
+        return (void*)((long int)ret);
+    }
 
 #if DISKS_TEST
     if((char)disks_targets[targetId] == 'T') {

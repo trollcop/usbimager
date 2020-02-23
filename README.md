@@ -14,7 +14,7 @@ Available platforms: Windows, MacOSX and Linux. Its interface is as simple as it
 Installation
 ------------
 
-1. download one of the `usbimager-*.zip` archives above for your desktop (approx. 128 Kilobytes each)
+1. download one of the `usbimager-*.zip` archives above for your desktop (less than 192 Kilobytes each)
 2. extract to: `C:\Program Files` (Windows), `/Applications` (MacOSX) or `/usr` (Linux)
 3. Enjoy!
 
@@ -36,6 +36,7 @@ Features
 - Can read compressed images on-the-fly: .gz, .bz2, .xz
 - Can read archives on-the-fly: .zip (PKZIP and ZIP64) (*)
 - Can create backups in raw and bzip2 compressed format
+- Can send images to microcontrollers over serial line
 
 (* - for archives with multiple files, the first file in the archive is used as input)
 
@@ -51,6 +52,28 @@ If you can't write to the target device (you get "permission denied" errors), th
 user to the "disk" (Linux) or "operator" (MacOSX) group (see "ls -la /dev|grep -e ^b" to find out which group your OS is using). __No need__ for
 *sudo /usr/bin/usbimager*, just make sure your user has write access to the block devices, that's the Principle of Least Privilege. This should not be
 an issue by the way, as USBImager comes with setgid bit set.
+
+The '-v' and '-vv' flags will make USBImager to be verbose, and it will print out details to the console. That is stdout on Linux and MacOSX (so run it in a
+Terminal), and on Windows a spearate window. For Windows users: right-click on usbimager.exe, and select "Create Shortcut". Then right-click on the newly
+created ".lnk" file, and select "Properties". On the "Shortcut" tab, in the "Target" field, you can add the flags. On the "Security" tab, you can also set
+to run USBImager as Administrator if you have problems accessing the raw disk devices.
+
+If you start USBImager with the '-s' flag (lowercase), then it will allow you to send images to serial ports as well. In this case on the client side:
+1. the client must wait indefinitely for the first byte to arrive, then store that into a buffer
+2. then it must read further bytes with a timeout (let's say 250 ms or 500 ms) and store those in the buffer as well
+3. when the timeout occurs, the image is received.
+
+The '-S' flag (uppercase) is similar, but then USBImager will do a [raspbootin](https://github.com/bztsrc/raspi3-tutorial/tree/master/14_raspbootin64) hand-shake
+on the serial line:
+1. USBImager awaits for the client
+2. client sends 3 bytes, '\003\003\003' (3 times <bd>Ctrl</kbd>+<kbd>C</kbd>)
+3. USBImager sends size of the image, 4 bytes in little-endian (size = 4th byte * 16777216 + 3rd byte * 65536 + 2nd byte * 256 + 1st byte)
+4. client responds with two bytes, either 'OK' or 'SE' (size error)
+5. if the response was OK, then USBImager sends the image, size bytes
+6. when the client got the sizeth byte, the image is received.
+
+For both case the serial line is set to 115200 baud, 8 data bits, no parity, 1 stop bit. For serial transfers, USBImager does not uncompress the image to minimize
+transfer times, so that has to be done on the client side.
 
 For X11 I made everything from scratch to avoid dependencies. Clicking and keyboard navigation works as expected: <kbd>Tab</kbd> and <kbd>Shift</kbd> +
 <kbd>Tab</kbd> switches the input field, <kbd>Enter</kbd> selects. Plus in Open File dialog <kbd>Left</kbd> / <kbd>BackSpace</kbd> goes one directory up,
@@ -70,7 +93,7 @@ For X11 I made everything from scratch to avoid dependencies. Clicking and keybo
 2. select a device by clicking on the 3rd row
 3. click on the first button (Write) in the 2nd row
 
-On restoring an image file, the file format and the compression is autodetected.
+With this operation, the file format and the compression is autodetected.
 
 ### Creating Backup Image File from Device
 

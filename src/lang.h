@@ -35,8 +35,12 @@ enum {
     L_COMPRESS,
     L_WRITE,
     L_READ,
+    L_SEND,
+    L_SERIAL,
     /* messages */
     L_ERROR,
+    L_WAITING,
+    L_COMMERR,
     L_VRFYERR,
     L_WRTRGERR,
     L_WRIMGERR,
@@ -85,6 +89,7 @@ enum {
 };
 
 #ifdef WINVER
+#include <windows.h>
 extern wchar_t **lang;
 #else
 extern char **lang;

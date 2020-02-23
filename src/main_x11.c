@@ -59,6 +59,7 @@ enum {
     color_btnbg0, color_btnbg1, color_btnbg2, color_btnbg3,
     color_wbtnbg0, color_wbtnbg1, color_wbtnbg2, color_wbtnbg3,
     color_btnbrd0, color_btnbrd1, color_btnbrd2, color_fg,
+    color_wrbtn, color_rdbtn,
     NUM_COLOR
 };
 static unsigned long int palette[NUM_COLOR] = {
@@ -66,7 +67,8 @@ static unsigned long int palette[NUM_COLOR] = {
     0xE9ECF0, 0xABADB3, 0xE2E3EA, 0xE3E9EF,
     0xFCFCFC, 0xECECEC, 0xF6F6F6, 0xDDDDDD,
     0xEFC8C1, 0xE49E90, 0xDDA398, 0xD47E6A,
-    0x919191, 0x777777, 0x707070, 0x303030
+    0x919191, 0x777777, 0x707070, 0x303030,
+    0x874D3F, 0x606060
 };
 
 char **lang = NULL;
@@ -183,16 +185,16 @@ static void mainInputBox(Window win, int x, int y, int w, int sel, char *txt)
     XDrawLine(dpy, win, gc, x+w+1, y, x+w+1, y+fonth+8);
     XDrawLine(dpy, win, gc, x, y+fonth+9, x+w, y+fonth+9);
 
-    XSetForeground(dpy, gc, colors[sel ? color_inpdrk : color_inpbrd1].pixel);
+    XSetForeground(dpy, gc, colors[inactive ? color_btnbg2 : (sel ? color_inpdrk : color_inpbrd1)].pixel);
     XDrawLine(dpy, win, gc, x+1, y, x+w-1, y);
-    XSetForeground(dpy, gc, colors[sel ? color_inpdrk : color_inpbrd2].pixel);
+    XSetForeground(dpy, gc, colors[inactive ? color_btnbg2 : (sel ? color_inpdrk : color_inpbrd2)].pixel);
     XDrawLine(dpy, win, gc, x, y+1, x, y+fonth+7);
     XDrawLine(dpy, win, gc, x+w, y+1, x+w, y+fonth+7);
-    XSetForeground(dpy, gc, colors[sel ? color_inpdrk : color_inpbrd3].pixel);
+    XSetForeground(dpy, gc, colors[inactive ? color_btnbg2 : (sel ? color_inpdrk : color_inpbrd3)].pixel);
     XDrawLine(dpy, win, gc, x+1, y+fonth+8, x+w-1, y+fonth+8);
     XSetForeground(dpy, gc, colors[inactive ? color_winbg : color_inputbg].pixel);
     XFillRectangle(dpy, win, gc, x+1, y+1, w-1, fonth+7);
-    XSetForeground(dpy, gc, colors[sel ? color_inplght : color_inpbrd0].pixel);
+    XSetForeground(dpy, gc, colors[inactive ? color_btnbg2 : (sel ? color_inplght : color_inpbrd0)].pixel);
     XDrawPoints(dpy, win, gc, points, 8, CoordModeOrigin);
     mainPrint(win, txtgc, x+4, y+4, w-8, 2, txt);
 }
@@ -223,6 +225,7 @@ static void mainButton(Window win, int x, int y, int w, int sel, int pressed, in
         { x+1, y+fonth+6 }, { x+2, y+fonth+7 }, { x+w-1, y+fonth+6}, { x+w-2, y+fonth+7 }
     };
     if(w < 8) return;
+    if(inactive) pressed &= ~1;
     switch(pressed) {
         case 1:
             bg0 = color_btnbg2; bg1 = color_btnbg3; bg2 = color_btnbg0; bg3 = color_btnbg1;
@@ -258,11 +261,11 @@ static void mainButton(Window win, int x, int y, int w, int sel, int pressed, in
 
     mainPrint(win, txtgc, x+7, y+5, w-10, style, txt);
 
-    XSetForeground(dpy, gc, colors[sel ? color_inpdrk : color_btnbrd2].pixel);
+    XSetForeground(dpy, gc, colors[inactive ? color_btnbg2 : (sel ? color_inpdrk : color_btnbrd2)].pixel);
     XDrawSegments(dpy, win, gc, border1, 4);
-    XSetForeground(dpy, gc, colors[sel ? color_inpdrk : color_btnbrd1].pixel);
+    XSetForeground(dpy, gc, colors[inactive ? color_btnbg2 : (sel ? color_inpdrk : color_btnbrd1)].pixel);
     XDrawPoints(dpy, win, gc, border4, 8, CoordModeOrigin);
-    XSetForeground(dpy, gc, colors[sel ? color_inpdrk : color_btnbrd0].pixel);
+    XSetForeground(dpy, gc, colors[inactive ? color_btnbg2 : (sel ? color_inpdrk : color_btnbrd0)].pixel);
     XDrawPoints(dpy, win, gc, border5, 12, CoordModeOrigin);
 
 }
@@ -284,7 +287,7 @@ static void mainBox(Window win, int x, int y, int w, int pressed, char *txt)
 
 static void mainCheckbox(Window win, int x, int y, int sel, int checked)
 {
-    XSetForeground(dpy, gc, colors[sel ? color_inpdrk : color_btnbrd2].pixel);
+    XSetForeground(dpy, gc, colors[inactive ? color_btnbg2 : (sel ? color_inpdrk : color_btnbrd2)].pixel);
     XDrawRectangle(dpy, win, gc, x, y, fonth, fonth);
 
     XSetForeground(dpy, gc, colors[sel ? color_inplght : color_winbg].pixel);
@@ -383,7 +386,7 @@ static Window mainModal(int *mw, int *mh, int bgcolor)
 static void mainRedraw()
 {
     XRectangle clip = { 17, 25+fonth, 0, fonth+8 };
-    int x;
+    int x, old = inactive, ser = targetId >= 0 && targetId < DISKS_MAX && disks_targets[targetId] >= 1024 ? 1 : 0;
 
     XWindowAttributes  wa;
     XGetWindowAttributes(dpy, mainwin, &wa);
@@ -392,7 +395,8 @@ static void mainRedraw()
     mainInputBox(mainwin, 10,10, wa.width-55, mainsel==0, source);
     mainButton(mainwin, wa.width>50?wa.width-40:10,10, 30, mainsel==0, pressedBtn == 1 ? 1 : 0, 5, "...");
 
-    mainButton(mainwin, 10, 25+fonth, half - 15, mainsel==1, pressedBtn == 2 ? 3 : 2, 5, lang[L_WRITE]);
+    if(ser && mainsel == 2) mainsel--;
+    mainButton(mainwin, 10, 25+fonth, half - 15, mainsel==1, pressedBtn == 2 ? 3 : 2, 5, lang[ser ? L_SEND : L_WRITE]);
     x = mainPrint(mainwin, txtgc, 0, 0, 0, 0, lang[L_WRITE]);
     if(x < half - 15) {
         x = (half - 15 - x) / 2 - 6;
@@ -404,7 +408,7 @@ static void mainRedraw()
         XSetForeground(dpy, gc, colors[inactive ? color_btnbrd2 : color_inputbg].pixel);
         XDrawLine(dpy, mainwin, gc, x+6, 25+fonth+fonth/2+8, x+12, 25+fonth+fonth/2+2);
         if(!inactive) {
-            XSetForeground(dpy, gc, colors[color_wbtnbg3].pixel);
+            XSetForeground(dpy, gc, colors[color_wrbtn].pixel);
             XDrawLine(dpy, mainwin, gc, x+2, 25+fonth+fonth/2+3, x+10, 25+fonth+fonth/2+3);
             XDrawLine(dpy, mainwin, gc, x+3, 25+fonth+fonth/2+4, x+9, 25+fonth+fonth/2+4);
             XDrawLine(dpy, mainwin, gc, x+4, 25+fonth+fonth/2+5, x+8, 25+fonth+fonth/2+5);
@@ -413,6 +417,7 @@ static void mainRedraw()
         }
         XSetClipMask(dpy, gc, None);
     }
+    if(ser) { inactive = 1; XSetForeground(dpy, txtgc, colors[color_btnbrd2].pixel); }
     mainButton(mainwin, half+5, 25+fonth, half - 15, mainsel==2, pressedBtn == 3 ? 1 : 0, 5, lang[L_READ]);
     x = mainPrint(mainwin, txtgc, 0, 0, 0, 0, lang[L_READ]);
     if(x < half - 15) {
@@ -426,7 +431,7 @@ static void mainRedraw()
         XSetForeground(dpy, gc, colors[inactive ? color_btnbrd2 : color_btnbrd0].pixel);
         XDrawLine(dpy, mainwin, gc, x+7, 25+fonth+fonth/2+3, x+11, 25+fonth+fonth/2+7);
         if(!inactive) {
-            XSetForeground(dpy, gc, colors[color_btnbg3].pixel);
+            XSetForeground(dpy, gc, colors[color_rdbtn].pixel);
             XDrawPoint(dpy, mainwin, gc, x+6, 25+fonth+fonth/2+3);
             XDrawLine(dpy, mainwin, gc, x+5, 25+fonth+fonth/2+4, x+7, 25+fonth+fonth/2+4);
             XDrawLine(dpy, mainwin, gc, x+4, 25+fonth+fonth/2+5, x+8, 25+fonth+fonth/2+5);
@@ -435,6 +440,7 @@ static void mainRedraw()
         }
         XSetClipMask(dpy, gc, None);
     }
+    if(ser) { inactive = old; XSetForeground(dpy, txtgc, colors[inactive ? color_btnbrd2 : color_fg].pixel); }
 
     mainButton(mainwin, 10, 40+2*fonth, wa.width>30?wa.width-20:10, mainsel==3, pressedBtn == 4 ? 1 : 0, 4,
         targetId >= 0 && targetId < numTargetList ? targetList[targetId] : "");
@@ -482,18 +488,22 @@ static void onQuit()
     XCloseDisplay(dpy);
 }
 
-static void onProgress(void *data)
+void main_onProgress(void *data)
 {
     stream_t *ctx = (stream_t*)data;
     XWindowAttributes  wa;
     XEvent e;
 
-    progress = stream_status(ctx, status);
+    if(!ctx) {
+        progress = 0;
+        strcpy(status, lang[L_WAITING]);
+    } else
+        progress = stream_status(ctx, status);
 
     if(XPending(dpy)) {
         XNextEvent(dpy, &e);
         if(e.type == ClientMessage && (Atom)(e.xclient.data.l[0]) == delAtom) {
-            if(ctx->b) stream_close(ctx);
+            if(ctx && ctx->b) stream_close(ctx);
             onQuit();
             exit(1);
         }
@@ -593,9 +603,9 @@ static void *writerRoutine()
     static stream_t ctx;
 
     ctx.readSize = 0;
-    dst = stream_open(&ctx, source);
+    dst = stream_open(&ctx, source, targetId >= 0 && targetId < DISKS_MAX && disks_targets[targetId] >= 1024);
     if(!dst) {
-        dst = (int)((long int)disks_open(targetId));
+        dst = (int)((long int)disks_open(targetId, ctx.fileSize));
         if(dst > 0) {
             while(1) {
                 if((numberOfBytesRead = stream_read(&ctx, ctx.buffer)) >= 0) {
@@ -618,7 +628,7 @@ static void *writerRoutine()
                                     break;
                                 }
                             }
-                            onProgress(&ctx);
+                            main_onProgress(&ctx);
                         } else {
                             if(errno) main_errorMessage = strerror(errno);
                             onThreadError(lang[L_WRTRGERR]);
@@ -674,8 +684,10 @@ static void *readerRoutine()
     time_t now = time(NULL);
     int i;
 
+    if(targetId >= 0 && targetId < DISKS_MAX && disks_targets[targetId] >= 1024) return NULL;
+
     ctx.readSize = 0;
-    src = (int)((long int)disks_open(targetId));
+    src = (int)((long int)disks_open(targetId, 0));
     if(src > 0) {
         fn[0] = 0;
         if((env = getenv("HOME")))
@@ -703,7 +715,7 @@ static void *readerRoutine()
                 numberOfBytesRead = (int)read(src, ctx.buffer, size);
                 if(numberOfBytesRead == size) {
                     if(stream_write(&ctx, ctx.buffer, size)) {
-                        onProgress(&ctx);
+                        main_onProgress(&ctx);
                     } else {
                         if(errno) main_errorMessage = strerror(errno);
                         onThreadError(lang[L_WRIMGERR]);
@@ -1357,13 +1369,23 @@ int main(int argc, char **argv)
     XEvent e;
     KeySym k;
     XTextProperty title_property;
-    char colorName[16], *title = "USBImager";
-    int i;
+    char colorName[16], *title = "USBImager " USBIMAGER_VERSION;
+    int i, ser;
     char *lc = getenv("LANG");
 
-    if(argc > 1 && argv[1] && argv[1][0] == '-')
+    if(argc > 1 && argv[1] && argv[1][0] == '-') {
+        if(!strcmp(argv[1], "--version")) {
+            printf("USBImager " USBIMAGER_VERSION " - MIT license, Copyright (C) 2020 bzt\r\n\r\n"
+                "https://gitlab.com/bztsrc/usbimager\r\n");
+            exit(0);
+        }
         for(i = 1; argv[1][i]; i++)
-            if(argv[1][1] == 'v') verbose++;
+            switch(argv[1][i]) {
+                case 'v': verbose++; break;
+                case 's': disks_serial = 1; break;
+                case 'S': disks_serial = 2; break;
+            }
+    }
 
     if(!lc) lc = "en";
     for(i = 0; i < NUMLANGS; i++) {
@@ -1440,7 +1462,7 @@ int main(int argc, char **argv)
 
     while(1) {
         XNextEvent(dpy, &e);
-        k = 0;
+        k = 0; ser = targetId >= 0 && targetId < DISKS_MAX && disks_targets[targetId] >= 1024 ? 1 : 0;
         if((e.type == ClientMessage && (Atom)(e.xclient.data.l[0]) == delAtom) ||
            (e.type == KeyPress && XLookupKeysym(&e.xkey,0) == XK_Escape))
             break;
@@ -1452,8 +1474,13 @@ int main(int argc, char **argv)
                 case XK_Tab:
                     if(mainsel == -1) mainsel = 0;
                     else {
-                        if(shift) { if(mainsel > 0) mainsel--; else mainsel = 3; }
-                        else { if(mainsel < 5) mainsel++; else mainsel = 0; }
+                        if(shift) {
+                            if(mainsel > 0) mainsel--; else mainsel = 3;
+                            if(ser && mainsel == 2) mainsel--;
+                        } else {
+                            if(mainsel < 5) mainsel++; else mainsel = 0;
+                            if(ser && mainsel == 2) mainsel++;
+                        }
                     }
                 break;
                 case XK_space:
@@ -1498,7 +1525,7 @@ int main(int argc, char **argv)
             switch(i) {
                 case 1: onSelectClicked(k != 0); break;
                 case 2: onWriteButtonClicked(); break;
-                case 3: onReadButtonClicked(); break;
+                case 3: if(!ser) onReadButtonClicked(); break;
                 case 4: onTargetClicked(); break;
             }
         }

@@ -27,7 +27,7 @@
  *
  */
 
-extern int verbose;
+#define USBIMAGER_VERSION "0.0.1"
 
 /* the overall buffer size. Will write in BUFFER_SIZE chunks */
 #define BUFFER_SIZE (1024 * 1024)
@@ -40,6 +40,8 @@ enum {
     TYPE_XZ
 };
 
+extern int verbose;
+
 /**
  * Add an option to the combobox
  */
@@ -49,3 +51,8 @@ void main_addToCombobox(char *option);
  * Get the last error message
  */
 void main_getErrorMessage();
+
+/**
+ * Update the progress and status bars
+ */
+void main_onProgress(void *data);

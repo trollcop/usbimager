@@ -42,7 +42,11 @@ int stream_status(stream_t *ctx, char *str)
     time_t t = time(NULL);
     uint64_t d;
     int h,m;
+#ifdef WINVER
+    wchar_t rem[64];
+#else
     char rem[64];
+#endif
 
     str[0] = 0;
     if(ctx->start < t && ctx->readSize) {
@@ -51,17 +55,17 @@ int stream_status(stream_t *ctx, char *str)
         else
             d = (t - ctx->start) * (ctx->compSize - ctx->cmrdSize) / ctx->cmrdSize;
         h = d / 3600; d %= 3600; m = d / 60;
-#ifdef __MINGW__
-        if(h > 0) wsprintf(rem, lang[h>1 && m>1 ? L_STATHSMS : (h>1 && m<2 ? L_STATHSM :
+#ifdef WINVER
+        if(h > 0) wsprintfW(rem, (wchar_t*)lang[h>1 && m>1 ? L_STATHSMS : (h>1 && m<2 ? L_STATHSM :
                 (h<2 && m>0 ? L_STATHMS : L_STATHM))], h, m);
-        else if(m > 0) wsprintf(rem, lang[m>1 ? L_STATMS : L_STATM], m);
-        else wsprintf(rem, lang[L_STATLM]);
+        else if(m > 0) wsprintfW(rem, (wchar_t*)lang[m>1 ? L_STATMS : L_STATM], m);
+        else wsprintfW(rem, (wchar_t*)lang[L_STATLM]);
         if(ctx->fileSize)
-            wsprintf((wchar_t*)str, "%6" PRIu64 " MiB / %" PRIu64 " MiB, %s",
+            wsprintfW((wchar_t*)str, L"%6" PRIu64 " MiB / %" PRIu64 " MiB, %s",
                 (ctx->readSize >> 20),
                 (ctx->fileSize >> 20), rem);
         else
-            wsprintf((wchar_t*)str, "%6" PRIu64 " MiB %s, %s",
+            wsprintfW((wchar_t*)str, L"%6" PRIu64 " MiB %s, %s",
                 (ctx->readSize >> 20), lang[L_SOFAR], rem);
 #else
         if(h > 0) sprintf(rem, lang[h>1 && m>1 ? L_STATHSMS : (h>1 && m<2 ? L_STATHSM :
@@ -84,7 +88,7 @@ int stream_status(stream_t *ctx, char *str)
 /**
  * Open file and determine the source's format
  */
-int stream_open(stream_t *ctx, char *fn)
+int stream_open(stream_t *ctx, char *fn, int uncompr)
 {
     unsigned char hdr[65536], *buff;
     int x, y;
@@ -98,7 +102,8 @@ int stream_open(stream_t *ctx, char *fn)
     ctx->f = fopen(fn, "rb");
     if(!ctx->f) return 1;
     memset(hdr, 0, sizeof(hdr));
-    fread(hdr, sizeof(hdr), 1, ctx->f);
+    if(!uncompr)
+        fread(hdr, sizeof(hdr), 1, ctx->f);
 
     /* detect input format */
     if(hdr[0] == 0x1f && hdr[1] == 0x8b) {

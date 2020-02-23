@@ -77,8 +77,9 @@ int stream_status(stream_t *ctx, char *str);
 
 /**
  * Open file and determine the source's format
+ * if uncompr is set, then file will be assumed uncompressed
  */
-int stream_open(stream_t *ctx, char *fn);
+int stream_open(stream_t *ctx, char *fn, int uncompr);
 
 /**
  * Read no more than BUFFER_SIZE uncompressed bytes of source data

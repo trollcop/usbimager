@@ -33,10 +33,13 @@
 #import <unistd.h>
 #import <fcntl.h>
 #import <errno.h>
+#import <termios.h>
 #import <sys/param.h>
 #import <sys/ucred.h>
 #import <sys/mount.h>
 #import <sys/stat.h>
+#import <sys/ioctl.h>
+#import <sys/ttycom.h>
 #import <Foundation/Foundation.h>
 #import <CoreFoundation/CoreFoundation.h>
 #import <DiskArbitration/DiskArbitration.h>
@@ -44,13 +47,17 @@
 #import <IOKit/IOMessage.h>
 #import <IOKit/IOCFPlugIn.h>
 #import <IOKit/usb/IOUSBLib.h>
+#import <IOKit/serial/IOSerialKeys.h>
+#import <IOKit/serial/ioss.h>
 #import <IOKit/IOBSD.h>
 
+#import "lang.h"
 #import "main.h"
 #import "disks.h"
 
-int disks_targets[DISKS_MAX], currTarget = 0;
+int disks_serial = 0, disks_targets[DISKS_MAX], currTarget = 0;
 uint64_t disks_capacity[DISKS_MAX];
+char disks_serials[DISKS_MAX][64];
 
 static int numUmount = 0;
 void disks_umountDone(DADiskRef disk, DADissenterRef dis, void *context)
@@ -76,7 +83,7 @@ void disks_refreshlist()
     io_service_t            usb_device_ref;
     CFMutableDictionaryRef  matching_dictionary = NULL;
     long int size = 0;
-    int i = 0, writ = 0;
+    int i = 0, j = 1024, writ = 0;
     const char *deviceName = 0, *vendorName = NULL, *productName = NULL;
     CFTypeRef writable = NULL, bsdName = NULL, vendor = NULL, product = NULL, disksize = NULL;
     struct stat st;
@@ -173,6 +180,33 @@ void disks_refreshlist()
         IOObjectRelease(usb_device_ref);
         if(i >= DISKS_MAX) break;
     }
+    if(disks_serial) {
+        matching_dictionary = NULL;
+        if ((matching_dictionary = IOServiceMatching(kIOSerialBSDServiceValue)) == NULL)
+            CFDictionarySetValue(matching_dictionary, CFSTR(kIOSerialBSDTypeKey), CFSTR(kIOSerialBSDModemType));
+        if (!matching_dictionary) return;
+        k_result = IOServiceGetMatchingServices(master_port, matching_dictionary, &iterator);
+        if (KERN_SUCCESS != k_result) return;
+
+        while ((usb_device_ref = IOIteratorNext(iterator))) {
+            bsdName = (CFTypeRef) IORegistryEntrySearchCFProperty (usb_device_ref,
+                                                                   kIOServicePlane,
+                                                                   CFSTR ( "BSD Name" ),
+                                                                   kCFAllocatorDefault,
+                                                                   kIORegistryIterateRecursively );
+            if (!bsdName) continue;
+            deviceName = [[NSString stringWithFormat: @"%@", bsdName] UTF8String];
+
+            strncpy(disks_serials[j], deviceName, 63);
+            snprintf(str, sizeof(str)-1, "%s %s", deviceName, lang[L_SERIAL]);
+            disks_targets[i++] = 1024 + j++;
+            main_addToCombobox(str);
+
+            CFRelease(bsdName); bsdName = NULL;
+            IOObjectRelease(usb_device_ref);
+            if(i >= DISKS_MAX) break;
+        }
+    }
 
     [pool release];
 }
@@ -228,14 +262,87 @@ char *disks_volumes(int *num, char ***mounts)
 /**
  * Lock, umount and open the target disk for writing
  */
-void *disks_open(int targetId)
+void *disks_open(int targetId, uint64_t size)
 {
     int ret = 0, i, l, n;
-    char deviceName[16];
+    char deviceName[16], tmp[8];
+    struct termios termios;
     struct statfs *buf;
 
     if(targetId < 0 || targetId >= DISKS_MAX || disks_targets[targetId] == -1) return (void*)-1;
     currTarget = disks_targets[targetId];
+
+    if(currTarget >= 1024) {
+        sprintf(deviceName, "/dev/%s", disks_serials[currTarget-1024]);
+        errno = 0;
+        ret = open(deviceName, O_RDWR | O_NOCTTY | O_NONBLOCK);
+        if(verbose)
+            printf("disks_open(%s) serial\r\n  fd=%d errno=%d err=%s\r\n",
+                deviceName, ret, errno, strerror(errno));
+        if(ret < 0 || errno || ioctl(ret, TIOCEXCL) == -1 || fcntl(ret, F_SETFL, 0) == -1) {
+            main_getErrorMessage();
+            return NULL;
+        }
+        if(isatty(ret)) {
+            if(tcgetattr(ret, &termios) != -1) {
+                termios.c_cc[VTIME] = 0;
+                termios.c_cc[VMIN] = 0;
+                termios.c_iflag = 0;
+                termios.c_oflag = 0;
+                termios.c_cflag = CS8 | CREAD | CLOCAL;
+                termios.c_lflag = 0;
+                if((cfsetispeed(&termios, B115200) < 0) || (cfsetospeed(&termios, B115200) < 0))
+                {
+                    if(verbose)
+                        printf(" failed to set baud errno=%d err=%s\r\n", errno, strerror(errno));
+                    goto sererr;
+                }
+                if(tcsetattr(ret, TCSAFLUSH, &termios) == -1) {
+                    if(verbose)
+                        printf(" failed to set attr errno=%d err=%s\r\n", errno, strerror(errno));
+                    goto sererr;
+                }
+            } else {
+                if(verbose)
+                    printf(" tcgetattr error errno=%d err=%s\r\n", errno, strerror(errno));
+sererr:         main_getErrorMessage();
+                close(ret);
+                return NULL;
+            }
+            if(disks_serial == 2) {
+                /* Raspbootin Serial Protocol:
+                 *   \003\003\003 - client to server
+                 *   4 bytes little-endian, size of image - server to client
+                 *   'OK' or 'SE' (size error) - client to server
+                 *   image content - server to client
+                 */
+                if(verbose) printf("  awaiting client\r\n");
+                for(l = 0; l < 3;) {
+                    if(read(ret, &tmp, 1)) {
+                        if(tmp[0] == 3) l++;
+                        else {
+                            l = 0;
+                            if(verbose) printf("%c", tmp[0]);
+                        }
+                    }
+                    usleep(1000);
+                }
+                if(verbose) printf("\r\n  client connected\r\n");
+                if(write(ret, &size, 4) != 4) {
+                    if(verbose)
+                        printf(" unable to send size errno=%d err=%s\r\n", errno, strerror(errno));
+                    goto sererr;
+                }
+                if(read(ret, &tmp, 2) != 2 || tmp[0] != 'O' || tmp[1] != 'K') {
+                    if(verbose)
+                        printf(" didn't received ACK from client, got '%c%c' errno=%d err=%s\r\n",
+                            tmp[0], tmp[1], errno, strerror(errno));
+                    goto sererr;
+                }
+            }
+        }
+        return (void*)((long int)ret);
+    }
 
 #if DISKS_TEST
     if(currTarget == 999) {

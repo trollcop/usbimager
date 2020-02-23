@@ -31,9 +31,9 @@
 #include <stdint.h>
 #include <limits.h>
 
-#define DISKS_MAX 32
+#define DISKS_MAX 128
 
-extern int disks_targets[DISKS_MAX];
+extern int disks_serial, disks_targets[DISKS_MAX];
 extern uint64_t disks_capacity[DISKS_MAX];
 
 /* some defines if not defined in limit.h */
@@ -63,7 +63,7 @@ char *disks_volumes(int *num, char ***mounts);
  * Lock, umount and open the target disk for writing
  * this returns FD on unices, and HANDLE on Windows
  */
-void *disks_open(int targetId);
+void *disks_open(int targetId, uint64_t size);
 
 /**
  * Close the target disk
