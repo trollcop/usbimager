@@ -66,7 +66,7 @@ If you start USBImager with the '-s' flag (lowercase), then it will allow you to
 The '-S' flag (uppercase) is similar, but then USBImager will do a [raspbootin](https://github.com/bztsrc/raspi3-tutorial/tree/master/14_raspbootin64) hand-shake
 on the serial line:
 1. USBImager awaits for the client
-2. client sends 3 bytes, '\003\003\003' (3 times <bd>Ctrl</kbd>+<kbd>C</kbd>)
+2. client sends 3 bytes, '\003\003\003' (3 times <kbd>Ctrl</kbd>+<kbd>C</kbd>)
 3. USBImager sends size of the image, 4 bytes in little-endian (size = 4th byte * 16777216 + 3rd byte * 65536 + 2nd byte * 256 + 1st byte)
 4. client responds with two bytes, either 'OK' or 'SE' (size error)
 5. if the response was OK, then USBImager sends the image, size bytes
