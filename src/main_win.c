@@ -142,7 +142,7 @@ static DWORD WINAPI writerRoutine(LPVOID lpParam) {
         int needVerify = IsDlgButtonChecked(hwndDlg, IDC_MAINDLG_VERIFY);
 
         hTargetDevice = index == CB_ERR ? (HANDLE)-1 : (HANDLE)disks_open((int)index, ctx.fileSize);
-        if (hTargetDevice != NULL && hTargetDevice != (HANDLE)-1 && hTargetDevice != (HANDLE)-2 && hTargetDevice != (HANDLE)-3) {
+        if (hTargetDevice != NULL && hTargetDevice != (HANDLE)-1 && hTargetDevice != (HANDLE)-2 && hTargetDevice != (HANDLE)-3 && hTargetDevice != (HANDLE)-4) {
             totalNumberOfBytesWritten.QuadPart = 0;
 
             while(1) {
@@ -191,7 +191,8 @@ static DWORD WINAPI writerRoutine(LPVOID lpParam) {
                 hTargetDevice == (HANDLE)-1 ? L_TRGERR :
                 (hTargetDevice == (HANDLE)-2 ? L_DISMOUNTERR :
                 (hTargetDevice == (HANDLE)-3 ? L_OPENVOLERR :
-                L_OPENTRGERR))]);
+                (hTargetDevice == (HANDLE)-4 ? L_COMMERR :
+                L_OPENTRGERR)))]);
         }
         stream_close(&ctx);
     } else {
@@ -252,7 +253,7 @@ static DWORD WINAPI readerRoutine(LPVOID lpParam) {
 
     ctx.fileSize = 0;
     src = targetId == CB_ERR ? (HANDLE)-1 : (HANDLE)disks_open((int)targetId, 0);
-    if(src != NULL && src != (HANDLE)-1 && src != (HANDLE)-2 && src != (HANDLE)-3) {
+    if(src != NULL && src != (HANDLE)-1 && src != (HANDLE)-2 && src != (HANDLE)-3 && src != (HANDLE)-4) {
         if(SHGetFolderPathW(HWND_DESKTOP, CSIDL_DESKTOPDIRECTORY, NULL, 0, home))
             wsprintfW(home, L".\\");
         GetDateFormatW(LOCALE_USER_DEFAULT, 0, NULL, L"yyyymmdd", (LPWSTR)&d, 16);
@@ -296,7 +297,7 @@ static DWORD WINAPI readerRoutine(LPVOID lpParam) {
         }
         disks_close((void*)((long int)src));
     } else {
-        MainDlgMsgBox(hwndDlg, lang[src == (HANDLE)-1 ? L_TRGERR : (src == (HANDLE)-2 ? L_UMOUNTERR : L_OPENTRGERR)]);
+        MainDlgMsgBox(hwndDlg, lang[src == (HANDLE)-1 ? L_TRGERR : (src == (HANDLE)-2 ? L_UMOUNTERR : (src == (HANDLE)-4 ? L_COMMERR : L_OPENTRGERR))]);
     }
     if(fn) free(fn);
     SetWindowTextW(GetDlgItem(hwndDlg, IDC_MAINDLG_STATUS), ctx.fileSize && ctx.readSize >= ctx.fileSize ? lang[L_DONE] : L"");

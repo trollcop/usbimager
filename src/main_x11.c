@@ -642,7 +642,7 @@ static void *writerRoutine()
             }
             disks_close((void*)((long int)dst));
         } else {
-            onThreadError(lang[dst == -1 ? L_TRGERR : (dst == -2 ? L_UMOUNTERR : L_OPENTRGERR)]);
+            onThreadError(lang[dst == -1 ? L_TRGERR : (dst == -2 ? L_UMOUNTERR : (dst == -4 ? L_COMMERR : L_OPENTRGERR))]);
         }
         stream_close(&ctx);
     } else {
@@ -734,7 +734,7 @@ static void *readerRoutine()
         }
         disks_close((void*)((long int)src));
     } else {
-        onThreadError(lang[src == -1 ? L_TRGERR : (src == -2 ? L_UMOUNTERR : L_OPENTRGERR)]);
+        onThreadError(lang[src == -1 ? L_TRGERR : (src == -2 ? L_UMOUNTERR : (src == -4 ? L_COMMERR : L_OPENTRGERR))]);
     }
     strcpy(status, !errno && ctx.fileSize && ctx.readSize >= ctx.fileSize ? lang[L_DONE] : "");
     if(verbose) printf("Worker thread finished.\r\n");

@@ -147,11 +147,7 @@ void *disks_open(int targetId, uint64_t size)
     if(targetId < 0 || targetId >= DISKS_MAX || disks_targets[targetId] == -1 || disks_targets[targetId] == 'C') return (HANDLE)-1;
 
     if(disks_targets[targetId] >= 1024) {
-        sprintf(szVolumePathName, "COM%d", disks_targets[targetId] - 1024);
-        if(!QueryDosDeviceA(szVolumePathName, (LPSTR)&szDevicePathName, sizeof(szDevicePathName))) {
-            main_getErrorMessage();
-            return NULL;
-        }
+        sprintf(szDevicePathName, "\\\\.\\COM%d", disks_targets[targetId] - 1024);
         ret = CreateFileA(szDevicePathName, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_FLAG_NO_BUFFERING, NULL);
         if(verbose) printf("disks_open(%s) serial\r\n  fd=%d errno=%d\r\n", szDevicePathName, ret, errno);
         if(ret == INVALID_HANDLE_VALUE) {
@@ -162,7 +158,7 @@ void *disks_open(int targetId, uint64_t size)
             if(verbose) printf("  GetCommState error\r\n");
 sererr:     main_getErrorMessage();
             CloseHandle(ret);
-            return NULL;
+            return (HANDLE)-4;
         }
         config.BaudRate = 115200;
         config.ByteSize = 8;

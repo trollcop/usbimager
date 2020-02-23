@@ -102,7 +102,7 @@ With this operation, the file format and the compression is autodetected.
 3. the image file will be saved on your Desktop, its name is in the 1st row
 
 The generated image file is in the form "usbimager-(datetime).dd", generated with the current timestamp. If "Compress" option is checked, then a ".bz2" suffix will
-be added, and the image will be compressed using bzip2. It has much better ratio than gzip deflate.
+be added, and the image will be compressed using bzip2. It has much better compression ratio than gzip deflate.
 
 Note: on Linux, if ~/Desktop is not found, then ~/Downloads will be used. If even that doesn't exists, then the image file will be saved in your home directory. On
 other platforms the Desktop always exists, but if by any chance not, then the current directory is used.
@@ -126,7 +126,7 @@ Dependencies: just standard frameworks (CoreFoundation, IOKit, DiskArbitration a
 2. in the src directory, run `make`
 3. to create the archive, run `make package`
 
-By default USBImager is compiled for native Cocoa with libui (included). You can also compile for X11 (but with Cocoa modals) by using `USE_X11=yes make`.
+By default USBImager is compiled for native Cocoa with libui (included). You can also compile for X11 (if you have XQuartz installed) by using `USE_X11=yes make`.
 
 ### Linux
 
@@ -144,7 +144,7 @@ manually or run USBImager via sudo, otherwise you'll get "permission denied" err
 Hacking the Source
 ------------------
 
-To compile with debugging, use `DEBUG=yes make`. This will add extra debugging symbols to the executable.
+To compile with debugging, use `DEBUG=yes make`. This will add extra debugging symbols and sorce file refernces to the executable, parsed by both valgrind and gdb.
 
 Editing Makefile and changing `DISKS_TEST` to 1 will add a special `test.bin` "device" to the list on all platforms. You can test the decompressors with this.
 
@@ -161,7 +161,7 @@ The source is clearly separated into 4 layers:
 Known Issues
 ------------
 
-For MacOSX it would be nice to have a full native main_cocoa.m in Obj-C, because in libui the progress bar is lagging.
+None. If you find any, please use the [issue tracker](https://gitlab.com/bztsrc/usbimages/issues).
 
 Authors
 -------

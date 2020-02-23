@@ -54,10 +54,10 @@ int stream_status(stream_t *ctx, char *str)
             d = (t - ctx->start) * (ctx->fileSize - ctx->readSize) / ctx->readSize;
         else
             d = (t - ctx->start) * (ctx->compSize - ctx->cmrdSize) / ctx->cmrdSize;
-        h = d / 3600; d %= 3600; m = d / 60;
+        h = d / 3600; d %= 3600; m = d / 60; if(m<0) m = 0;
 #ifdef WINVER
         if(h > 0) wsprintfW(rem, (wchar_t*)lang[h>1 && m>1 ? L_STATHSMS : (h>1 && m<2 ? L_STATHSM :
-                (h<2 && m>0 ? L_STATHMS : L_STATHM))], h, m);
+                (h==1 && m>0 ? L_STATHMS : L_STATHM))], h, m);
         else if(m > 0) wsprintfW(rem, (wchar_t*)lang[m>1 ? L_STATMS : L_STATM], m);
         else wsprintfW(rem, (wchar_t*)lang[L_STATLM]);
         if(ctx->fileSize)
@@ -69,7 +69,7 @@ int stream_status(stream_t *ctx, char *str)
                 (ctx->readSize >> 20), lang[L_SOFAR], rem);
 #else
         if(h > 0) sprintf(rem, lang[h>1 && m>1 ? L_STATHSMS : (h>1 && m<2 ? L_STATHSM :
-                (h<2 && m>0 ? L_STATHMS : L_STATHM))], h, m);
+                (h==1 && m>0 ? L_STATHMS : L_STATHM))], h, m);
         else if(m > 0) sprintf(rem, lang[m>1 ? L_STATMS : L_STATM], m);
         else strcpy(rem, lang[L_STATLM]);
         if(ctx->fileSize)

@@ -27,9 +27,6 @@
  *
  */
 
-#ifdef MACOSX
-#import <CoreFoundation/CoreFoundation.h>
-#endif
 #include <pthread.h>
 #include <errno.h>
 #include <sys/stat.h>
@@ -92,10 +89,6 @@ static void onProgress(void *data)
 
     uiProgressBarSetValue(pbar, pos);
     uiLabelSetText(status, !data ? lang[L_WAITING] : textstat);
-#ifdef MACOSX
-    uiMainStep(0);
-    CFRunLoopRun();
-#endif
 }
 
 void main_onProgress(void *data)
@@ -158,7 +151,7 @@ static void *writerRoutine(void *data)
             }
             disks_close((void*)((long int)dst));
         } else {
-            uiQueueMain(onThreadError, lang[dst == -1 ? L_TRGERR : (dst == -2 ? L_UMOUNTERR : L_OPENTRGERR)]);
+            uiQueueMain(onThreadError, lang[dst == -1 ? L_TRGERR : (dst == -2 ? L_UMOUNTERR : (dst == -4 ? L_COMMERR : L_OPENTRGERR))]);
         }
         stream_close(&ctx);
     } else {
@@ -186,12 +179,7 @@ static void onWriteButtonClicked(uiButton *b, void *data)
     main_errorMessage = NULL;
 
     if(verbose) printf("Starting worker thread\r\n");
-#ifndef MACOSX
     pthread_create(&thrd, &tha, writerRoutine, NULL);
-#else
-    CFRunLoopRun();
-    writerRoutine(NULL);
-#endif
 }
 
 /**
@@ -257,7 +245,7 @@ static void *readerRoutine(void *data)
         }
         disks_close((void*)((long int)src));
     } else {
-        uiQueueMain(onThreadError, lang[src == -1 ? L_TRGERR : (src == -2 ? L_UMOUNTERR : L_OPENTRGERR)]);
+        uiQueueMain(onThreadError, lang[src == -1 ? L_TRGERR : (src == -2 ? L_UMOUNTERR : (src == -4 ? L_COMMERR : L_OPENTRGERR))]);
     }
     uiLabelSetText(status, !errno && ctx.fileSize && ctx.readSize >= ctx.fileSize ? lang[L_DONE] : "");
     if(verbose) printf("Worker thread finished.\r\n");
@@ -280,12 +268,7 @@ static void onReadButtonClicked(uiButton *b, void *data)
     uiLabelSetText(status, "");
     main_errorMessage = NULL;
     if(verbose) printf("Starting worker thread\r\n");
-#ifndef MACOSX
     pthread_create(&thrd, &tha, readerRoutine, NULL);
-#else
-    CFRunLoopRun();
-    readerRoutine(NULL);
-#endif
 }
 
 static void refreshTarget(uiCombobox *cb, void *data)

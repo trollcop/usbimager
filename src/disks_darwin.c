@@ -307,7 +307,7 @@ void *disks_open(int targetId, uint64_t size)
                     printf(" tcgetattr error errno=%d err=%s\r\n", errno, strerror(errno));
 sererr:         main_getErrorMessage();
                 close(ret);
-                return NULL;
+                return (void*)-1;
             }
             if(disks_serial == 2) {
                 /* Raspbootin Serial Protocol:
