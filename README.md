@@ -161,7 +161,7 @@ The source is clearly separated into 4 layers:
 Known Issues
 ------------
 
-None. If you find any, please use the [issue tracker](https://gitlab.com/bztsrc/usbimages/issues).
+None. If you find any, please use the [issue tracker](https://gitlab.com/bztsrc/usbimager/issues).
 
 Authors
 -------

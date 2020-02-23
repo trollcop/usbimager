@@ -173,7 +173,7 @@ A forrás jól elkülöníthetően 4 rétegre van bontva:
 Ismert bugok
 ------------
 
-Nincs. Ha belefutnál egybe, használd kérlek az [issue tracker](https://gitlab.com/bztsrc/usbimages/issues)-t.
+Nincs. Ha belefutnál egybe, használd kérlek az [issue tracker](https://gitlab.com/bztsrc/usbimager/issues)-t.
 
 Szerzők
 -------
