@@ -77,7 +77,9 @@ kézfogást fogja alkalmazni a soros vonalon:
 6. amikor a kliens fogadta a méretedik bájtot, a lemezkép megérkezett.
 
 Mindkét esetben a soros port 115200 baud, 8 adatbit, nincs paritás, 1 stopbit módra kerül felkonfigurálásra. A soros vonali átvitelek esetében
-az USBImager nem tömöríti ki a lemezképet, hogy csökkentse az átviteli időt, így a kicsomagolást a kliensen kell elvégezni.
+az USBImager nem tömöríti ki a lemezképet, hogy csökkentse az átviteli időt, így a kicsomagolást a kliensen kell elvégezni. Ha egy egyszerű
+rendszerbetöltőre vágysz, ami kompatíbilis az USBImager-el, akkor javalom az [Image Receiver](https://gitlab.com/bztsrc/imgrecv)-t
+(elérhető RPi1, 2, 3, 4 és IBM PC BIOS gépekre).
 
 Az X11 esetén mindent a nulláról írtam meg, hogy elkerüljem a függőségeket. A kattintás és a billentyűnavigáció a megszokott: <kbd>Tab</kbd>
 és <kbd>Shift</kbd> + <kbd>Tab</kbd> váltogat a mezők között, <kbd>Enter</kbd> a kiválasztás. Plusz a fájl tallózásakor a <kbd>Bal nyíl</kbd>

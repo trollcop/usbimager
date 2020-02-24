@@ -102,7 +102,8 @@ With this operation, the file format and the compression is autodetected.
 3. the image file will be saved on your Desktop, its name is in the 1st row
 
 The generated image file is in the form "usbimager-(datetime).dd", generated with the current timestamp. If "Compress" option is checked, then a ".bz2" suffix will
-be added, and the image will be compressed using bzip2. It has much better compression ratio than gzip deflate.
+be added, and the image will be compressed using bzip2. It has much better compression ratio than gzip deflate. For a simple boot loader that's compatible with
+USBImager, take a look at [Image Receiver](https://gitlab.com/bztsrc/imgrecv) (available for RPi1, 2, 3, 4 and IBM PC BIOS machines).
 
 Note: on Linux, if ~/Desktop is not found, then ~/Downloads will be used. If even that doesn't exists, then the image file will be saved in your home directory. On
 other platforms the Desktop always exists, but if by any chance not, then the current directory is used.
