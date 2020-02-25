@@ -114,7 +114,7 @@ For X11 I made everything from scratch to avoid dependencies. Clicking and keybo
 3. click on the first button (Write) in the 2nd row
 
 With this operation, the file format and the compression is autodetected. Please note that the remaining time is just an estimate. Some
-compressed files does not store the uncompressed file size, for those you will see "so far" in the status bar. Their remaining time will be
+compressed files do not store the uncompressed file size, for those you will see "x MiB so far" in the status bar. Their remaining time will be
 less accurate, just an approximation of an estimation using the ratio of compressed position / compressed size (in short it is truly
 nothing more than a rough estimate).
 

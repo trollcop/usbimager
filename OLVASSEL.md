@@ -120,7 +120,7 @@ szabvány alapján).
 3. kattints a második sor első gombjára (Kiír)
 
 Ennél a műveletnél a fájl formátuma és a tömörítése automatikusan detektálásra kerül. Kérlek vedd figyelembe, hogy a hátralévő idő becsült.
-Bizonyos tömörített fájlok nem tárolják a kicsomagolt méretet, ezeknél a státuszban "ezidáig" szerepel. A hátralévő idejük nem lesz pontos,
+Bizonyos tömörített fájlok nem tárolják a kicsomagolt méretet, ezeknél a státuszban "x MiB ezidáig" szerepel. A hátralévő idejük nem lesz pontos,
 csak egy közelítés a becslésre a tömörített pozíció / tömörített méret arányában (magyarán a mértékegysége sacc/kb).
 
 ### Lemezkép készítése eszközről
