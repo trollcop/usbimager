@@ -211,7 +211,7 @@ Szerzők
 Hozzájárulások
 --------------
 
-Szeretnék köszönetet mondani a következő felhasználóknak: @mattmiller, @MisterEd, @scruss, @rpdom, @DarkElvenAngel, és különösen
+Szeretnék köszönetet mondani a következő felhasználóknak: @mattmiller, @MisterEd, @the_scruss, @rpdom, @DarkElvenAngel, és különösen
 @tvjon-nak és @CaptainMidnight-nak amiért több különböző platformon és számos különböző eszközzel is letesztelték az USBImager-t.
 
 Legjobbakat,

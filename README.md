@@ -201,7 +201,7 @@ Authors
 Contributors
 ------------
 
-I'd like to say thanks to @mattmiller, @MisterEd, @scruss, @rpdom, @DarkElvenAngel, and especially to @tvjon and @CaptainMidnight for testing
+I'd like to say thanks to @mattmiller, @MisterEd, @the_scruss, @rpdom, @DarkElvenAngel, and especially to @tvjon and @CaptainMidnight for testing
 USBImager on various platforms with various devices.
 
 Bests,
