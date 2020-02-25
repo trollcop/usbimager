@@ -129,7 +129,7 @@ csak egy közelítés a becslésre a tömörített pozíció / tömörített mé
 2. kattints a második sor második gombjára (Beolvas)
 3. a lemezkép az Asztalodon fog létrejönni, a fájlnév pedig megjelenik az első sorban
 
-A generált lemezkép neve "usbimager-(dátumidő).dd" lesz, a pontos időből számítva. Ha a "Tömörítés" be volt pipálva, akkor a fájlnév
+A generált lemezkép neve "usbimager-(dátum)-(idő).dd" lesz, a pontos időből számítva. Ha a "Tömörítés" be volt pipálva, akkor a fájlnév
 végére egy ".bz2" kiterszejtést biggyeszt, és a lemezkép tartalma bzip2 tömörített lesz. Ennek sokkal jobb a tömörítési aránya, mint
 a gzipé. Nyers lemezképek esetén a hátralévő idő pontos, tömörítés esetén nagyban ingadozik a tömörítés műveletigényétől, ami meg az
 adatok függvénye, ezért csak egy becslés.
