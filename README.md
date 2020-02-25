@@ -50,7 +50,7 @@ Usage
 -----
 
 If you can't write to the target device (you get "permission denied" errors), then use the "Run As Administrator" option under Windows, and add your
-user to the "disk" (Linux) or "operator" (MacOSX) group (see "ls -la /dev|grep -e ^b" to find out which group your OS is using). __No need__ for
+user to the "disk" (Linux) or "operator" (MacOSX) group (see "ls -la /dev|grep -e ^b" to find out which group your OS is using). __Should be no need__ for
 *sudo /usr/bin/usbimager*, just make sure your user has write access to the devices, that's the Principle of Least Privilege. This should not be
 an issue by the way, as USBImager comes with setgid bit set. If not, then you can use "sudo chgrp disk usbimager && sudo chmod g+s usbimager"
 to set it.
