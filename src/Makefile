@@ -47,7 +47,7 @@ ifneq ("$(wildcard /bin/*.exe)","")
 # Windows (mingw)
 WIN = 1
 SRC += main_win.c disks_win.c
-CFLAGS += -DNDEBUG -DWINVER=0x0500
+CFLAGS += -DNDEBUG -DWINVER=0x0500 -DUNICODE=1
 LDFLAGS += -mwindows -static -static-libgcc
 TARGET = usbimager.exe
 OBJ += resource.o

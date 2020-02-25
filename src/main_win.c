@@ -277,10 +277,10 @@ static DWORD WINAPI readerRoutine(LPVOID lpParam) {
                 size = ctx.fileSize - ctx.readSize < (uint64_t)buffer_size ? (int)(ctx.fileSize - ctx.readSize) : buffer_size;
                 if(ReadFile(src, ctx.buffer, size, &numberOfBytesRead, NULL)) {
                     if(stream_write(&ctx, ctx.buffer, size)) {
-                        static CHAR lpStatus[128];
-                        DWORD pos = (DWORD) stream_status(&ctx, lpStatus);
+                        static wchar_t lpStatus[128];
+                        DWORD pos = (DWORD) stream_status(&ctx, (char*)&lpStatus);
                         SendDlgItemMessage(hwndDlg, IDC_MAINDLG_PROGRESSBAR, PBM_SETPOS, pos, 0);
-                        SetWindowText(GetDlgItem(hwndDlg, IDC_MAINDLG_STATUS), lpStatus);
+                        SetWindowTextW(GetDlgItem(hwndDlg, IDC_MAINDLG_STATUS), lpStatus);
                         ShowWindow(GetDlgItem(hwndDlg, IDC_MAINDLG_STATUS), SW_HIDE);
                         ShowWindow(GetDlgItem(hwndDlg, IDC_MAINDLG_STATUS), SW_SHOW);
                     } else {
@@ -352,7 +352,7 @@ INT_PTR MainDlgSelectClick(HWND hwndDlg) {
 
     MainDlgRefreshTarget(hwndDlg);
 
-    SetWindowText(GetDlgItem(hwndDlg, IDC_MAINDLG_STATUS), "");
+    SetWindowTextW(GetDlgItem(hwndDlg, IDC_MAINDLG_STATUS), L"");
     ZeroMemory(&ofn, sizeof ofn);
     ZeroMemory(lpstrFile, sizeof lpstrFile);
 
@@ -445,7 +445,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszArgum
     char *s;
     wchar_t *d;
 
-    char *cmdline = GetCommandLine();
+    char *cmdline = GetCommandLineA();
     for(; cmdline && cmdline[0] && cmdline[0] != '-'; cmdline++);
     if(cmdline && cmdline[0] == '-') {
         for(; cmdline[0]; cmdline++)
