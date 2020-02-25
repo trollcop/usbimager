@@ -9,7 +9,8 @@ Available platforms: Windows, MacOSX and Linux. Its interface is as simple as it
 |----------|--------------|------------------------------|
 | Windows  | [GDI](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager-i686-win-gdi.zip) | native interface |
 | MacOSX   | [Cocoa](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager-intel-macosx-cocoa.zip) | native interface|
-| Linux    | [X11](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager-x86_64-linux-x11.zip)<br>[GTK+](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager-x86_64-linux-gtk.zip)  | recommended<br>compatibility (has security issues with accessing raw disks) |
+| Linux PC | [X11](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager-x86_64-linux-x11.zip)<br>[GTK+](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager-x86_64-linux-gtk.zip)  | recommended<br>compatibility (has security issues with accessing raw disks) |
+| Raspbian | [X11](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager-armv7l-linux-x11.zip) | native interface |
 
 Installation
 ------------

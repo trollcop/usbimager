@@ -1066,7 +1066,7 @@ ok:             if(selFile >=0 && selFile < numFiles) {
                         if(!memcmp(mounts[i], "/home/", 6)) {
                             for(t = mounts[i] + 6, j = 0; *t; t++) if(*t=='/') j = 1;
                             if(!j) { s = lang[L_HOME]; j = 1; }
-                            else if(t - mounts[i] > 6 + 9 && !strcmp(t - 9, "Desktop")) { s = lang[L_DESKTOP]; j = 2; }
+                            else if(t - mounts[i] > 6 + 7 && !strcmp(t - 7, "Desktop")) { s = lang[L_DESKTOP]; j = 2; }
                             else if(t - mounts[i] > 6 + 9 && !strcmp(t - 9, "Downloads")) { s = lang[L_DOWNLOADS]; j = 3; }
                             else { s = mounts[i]; j = 4; }
                         } else {
