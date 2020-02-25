@@ -29,9 +29,6 @@
 
 #define USBIMAGER_VERSION "0.0.1"
 
-/* the overall buffer size. Will write in BUFFER_SIZE chunks */
-#define BUFFER_SIZE (1024 * 1024)
-
 /* filters */
 enum {
     TYPE_PLAIN = 0,
@@ -41,6 +38,7 @@ enum {
 };
 
 extern int verbose;
+extern int buffer_size;
 
 /**
  * Add an option to the combobox

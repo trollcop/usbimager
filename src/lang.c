@@ -583,7 +583,7 @@ char *dict[NUMLANGS][NUMTEXTS + 1] = {
         "Mostrar todos os arquivos"
     },
     {
-        "ga",
+        "gd",
         "Dearbhaich",
         "Compress",
         "Sgrìobh",

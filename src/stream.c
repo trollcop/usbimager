@@ -33,6 +33,7 @@
 #include "stream.h"
 
 int verbose = 0;
+int buffer_size = 1024*1024;
 
 /**
  * Returns progress percentage and the status string in str
@@ -40,7 +41,7 @@ int verbose = 0;
 int stream_status(stream_t *ctx, char *str)
 {
     time_t t = time(NULL);
-    uint64_t d;
+    uint64_t d = 0;
     int h,m;
 #ifdef WINVER
     wchar_t rem[64];
@@ -48,41 +49,54 @@ int stream_status(stream_t *ctx, char *str)
     char rem[64];
 #endif
 
-    str[0] = 0;
-    if(ctx->start < t && ctx->readSize) {
-        if(ctx->fileSize)
-            d = (t - ctx->start) * (ctx->fileSize - ctx->readSize) / ctx->readSize;
-        else
-            d = (t - ctx->start) * (ctx->compSize - ctx->cmrdSize) / ctx->cmrdSize;
-        h = d / 3600; d %= 3600; m = d / 60; if(m<0) m = 0;
+    rem[0] = 0;
+    if(ctx->start < t) {
+        if(ctx->readSize) {
+            if(ctx->fileSize)
+                d = ctx->readSize / (t - ctx->start);
+            else
+                d = ctx->cmrdSize / (t - ctx->start);
+            ctx->avgSpeedBytes += d;
+            ctx->avgSpeedNum++;
+            d = ctx->avgSpeedBytes / ctx->avgSpeedNum;
+            if(verbose) printf("  average speed %" PRIu64" bytes / sec\r\n", d);
+        }
+        if(ctx->avgSpeedNum > 2) {
+            if(d)
+                d = (ctx->fileSize ? ctx->fileSize - ctx->readSize : ctx->compSize - ctx->cmrdSize) / d;
+            h = d / 3600; d %= 3600; m = d / 60; if(m<0) m = 0;
 #ifdef WINVER
-        if(h > 0) wsprintfW(rem, (wchar_t*)lang[h>1 && m>1 ? L_STATHSMS : (h>1 && m<2 ? L_STATHSM :
-                (h==1 && m>0 ? L_STATHMS : L_STATHM))], h, m);
-        else if(m > 0) wsprintfW(rem, (wchar_t*)lang[m>1 ? L_STATMS : L_STATM], m);
-        else wsprintfW(rem, (wchar_t*)lang[L_STATLM]);
-        if(ctx->fileSize)
-            wsprintfW((wchar_t*)str, L"%6" PRIu64 " MiB / %" PRIu64 " MiB, %s",
-                (ctx->readSize >> 20),
-                (ctx->fileSize >> 20), rem);
-        else
-            wsprintfW((wchar_t*)str, L"%6" PRIu64 " MiB %s, %s",
-                (ctx->readSize >> 20), lang[L_SOFAR], rem);
+            if(h > 0) wsprintfW(rem, (wchar_t*)lang[h>1 && m>1 ? L_STATHSMS : (h>1 && m<2 ? L_STATHSM :
+                    (h==1 && m>0 ? L_STATHMS : L_STATHM))], h, m);
+            else if(m > 0) wsprintfW(rem, (wchar_t*)lang[m>1 ? L_STATMS : L_STATM], m);
+            else wsprintfW(rem, (wchar_t*)lang[L_STATLM]);
 #else
-        if(h > 0) sprintf(rem, lang[h>1 && m>1 ? L_STATHSMS : (h>1 && m<2 ? L_STATHSM :
-                (h==1 && m>0 ? L_STATHMS : L_STATHM))], h, m);
-        else if(m > 0) sprintf(rem, lang[m>1 ? L_STATMS : L_STATM], m);
-        else strcpy(rem, lang[L_STATLM]);
-        if(ctx->fileSize)
-            sprintf(str, "%6" PRIu64 " MiB / %" PRIu64 " MiB, %s",
-                (ctx->readSize >> 20),
-                (ctx->fileSize >> 20), rem);
-        else
-            sprintf(str, "%6" PRIu64 " MiB %s, %s",
-                (ctx->readSize >> 20), lang[L_SOFAR], rem);
+            if(h > 0) sprintf(rem, lang[h>1 && m>1 ? L_STATHSMS : (h>1 && m<2 ? L_STATHSM :
+                    (h==1 && m>0 ? L_STATHMS : L_STATHM))], h, m);
+            else if(m > 0) sprintf(rem, lang[m>1 ? L_STATMS : L_STATM], m);
+            else strcpy(rem, lang[L_STATLM]);
 #endif
+        }
     }
-    return ctx->fileSize ? (ctx->readSize * 100) / ctx->fileSize :
-        (ctx->cmrdSize * 100) / (ctx->compSize+1);
+#ifdef WINVER
+    if(ctx->fileSize)
+        wsprintfW((wchar_t*)str, L"%6" PRIu64 " MiB / %" PRIu64 " MiB%s%s",
+            (ctx->readSize >> 20),
+            (ctx->fileSize >> 20), rem[0] ? L", " : L"", rem);
+    else
+        wsprintfW((wchar_t*)str, L"%6" PRIu64 " MiB %s%s%s",
+            (ctx->readSize >> 20), lang[L_SOFAR], rem[0] ? L", " : L"", rem);
+#else
+    if(ctx->fileSize)
+        sprintf(str, "%6" PRIu64 " MiB / %" PRIu64 " MiB%s%s",
+            (ctx->readSize >> 20),
+            (ctx->fileSize >> 20), rem[0] ? ", " : "", rem);
+    else
+        sprintf(str, "%6" PRIu64 " MiB %s%s%s",
+            (ctx->readSize >> 20), lang[L_SOFAR], rem[0] ? ", " : "", rem);
+#endif
+    return ctx->fileSize ? (ctx->readSize * 1000) / (ctx->fileSize * 10) :
+        (ctx->cmrdSize * 1000) / (ctx->compSize * 10 + 1);
 }
 
 /**
@@ -98,6 +112,25 @@ int stream_open(stream_t *ctx, char *fn, int uncompr)
     if(!fn || !*fn) return 1;
 
     if(verbose) printf("stream_open(%s)\r\n", fn);
+
+    ctx->compBuf = (unsigned char*)malloc(buffer_size);
+    if(!ctx->compBuf) {
+        main_getErrorMessage();
+        return 1;
+    }
+    ctx->verifyBuf = (char*)malloc(buffer_size);
+    if(!ctx->verifyBuf) {
+        main_getErrorMessage();
+        free(ctx->compBuf);
+        return 1;
+    }
+    ctx->buffer = (char*)malloc(buffer_size);
+    if(!ctx->buffer) {
+        main_getErrorMessage();
+        free(ctx->compBuf);
+        free(ctx->verifyBuf);
+        return 1;
+    }
 
     ctx->f = fopen(fn, "rb");
     if(!ctx->f) return 1;
@@ -201,9 +234,9 @@ int stream_open(stream_t *ctx, char *fn, int uncompr)
 }
 
 /**
- * Read no more than BUFFER_SIZE uncompressed bytes of source data
+ * Read no more than buffer_size uncompressed bytes of source data
  */
-int stream_read(stream_t *ctx, char *buffer)
+int stream_read(stream_t *ctx)
 {
     int ret = 0;
     int64_t size = 0, insiz;
@@ -211,7 +244,7 @@ int stream_read(stream_t *ctx, char *buffer)
     errno = 0;
     size = ctx->fileSize - ctx->readSize;
     if(size < 1) { if(ctx->fileSize) return 0; size = 0; }
-    if(size > BUFFER_SIZE) size = BUFFER_SIZE;
+    if(size > buffer_size) size = buffer_size;
     if(verbose)
         printf("stream_read() readSize %" PRIu64 " / fileSize %" PRIu64 " (input size %"
             PRId64 "), cmrdSize %" PRIu64 " / compSize %" PRIu64 "u\r\n",
@@ -219,21 +252,21 @@ int stream_read(stream_t *ctx, char *buffer)
 
     switch(ctx->type) {
         case TYPE_PLAIN:
-            fread(buffer, size, 1, ctx->f);
+            fread(ctx->buffer, size, 1, ctx->f);
         break;
         case TYPE_DEFLATE:
-            ctx->zstrm.next_out = (unsigned char*)buffer;
+            ctx->zstrm.next_out = (unsigned char*)ctx->buffer;
             ctx->zstrm.avail_out = size;
             do {
                 if(!ctx->zstrm.avail_in) {
                     insiz = ctx->compSize - ctx->cmrdSize;
                     if(insiz < 1) { ret = Z_STREAM_END; break; }
-                    if(insiz > BUFFER_SIZE) insiz = BUFFER_SIZE;
+                    if(insiz > buffer_size) insiz = buffer_size;
                     if(verbose) printf("  deflate cmrdSize %" PRIu64
                         " insiz %" PRId64 "\r\n", ctx->cmrdSize, insiz);
                     ctx->zstrm.next_in = ctx->compBuf;
                     ctx->zstrm.avail_in = insiz;
-                    if(!fread(&ctx->compBuf, insiz, 1, ctx->f)) break;
+                    if(!fread(ctx->compBuf, insiz, 1, ctx->f)) break;
                     ctx->cmrdSize += (uint64_t)insiz;
                 }
                 ret = inflate(&ctx->zstrm, Z_NO_FLUSH);
@@ -244,18 +277,18 @@ int stream_read(stream_t *ctx, char *buffer)
             }
         break;
         case TYPE_BZIP2:
-            ctx->bstrm.next_out = buffer;
-            ctx->bstrm.avail_out = BUFFER_SIZE;
+            ctx->bstrm.next_out = ctx->buffer;
+            ctx->bstrm.avail_out = buffer_size;
             do {
                 if(!ctx->bstrm.avail_in) {
                     insiz = ctx->compSize - ctx->cmrdSize;
                     if(insiz < 1) { ret = BZ_STREAM_END; break; }
-                    if(insiz > BUFFER_SIZE) insiz = BUFFER_SIZE;
+                    if(insiz > buffer_size) insiz = buffer_size;
                     if(verbose) printf("  bzip2 cmrdSize %" PRIu64
                         " insiz %" PRId64 "\r\n", ctx->cmrdSize, insiz);
                     ctx->bstrm.next_in = (char*)ctx->compBuf;
                     ctx->bstrm.avail_in = insiz;
-                    if(!fread(&ctx->compBuf, insiz, 1, ctx->f)) break;
+                    if(!fread(ctx->compBuf, insiz, 1, ctx->f)) break;
                     ctx->cmrdSize += (uint64_t)insiz;
                 }
                 ret = BZ2_bzDecompress(&ctx->bstrm);
@@ -264,25 +297,25 @@ int stream_read(stream_t *ctx, char *buffer)
                 if(verbose) printf("  bzip2 decompress error %d\r\n", ret);
                 return -1;
             }
-            size = BUFFER_SIZE - ctx->bstrm.avail_out;
+            size = buffer_size - ctx->bstrm.avail_out;
         break;
         case TYPE_XZ:
-            ctx->xstrm.out = (unsigned char*)buffer;
+            ctx->xstrm.out = (unsigned char*)ctx->buffer;
             ctx->xstrm.out_pos = 0;
-            ctx->xstrm.out_size = BUFFER_SIZE;
+            ctx->xstrm.out_size = buffer_size;
             do {
                 if(ctx->xstrm.in_pos == ctx->xstrm.in_size) {
                     insiz = ctx->compSize - ctx->cmrdSize;
                     if(insiz < 1) { ret = XZ_STREAM_END; break; }
-                    if(insiz > BUFFER_SIZE) insiz = BUFFER_SIZE;
+                    if(insiz > buffer_size) insiz = buffer_size;
                     if(verbose) printf("  xz cmrdSize %" PRIu64
                         " insiz %" PRId64 "\r\n", ctx->cmrdSize, insiz);
                     ctx->xstrm.in = (unsigned char*)ctx->compBuf;
                     ctx->xstrm.in_pos = 0;
                     ctx->xstrm.in_size = insiz;
-                    if(!fread(&ctx->compBuf, insiz, 1, ctx->f)) break;
-                    if(insiz < BUFFER_SIZE)
-                        memset(ctx->compBuf + insiz, 0, BUFFER_SIZE - insiz);
+                    if(!fread(ctx->compBuf, insiz, 1, ctx->f)) break;
+                    if(insiz < buffer_size)
+                        memset(ctx->compBuf + insiz, 0, buffer_size - insiz);
                     ctx->cmrdSize += (uint64_t)insiz;
                 }
                 ret = xz_dec_run(ctx->xz, &ctx->xstrm);
@@ -295,7 +328,7 @@ int stream_read(stream_t *ctx, char *buffer)
             size = ctx->xstrm.out_pos;
         break;
     }
-    while(size & 511) buffer[size++] = 0;
+    while(size & 511) ctx->buffer[size++] = 0;
     if(verbose) printf("stream_read() output size %" PRId64 "\r\n", size);
     ctx->readSize += (uint64_t)size;
     return size;
@@ -357,6 +390,9 @@ int stream_write(stream_t *ctx, char *buffer, int size)
  */
 void stream_close(stream_t *ctx)
 {
+    if(ctx->compBuf) free(ctx->compBuf);
+    if(ctx->verifyBuf) free(ctx->verifyBuf);
+    if(ctx->buffer) free(ctx->buffer);
     if(ctx->f) fclose(ctx->f);
     switch(ctx->type) {
         case TYPE_DEFLATE: inflateEnd(&ctx->zstrm); break;

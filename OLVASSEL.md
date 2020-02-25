@@ -50,19 +50,37 @@ Képernyőképek
 Használat
 ---------
 
+| Kapcsoló  | Leírás                  |
+|-----------|-------------------------|
+| -v/-vv    | Részletes kimenet       |
+| -1..9     | Buffer méret beállítása |
+| -s/-S     | Soros portok használata |
+| --version | Kiírja a verziót        |
+
 Ha nem tudod írni a céleszközt (folyton "hozzáférés megtagadva" hibaüzenetet kapsz), akkor használd a "Futtatás rendszergazdaként" opciót
 Windows alatt, vagy add hozzá a felhasználódat a "disk" (Linux) illetve "operator" (MacOSX) csoportokhoz (az "ls -la /dev|grep -e ^b"
 parancs kiírja, melyik csoportban vannak az oprendszered alatt a lemezeszközök). __Nincs szükség__ a *sudo /usr/bin/usbimager*-re,
-csak győzödj meg róla, hogy a felhasználódnak van írási hozzáférése a blokk eszközökhöz, ez a Legalacsonyabb Privilégium Elve (Principle
-of Least Privilege). Erre az egészre egyébként valószínűleg nem lesz szükség, mivel az USBImager setgid bittel érkezik.
+csak győzödj meg róla, hogy a felhasználódnak van írási hozzáférése az eszközökhöz, ez a Legalacsonyabb Privilégium Elve (Principle
+of Least Privilege). Erre az egészre egyébként valószínűleg nem lesz szükség, mivel az USBImager setgid bittel érkezik. Ha mégsem, akkor
+a "sudo chgrp disk usbimager && sudo chmod g+s usbimager" parancs beállítja.
+
+Windows felhasználóknak: jobb-klikk az usbimager.exe-n, majd választd a "Parancsikon létrehozása" menüt. Aztán jobb-klikk az újonnan
+létrejött ".lnk" fájlra, és válaszd a "Tulajdonságok" menüt. A "Parancsikon" fülön, a "Cél" mezőben tudod hozzáadni a kapcsolókat.
+Ugyancsak itt, a "Biztonság" fülön be lehet állítani, hogy rendszergazdaként futtassa, ha problémáid lennének a direkt lemezhozzáférésekkel.
+
+A kapcsolókat külön-külön (pl. "usbimager -v -s -2") vagy egyben ("usbimager -2vs") is megadhatod, a sorrend nem számít. Azon kapcsolók
+közül, amik ugyanazt állítják, csak a legutolsót veszi figyelembe (pl "-124" ugyanaz, mint a "-4").
 
 A '-v' és '-vv' kapcsolók szószátyárrá teszik az USBImager-t, és mindenféle részletes infókat fog kiírni a konzolra. Ez utóbbi a szabvány
-kimenet (stdout) Linux és MacOSX alatt (szóval terminálból használd), míg Windowson egy külön ablakot nyit az üzeneteknek. Windows felhasználóknak:
-jobb-klikk az usbimager.exe-n, majd választ a "Parancsikon létrehozása" menüt. Aztán jobb-klikk az újonnan létrejött ".lnk" fájlra, és
-válaszd a "Tulajdonságok" menüt. A "Parancsikon" fülön, a "Cél" mezőben tudod hozzáadni a kapcsolókat. Ugyancsak itt, a "Biztonság" fülön
-be lehet állítani, hogy rendszergazdaként futtassa, ha problémáid lennének a direkt lemezhozzáférésekkel.
+kimenet (stdout) Linux és MacOSX alatt (szóval terminálból használd), míg Windowson egy külön ablakot nyit az üzeneteknek.
 
-Ha az USBImager-t '-s' (kisbetű) kapcsolóval indítod, akkor a soros portra is engedi küldeni a lemezképeket. Ez esetben a kliensen:
+A szám kapcsolók a buffer méretét állítják a kettő hatványa Megabájtra (0 = 1M, 1 = 2M, 2 = 4M, 3 = 8M, 4 = 16M, ... 9 = 512M). Vedd
+figyelembe, hogy a tényleges memóriaigény ennek háromszorosa, mivel van egy buffer a tömörített adatoknak, egy a kicsomagolt adatoknak, és
+egy az ellenőrzésre visszaolvasott adatoknak. Ha nincs megadva, a buffer méret alapértelmezetten 1 Megabájt.
+
+Ha az USBImager-t '-s' (kisbetű) kapcsolóval indítod, akkor a soros portra is engedi küldeni a lemezképeket. Ehhez szükséges, hogy a
+felhasználó az "uucp" illetve a "dialout" csoport tagja legyen (disztribúciónként eltérő, használd a "ls -la /dev|grep tty" parancsot).
+Ez esetben a kliensen:
 1. tetszőleges ideig várakozni kell az első bájtra, majd lementeni azt a bufferbe
 2. ezután a többi bájtot időtúllépéssel (mondjuk 250 mszekkel vagy 500 mszekkel) kell olvasni, és lerakni azokat is a bufferbe
 3. ha az időtúllépés bekövetkezik, a lemezkép megérkezett.
@@ -101,7 +119,9 @@ szabvány alapján).
 2. kattints a harmadik sorra és válassz eszközt
 3. kattints a második sor első gombjára (Kiír)
 
-Ennél a műveletnél a fájl formátuma és a tömörítése automatikusan detektálásra kerül.
+Ennél a műveletnél a fájl formátuma és a tömörítése automatikusan detektálásra kerül. Kérlek vedd figyelembe, hogy a hátralévő idő becsült.
+Bizonyos tömörített fájlok nem tárolják a kicsomagolt méretet, ezeknél a státuszban "ezidáig" szerepel. A hátralévő idejük nem lesz pontos,
+csak egy közelítés a becslésre a tömörített pozíció / tömörített méret arányában (magyarán a mértékegysége sacc/kb).
 
 ### Lemezkép készítése eszközről
 
@@ -111,7 +131,8 @@ Ennél a műveletnél a fájl formátuma és a tömörítése automatikusan dete
 
 A generált lemezkép neve "usbimager-(dátumidő).dd" lesz, a pontos időből számítva. Ha a "Tömörítés" be volt pipálva, akkor a fájlnév
 végére egy ".bz2" kiterszejtést biggyeszt, és a lemezkép tartalma bzip2 tömörített lesz. Ennek sokkal jobb a tömörítési aránya, mint
-a gzipé.
+a gzipé. Nyers lemezképek esetén a hátralévő idő pontos, tömörítés esetén nagyban ingadozik a tömörítés műveletigényétől, ami meg az
+adatok függvénye, ezért csak egy becslés.
 
 Megjegyzés: Linuxon ha nincs ~/Desktop (Asztal), akkor a ~/Downloads (Letöltések) mappát használja. Ha az sincs, akkor a lemezkép a
 home mappába lesz lementve. A többi platformon mindig van Asztal, ha mégse találná, akkor az aktuális könyvtárba ment.

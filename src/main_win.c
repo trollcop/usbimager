@@ -148,7 +148,7 @@ static DWORD WINAPI writerRoutine(LPVOID lpParam) {
             while(1) {
                 int numberOfBytesRead;
 
-                if((numberOfBytesRead = stream_read(&ctx, ctx.buffer)) >= 0) {
+                if((numberOfBytesRead = stream_read(&ctx)) >= 0) {
                     if(numberOfBytesRead == 0) {
                         if(!ctx.fileSize) ctx.fileSize = ctx.readSize;
                         break;
@@ -256,9 +256,9 @@ static DWORD WINAPI readerRoutine(LPVOID lpParam) {
     if(src != NULL && src != (HANDLE)-1 && src != (HANDLE)-2 && src != (HANDLE)-3 && src != (HANDLE)-4) {
         if(SHGetFolderPathW(HWND_DESKTOP, CSIDL_DESKTOPDIRECTORY, NULL, 0, home))
             wsprintfW(home, L".\\");
-        GetDateFormatW(LOCALE_USER_DEFAULT, 0, NULL, L"yyyymmdd", (LPWSTR)&d, 16);
+        GetDateFormatW(LOCALE_USER_DEFAULT, 0, NULL, L"yyyyMMdd", (LPWSTR)&d, 16);
         GetTimeFormatW(LOCALE_USER_DEFAULT, 0, NULL, L"HHmm", (LPWSTR)&t, 8);
-        wsprintfW(wFn, L"%s\\usbimager-%s%s.dd%s", home, d, t, needCompress ? L".bz2" : L"");
+        wsprintfW(wFn, L"%s\\usbimager-%s-%s.dd%s", home, d, t, needCompress ? L".bz2" : L"");
         for(wlen = 0; wFn[wlen]; wlen++);
         len = WideCharToMultiByte(CP_UTF8, 0, wFn, wlen, 0, 0, NULL, NULL);
         if(len > 0) {
@@ -274,7 +274,7 @@ static DWORD WINAPI readerRoutine(LPVOID lpParam) {
         if(fn && !stream_create(&ctx, fn, needCompress, disks_capacity[targetId])) {
             while(ctx.readSize < ctx.fileSize) {
                 errno = 0;
-                size = ctx.fileSize - ctx.readSize < BUFFER_SIZE ? (int)(ctx.fileSize - ctx.readSize) : BUFFER_SIZE;
+                size = ctx.fileSize - ctx.readSize < (uint64_t)buffer_size ? (int)(ctx.fileSize - ctx.readSize) : buffer_size;
                 if(ReadFile(src, ctx.buffer, size, &numberOfBytesRead, NULL)) {
                     if(stream_write(&ctx, ctx.buffer, size)) {
                         static CHAR lpStatus[128];
@@ -447,30 +447,42 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszArgum
 
     char *cmdline = GetCommandLine();
     for(; cmdline && cmdline[0] && cmdline[0] != '-'; cmdline++);
-    if(cmdline && cmdline[0] == '-')
-      for(; cmdline[0]; cmdline++) {
-        if(cmdline[0] == 'v') {
-            verbose = 1;
-            AllocConsole();
-            HANDLE ConsoleHandle = GetStdHandle(STD_OUTPUT_HANDLE);
-            FILE *f = _fdopen(_open_osfhandle((intptr_t)ConsoleHandle, _O_TEXT), "w");
-            *stdout = *f;
-            setvbuf(stdout, NULL, _IONBF, 0);
-            SetConsoleTitle(TEXT("USBImager Debug"));
-            CONSOLE_SCREEN_BUFFER_INFO csbi;
-            if(GetConsoleScreenBufferInfo(ConsoleHandle, &csbi)) {
-                COORD bs;
-                bs.X = 132; bs.Y = 32767;
-                SetConsoleScreenBufferSize(ConsoleHandle, bs);
+    if(cmdline && cmdline[0] == '-') {
+        for(; cmdline[0]; cmdline++)
+            switch(cmdline[0]) {
+                case 'v':
+                    verbose++;
+                    if(verbose == 1) {
+                        AllocConsole();
+                        HANDLE ConsoleHandle = GetStdHandle(STD_OUTPUT_HANDLE);
+                        FILE *f = _fdopen(_open_osfhandle((intptr_t)ConsoleHandle, _O_TEXT), "w");
+                        *stdout = *f;
+                        setvbuf(stdout, NULL, _IONBF, 0);
+                        SetConsoleTitle(TEXT("USBImager Debug"));
+                        CONSOLE_SCREEN_BUFFER_INFO csbi;
+                        if(GetConsoleScreenBufferInfo(ConsoleHandle, &csbi)) {
+                            COORD bs;
+                            bs.X = 132; bs.Y = 32767;
+                            SetConsoleScreenBufferSize(ConsoleHandle, bs);
+                        }
+                        printf("USBImager " USBIMAGER_VERSION " - MIT license, Copyright (C) 2020 bzt\r\n\r\n"
+                            "usbimager.exe [-v|-vv|-s|-S|-1|-2|-3|-4|-5|-6|-7|-8|-9]\r\n\r\n"
+                            "https://gitlab.com/bztsrc/usbimager\r\n\r\n");
+                    }
+                break;
+                case 's': disks_serial = 1; break;
+                case 'S': disks_serial = 2; break;
+                case '1': buffer_size = 2*1024*1024; break;
+                case '2': buffer_size = 4*1024*1024; break;
+                case '3': buffer_size = 8*1024*1024; break;
+                case '4': buffer_size = 16*1024*1024; break;
+                case '5': buffer_size = 32*1024*1024; break;
+                case '6': buffer_size = 64*1024*1024; break;
+                case '7': buffer_size = 128*1024*1024; break;
+                case '8': buffer_size = 256*1024*1024; break;
+                case '9': buffer_size = 512*1024*1024; break;
             }
-            if(!memcmp(cmdline, "version", 7))
-                printf("USBImager " USBIMAGER_VERSION " - MIT license, Copyright (C) 2020 bzt\r\n\r\n"
-                    "https://gitlab.com/bztsrc/usbimager\r\n\r\n");
-        } else
-        if(cmdline[0] == 's') disks_serial = 1; else
-        if(cmdline[0] == 'S') disks_serial = 2;
-      }
-
+    }
     char *loc;
     int lid = GetUserDefaultLangID();
     /* see https://docs.microsoft.com/en-us/windows/win32/intl/language-identifier-constants-and-strings */
@@ -499,7 +511,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszArgum
         case 0x2F: loc = "mk"; break;   case 0x36: loc = "af"; break;
         case 0x37: loc = "ka"; break;   case 0x38: loc = "fo"; break;
         case 0x39: loc = "hi"; break;   case 0x3A: loc = "mt"; break;
-        case 0x3C: loc = "ga"; break;   case 0x3E: loc = "ms"; break;
+        case 0x3C: loc = "gd"; break;   case 0x3E: loc = "ms"; break;
         case 0x3F: loc = "kk"; break;   case 0x40: loc = "ky"; break;
         case 0x45: loc = "bn"; break;   case 0x47: loc = "gu"; break;
         case 0x4D: loc = "as"; break;   case 0x4E: loc = "mr"; break;
@@ -511,7 +523,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszArgum
         case 0x7E: loc = "br"; break;   case 0x92: loc = "ku"; break;
         case 0x09: default: loc = "en"; break;
     }
-    if(verbose) printf("GetUserDefaultLangID %04x, locale %s\r\n", lid, loc);
+
     lang=(wchar_t**)malloc(NUMTEXTS * sizeof(wchar_t*));
     if(!lang) return 1;
     for(i = 0; i < NUMLANGS; i++)
@@ -533,6 +545,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszArgum
             }
             break;
         }
+    if(verbose) printf("GetUserDefaultLangID %04x '%s', dict '%s', serial %d, buffer_size %d MiB\r\n",
+        lid, loc, lang[-1], disks_serial, buffer_size/1024/1024);
+
     ret = DialogBoxParam(hInstance, MAKEINTRESOURCE(IDC_MAINDLG), NULL, MainDlgProc, (LPARAM) hInstance);
 
     for(j = 0; j < NUMTEXTS; j++)

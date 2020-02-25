@@ -58,9 +58,11 @@ typedef struct {
     uint64_t compSize;
     uint64_t readSize;
     uint64_t cmrdSize;
-    unsigned char compBuf[BUFFER_SIZE];
-    char buffer[BUFFER_SIZE];
-    char verifyBuf[BUFFER_SIZE];
+    uint64_t avgSpeedBytes;
+    uint64_t avgSpeedNum;
+    unsigned char *compBuf;
+    char *buffer;
+    char *verifyBuf;
     z_stream zstrm;
     bz_stream bstrm;
     struct xz_buf xstrm;
@@ -82,9 +84,9 @@ int stream_status(stream_t *ctx, char *str);
 int stream_open(stream_t *ctx, char *fn, int uncompr);
 
 /**
- * Read no more than BUFFER_SIZE uncompressed bytes of source data
+ * Read no more than buffer_size uncompressed bytes of source data
  */
-int stream_read(stream_t *ctx, char *buffer);
+int stream_read(stream_t *ctx);
 
 /**
  * Open file for writing

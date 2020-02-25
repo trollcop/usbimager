@@ -117,7 +117,7 @@ static void *writerRoutine(void *data)
         dst = (int)((long int)disks_open(targetId, ctx.fileSize));
         if(dst > 0) {
             while(1) {
-                if((numberOfBytesRead = stream_read(&ctx, ctx.buffer)) >= 0) {
+                if((numberOfBytesRead = stream_read(&ctx)) >= 0) {
                     if(numberOfBytesRead == 0) {
                         if(!ctx.fileSize) ctx.fileSize = ctx.readSize;
                         break;
@@ -215,7 +215,7 @@ static void *readerRoutine(void *data)
         }
         i = strlen(fn);
         lt = localtime(&now);
-        snprintf(fn + i, sizeof(fn)-1-i, "/usbimager-%04d%02d%02d%02d%02d.dd%s",
+        snprintf(fn + i, sizeof(fn)-1-i, "/usbimager-%04d%02d%02d-%02d%02d.dd%s",
             lt->tm_year+1900, lt->tm_mon+1, lt->tm_mday, lt->tm_hour, lt->tm_min,
             needCompress ? ".bz2" : "");
         uiEntrySetText(source, fn);
@@ -223,7 +223,7 @@ static void *readerRoutine(void *data)
         if(!stream_create(&ctx, fn, needCompress, disks_capacity[targetId])) {
             while(ctx.readSize < ctx.fileSize) {
                 errno = 0;
-                size = ctx.fileSize - ctx.readSize < BUFFER_SIZE ? (int)(ctx.fileSize - ctx.readSize) : BUFFER_SIZE;
+                size = ctx.fileSize - ctx.readSize < (uint64_t)buffer_size ? (int)(ctx.fileSize - ctx.readSize) : buffer_size;
                 numberOfBytesRead = (int)read(src, ctx.buffer, size);
                 if(numberOfBytesRead == size) {
                     if(stream_write(&ctx, ctx.buffer, size)) {
@@ -334,18 +334,36 @@ int main(int argc, char **argv)
     uiLabel *sep;
     int i;
     char *lc = getenv("LANG"), btntext[256];
+    char help[] = "USBImager " USBIMAGER_VERSION " - MIT license, Copyright (C) 2020 bzt\r\n\r\n"
+                "./usbimager [-v|-vv|-s|-S|-1|-2|-3|-4|-5|-6|-7|-8|-9]\r\n\r\n"
+                "https://gitlab.com/bztsrc/usbimager\r\n\r\n";
 
     if(argc > 1 && argv[1] && argv[1][0] == '-') {
         if(!strcmp(argv[1], "--version")) {
-            printf("USBImager " USBIMAGER_VERSION " - MIT license, Copyright (C) 2020 bzt\r\n\r\n"
-                "https://gitlab.com/bztsrc/usbimager\r\n");
+            printf(USBIMAGER_VERSION "\n");
+            exit(0);
+        }
+        if(!strcmp(argv[1], "--help")) {
+            printf("%s", help);
             exit(0);
         }
         for(i = 1; argv[1][i]; i++)
             switch(argv[1][i]) {
-                case 'v': verbose++; break;
+                case 'v':
+                    verbose++;
+                    if(verbose == 1) printf("%s", help);
+                break;
                 case 's': disks_serial = 1; break;
                 case 'S': disks_serial = 2; break;
+                case '1': buffer_size = 2*1024*1024; break;
+                case '2': buffer_size = 4*1024*1024; break;
+                case '3': buffer_size = 8*1024*1024; break;
+                case '4': buffer_size = 16*1024*1024; break;
+                case '5': buffer_size = 32*1024*1024; break;
+                case '6': buffer_size = 64*1024*1024; break;
+                case '7': buffer_size = 128*1024*1024; break;
+                case '8': buffer_size = 256*1024*1024; break;
+                case '9': buffer_size = 512*1024*1024; break;
             }
     }
 
@@ -357,6 +375,9 @@ int main(int argc, char **argv)
         }
     }
     if(!lang) lang = &dict[0][1];
+
+    if(verbose) printf("LANG '%s', dict '%s', serial %d, buffer_size %d MiB\r\n",
+        lc, lang[-1], disks_serial, buffer_size/1024/1024);
 
     pthread_attr_init(&tha);
     memset(&thrd, 0, sizeof(pthread_t));
