@@ -49,18 +49,57 @@ Screenshots
 Usage
 -----
 
+If you can't write to the target device (you get "permission denied" errors), then use the "Run As Administrator" option under Windows, and add your
+user to the "disk" (Linux) or "operator" (MacOSX) group (see "ls -la /dev|grep -e ^b" to find out which group your OS is using). __No need__ for
+*sudo /usr/bin/usbimager*, just make sure your user has write access to the devices, that's the Principle of Least Privilege. This should not be
+an issue by the way, as USBImager comes with setgid bit set. If not, then you can use "sudo chgrp disk usbimager && sudo chmod g+s usbimager"
+to set it.
+
+### Interface
+
+1. row: image file
+2. row: operations, write and read respectively
+3. row: device selection
+4. row: options, verify write and compress output respectively
+
+For X11 I made everything from scratch to avoid dependencies. Clicking and keyboard navigation works as expected: <kbd>Tab</kbd> and <kbd>Shift</kbd> +
+<kbd>Tab</kbd> switches the input field, <kbd>Enter</kbd> selects. Plus in Open File dialog <kbd>Left</kbd> / <kbd>BackSpace</kbd> goes one directory up,
+<kbd>Right</kbd> / <kbd>Enter</kbd> goes one directory down (or selects it if it's not a directory). You can use <kbd>Shift</kbd> + <kbd>Up</kbd> /
+<kbd>Down</kbd> to change the sorting order. "Recently Used" files also supported (through freedesktop.org's [Desktop Bookmarks](https://freedesktop.org/wiki/Specifications/desktop-bookmark-spec/) Standard).
+
+### Writing Image File to Device
+
+1. select an image by clicking on "..." in the 1st row
+2. select a device by clicking on the 3rd row
+3. click on the first button (Write) in the 2nd row
+
+With this operation, the file format and the compression is autodetected. Please note that the remaining time is just an estimate. Some
+compressed files do not store the uncompressed file size, for those you will see "x MiB so far" in the status bar. Their remaining time will be
+less accurate, just an approximation of an estimation using the ratio of compressed position / compressed size (in short it is truly
+nothing more than a rough estimate).
+
+### Creating Backup Image File from Device
+
+1. select a device by clicking on the 3rd row
+2. click on the second button (Read) in the 2nd row
+3. the image file will be saved on your Desktop, its name is in the 1st row
+
+The generated image file is in the form "usbimager-(date)-(time).dd", generated with the current timestamp. If "Compress" option is checked, then a ".bz2" suffix will
+be added, and the image will be compressed using bzip2. It has much better compression ratio than gzip deflate. For raw images the remaining
+time is accurate, however for compression it highly depends on the time taken by the compression algorithm, which in turn depends on the data,
+so remaining time is just an estimate.
+
+Note: on Linux, if ~/Desktop is not found, then ~/Downloads will be used. If even that doesn't exists, then the image file will be saved in your home directory. On
+other platforms the Desktop always exists, but if by any chance not, then the current directory is used.
+
+### Advanced Functionalities
+
 | Flag      | Description         |
 |-----------|---------------------|
 | -v/-vv    | Be verbose          |
 | -1..9     | Set buffer size     |
 | -s/-S     | Use serial devices  |
 | --version | Prints version      |
-
-If you can't write to the target device (you get "permission denied" errors), then use the "Run As Administrator" option under Windows, and add your
-user to the "disk" (Linux) or "operator" (MacOSX) group (see "ls -la /dev|grep -e ^b" to find out which group your OS is using). __No need__ for
-*sudo /usr/bin/usbimager*, just make sure your user has write access to the devices, that's the Principle of Least Privilege. This should not be
-an issue by the way, as USBImager comes with setgid bit set. If not, then you can use "sudo chgrp disk usbimager && sudo chmod g+s usbimager"
-to set it.
 
 For Windows users: right-click on usbimager.exe, and select "Create Shortcut". Then right-click on the newly created ".lnk" file, and
 select "Properties". On the "Shortcut" tab, in the "Target" field, you can add the flags. On the "Security" tab, you can also set
@@ -95,43 +134,6 @@ on the serial line:
 For both case the serial line is set to 115200 baud, 8 data bits, no parity, 1 stop bit. For serial transfers, USBImager does not uncompress the image to minimize
 transfer times, so that has to be done on the client side. For a simple boot loader that's compatible with USBImager, take a look at
 [Image Receiver](https://gitlab.com/bztsrc/imgrecv) (available for RPi1, 2, 3, 4 and IBM PC BIOS machines).
-
-For X11 I made everything from scratch to avoid dependencies. Clicking and keyboard navigation works as expected: <kbd>Tab</kbd> and <kbd>Shift</kbd> +
-<kbd>Tab</kbd> switches the input field, <kbd>Enter</kbd> selects. Plus in Open File dialog <kbd>Left</kbd> / <kbd>BackSpace</kbd> goes one directory up,
-<kbd>Right</kbd> / <kbd>Enter</kbd> goes one directory down (or selects it if it's not a directory). You can use <kbd>Shift</kbd> + <kbd>Up</kbd> /
-<kbd>Down</kbd> to change the sorting order. "Recently Used" files also supported (through freedesktop.org's [Desktop Bookmarks](https://freedesktop.org/wiki/Specifications/desktop-bookmark-spec/) Standard).
-
-### Interface
-
-1. row: image file
-2. row: operations, write and read respectively
-3. row: device selection
-4. row: options, verify write and compress output respectively
-
-### Writing Image File to Device
-
-1. select an image by clicking on "..." in the 1st row
-2. select a device by clicking on the 3rd row
-3. click on the first button (Write) in the 2nd row
-
-With this operation, the file format and the compression is autodetected. Please note that the remaining time is just an estimate. Some
-compressed files do not store the uncompressed file size, for those you will see "x MiB so far" in the status bar. Their remaining time will be
-less accurate, just an approximation of an estimation using the ratio of compressed position / compressed size (in short it is truly
-nothing more than a rough estimate).
-
-### Creating Backup Image File from Device
-
-1. select a device by clicking on the 3rd row
-2. click on the second button (Read) in the 2nd row
-3. the image file will be saved on your Desktop, its name is in the 1st row
-
-The generated image file is in the form "usbimager-(date)-(time).dd", generated with the current timestamp. If "Compress" option is checked, then a ".bz2" suffix will
-be added, and the image will be compressed using bzip2. It has much better compression ratio than gzip deflate. For raw images the remaining
-time is accurate, however for compression it highly depends on the time taken by the compression algorithm, which in turn depends on the data,
-so remaining time is just an estimate.
-
-Note: on Linux, if ~/Desktop is not found, then ~/Downloads will be used. If even that doesn't exists, then the image file will be saved in your home directory. On
-other platforms the Desktop always exists, but if by any chance not, then the current directory is used.
 
 Compilation
 -----------

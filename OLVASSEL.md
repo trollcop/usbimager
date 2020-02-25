@@ -51,19 +51,59 @@ Képernyőképek
 Használat
 ---------
 
+Ha nem tudod írni a céleszközt (folyton "hozzáférés megtagadva" hibaüzenetet kapsz), akkor használd a "Futtatás rendszergazdaként" opciót
+Windows alatt, vagy add hozzá a felhasználódat a "disk" (Linux) illetve "operator" (MacOSX) csoportokhoz (az "ls -la /dev|grep -e ^b"
+parancs kiírja, melyik csoportban vannak az oprendszered alatt a lemezeszközök). __Elvileg nincs szükség__ a *sudo /usr/bin/usbimager*-re,
+csak győzödj meg róla, hogy a felhasználódnak van írási hozzáférése az eszközökhöz, ez a Legalacsonyabb Privilégium Elve (Principle
+of Least Privilege). Erre az egészre egyébként valószínűleg nem lesz szükség, mivel az USBImager setgid bittel érkezik. Ha mégsem, akkor
+a "sudo chgrp disk usbimager && sudo chmod g+s usbimager" parancs beállítja.
+
+### Interfész
+
+1. sor: lemezkép fájl
+2. sor: műveletek, írás és olvasás ebben a sorrendben
+3. sor: eszköz kiválasztás
+4. sor: opciók, írás ellenőrzés és kimenet tömörítése
+
+Az X11 esetén mindent a nulláról írtam meg, hogy elkerüljem a függőségeket. A kattintás és a billentyűnavigáció a megszokott: <kbd>Tab</kbd>
+és <kbd>Shift</kbd> + <kbd>Tab</kbd> váltogat a mezők között, <kbd>Enter</kbd> a kiválasztás. Plusz a fájl tallózásakor a <kbd>Bal nyíl</kbd>
+/ <kbd>BackSpace</kbd> (törlés) feljebb lép egy könyvtárral, a <kbd>Jobbra nyíl</kbd> / <kbd>Enter</kbd> pedig beljebb megy (vagy kiválaszt, ha
+az aktuális elem nem könyvtár). A sorrendezést a <kbd>Shift</kbd> + <kbd>Fel nyíl</kbd> / <kbd>Le nyíl</kbd> kombinációkkal tudod változtatni.
+A "Legutóbb használt" fájlok listája szintén támogatott (a freedesktop.org féle [Desktop Bookmarks](https://freedesktop.org/wiki/Specifications/desktop-bookmark-spec/)
+szabvány alapján).
+
+### Lemezkép kiírása eszközre
+
+1. kattints a "..." gombra az első sorban és válassz lemezkép fájlt
+2. kattints a harmadik sorra és válassz eszközt
+3. kattints a második sor első gombjára (Kiír)
+
+Ennél a műveletnél a fájl formátuma és a tömörítése automatikusan detektálásra kerül. Kérlek vedd figyelembe, hogy a hátralévő idő becsült.
+Bizonyos tömörített fájlok nem tárolják a kicsomagolt méretet, ezeknél a státuszban "x MiB ezidáig" szerepel. A hátralévő idejük nem lesz pontos,
+csak egy közelítés a becslésre a tömörített pozíció / tömörített méret arányában (magyarán a mértékegysége sacc/kb).
+
+### Lemezkép készítése eszközről
+
+1. kattints a harmadik sorra és válassz eszközt
+2. kattints a második sor második gombjára (Beolvas)
+3. a lemezkép az Asztalodon fog létrejönni, a fájlnév pedig megjelenik az első sorban
+
+A generált lemezkép neve "usbimager-(dátum)-(idő).dd" lesz, a pontos időből számítva. Ha a "Tömörítés" be volt pipálva, akkor a fájlnév
+végére egy ".bz2" kiterszejtést biggyeszt, és a lemezkép tartalma bzip2 tömörített lesz. Ennek sokkal jobb a tömörítési aránya, mint
+a gzipé. Nyers lemezképek esetén a hátralévő idő pontos, tömörítés esetén nagyban ingadozik a tömörítés műveletigényétől, ami meg az
+adatok függvénye, ezért csak egy becslés.
+
+Megjegyzés: Linuxon ha nincs ~/Desktop (Asztal), akkor a ~/Downloads (Letöltések) mappát használja. Ha az sincs, akkor a lemezkép a
+home mappába lesz lementve. A többi platformon mindig van Asztal, ha mégse találná, akkor az aktuális könyvtárba ment.
+
+### Haladó funkciók
+
 | Kapcsoló  | Leírás                  |
 |-----------|-------------------------|
 | -v/-vv    | Részletes kimenet       |
 | -1..9     | Buffer méret beállítása |
 | -s/-S     | Soros portok használata |
 | --version | Kiírja a verziót        |
-
-Ha nem tudod írni a céleszközt (folyton "hozzáférés megtagadva" hibaüzenetet kapsz), akkor használd a "Futtatás rendszergazdaként" opciót
-Windows alatt, vagy add hozzá a felhasználódat a "disk" (Linux) illetve "operator" (MacOSX) csoportokhoz (az "ls -la /dev|grep -e ^b"
-parancs kiírja, melyik csoportban vannak az oprendszered alatt a lemezeszközök). __Nincs szükség__ a *sudo /usr/bin/usbimager*-re,
-csak győzödj meg róla, hogy a felhasználódnak van írási hozzáférése az eszközökhöz, ez a Legalacsonyabb Privilégium Elve (Principle
-of Least Privilege). Erre az egészre egyébként valószínűleg nem lesz szükség, mivel az USBImager setgid bittel érkezik. Ha mégsem, akkor
-a "sudo chgrp disk usbimager && sudo chmod g+s usbimager" parancs beállítja.
 
 Windows felhasználóknak: jobb-klikk az usbimager.exe-n, majd választd a "Parancsikon létrehozása" menüt. Aztán jobb-klikk az újonnan
 létrejött ".lnk" fájlra, és válaszd a "Tulajdonságok" menüt. A "Parancsikon" fülön, a "Cél" mezőben tudod hozzáadni a kapcsolókat.
@@ -99,44 +139,6 @@ Mindkét esetben a soros port 115200 baud, 8 adatbit, nincs paritás, 1 stopbit 
 az USBImager nem tömöríti ki a lemezképet, hogy csökkentse az átviteli időt, így a kicsomagolást a kliensen kell elvégezni. Ha egy egyszerű
 rendszerbetöltőre vágysz, ami kompatíbilis az USBImager-el, akkor javalom az [Image Receiver](https://gitlab.com/bztsrc/imgrecv)-t
 (elérhető RPi1, 2, 3, 4 és IBM PC BIOS gépekre).
-
-Az X11 esetén mindent a nulláról írtam meg, hogy elkerüljem a függőségeket. A kattintás és a billentyűnavigáció a megszokott: <kbd>Tab</kbd>
-és <kbd>Shift</kbd> + <kbd>Tab</kbd> váltogat a mezők között, <kbd>Enter</kbd> a kiválasztás. Plusz a fájl tallózásakor a <kbd>Bal nyíl</kbd>
-/ <kbd>BackSpace</kbd> (törlés) feljebb lép egy könyvtárral, a <kbd>Jobbra nyíl</kbd> / <kbd>Enter</kbd> pedig beljebb megy (vagy kiválaszt, ha
-az aktuális elem nem könyvtár). A sorrendezést a <kbd>Shift</kbd> + <kbd>Fel nyíl</kbd> / <kbd>Le nyíl</kbd> kombinációkkal tudod változtatni.
-A "Legutóbb használt" fájlok listája szintén támogatott (a freedesktop.org féle [Desktop Bookmarks](https://freedesktop.org/wiki/Specifications/desktop-bookmark-spec/)
-szabvány alapján).
-
-### Interfész
-
-1. sor: lemezkép fájl
-2. sor: műveletek, írás és olvasás ebben a sorrendben
-3. sor: eszköz kiválasztás
-4. sor: opciók, írás ellenőrzés és kimenet tömörítése
-
-### Lemezkép kiírása eszközre
-
-1. kattints a "..." gombra az első sorban és válassz lemezkép fájlt
-2. kattints a harmadik sorra és válassz eszközt
-3. kattints a második sor első gombjára (Kiír)
-
-Ennél a műveletnél a fájl formátuma és a tömörítése automatikusan detektálásra kerül. Kérlek vedd figyelembe, hogy a hátralévő idő becsült.
-Bizonyos tömörített fájlok nem tárolják a kicsomagolt méretet, ezeknél a státuszban "x MiB ezidáig" szerepel. A hátralévő idejük nem lesz pontos,
-csak egy közelítés a becslésre a tömörített pozíció / tömörített méret arányában (magyarán a mértékegysége sacc/kb).
-
-### Lemezkép készítése eszközről
-
-1. kattints a harmadik sorra és válassz eszközt
-2. kattints a második sor második gombjára (Beolvas)
-3. a lemezkép az Asztalodon fog létrejönni, a fájlnév pedig megjelenik az első sorban
-
-A generált lemezkép neve "usbimager-(dátum)-(idő).dd" lesz, a pontos időből számítva. Ha a "Tömörítés" be volt pipálva, akkor a fájlnév
-végére egy ".bz2" kiterszejtést biggyeszt, és a lemezkép tartalma bzip2 tömörített lesz. Ennek sokkal jobb a tömörítési aránya, mint
-a gzipé. Nyers lemezképek esetén a hátralévő idő pontos, tömörítés esetén nagyban ingadozik a tömörítés műveletigényétől, ami meg az
-adatok függvénye, ezért csak egy becslés.
-
-Megjegyzés: Linuxon ha nincs ~/Desktop (Asztal), akkor a ~/Downloads (Letöltések) mappát használja. Ha az sincs, akkor a lemezkép a
-home mappába lesz lementve. A többi platformon mindig van Asztal, ha mégse találná, akkor az aktuális könyvtárba ment.
 
 Fordítás
 --------
