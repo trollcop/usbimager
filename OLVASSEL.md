@@ -6,12 +6,12 @@ Az [USBImager](https://gitlab.com/bztsrc/usbimager) egy igen igen faék egyszer�
 tömörített lemezképeket lehet USB meghajtókra írni. Elérhető Windows, MaxOSX és Linux rendszereken. A felülete
 annyira egyszerű, amennyire csak lehetséges, teljesen salang mentes.
 
-| Platform | Felület      | Leírás                       |
-|----------|--------------|------------------------------|
-| Windows  | [GDI](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager-i686-win-gdi.zip) | natív interfész |
-| MacOSX   | [Cocoa](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager-intel-macosx-cocoa.zip) | natív interfész |
-| Linux PC | [X11](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager-x86_64-linux-x11.zip)<br>[GTK+](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager-x86_64-linux-gtk.zip)  | javalott<br>kompatíbilitás (van egy kis biztonsági kockázat a nyers lemezelérések engedélyezésekor) |
-| Raspbian | [X11](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager-armv7l-linux-x11.zip) | natív interfész |
+| Platform     | Felület      | Leírás                       |
+|--------------|--------------|------------------------------|
+| Windows      | [GDI](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager-i686-win-gdi.zip) | natív interfész |
+| MacOSX       | [Cocoa](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager-intel-macosx-cocoa.zip) | natív interfész |
+| Linux PC     | [X11](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager-x86_64-linux-x11.zip)<br>[GTK+](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager-x86_64-linux-gtk.zip)  | javalott<br>kompatíbilitás (van egy kis biztonsági kockázat a nyers lemezelérések engedélyezésekor) |
+| Raspberry Pi | [X11](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager-armv7l-linux-x11.zip) | natív interfész |
 
 Telepítés
 ---------
