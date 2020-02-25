@@ -145,6 +145,7 @@ void *disks_open(int targetId, uint64_t size)
     int k;
 
     if(targetId < 0 || targetId >= DISKS_MAX || disks_targets[targetId] == -1 || disks_targets[targetId] == 'C') return (HANDLE)-1;
+    if(size && disks_capacity[targetId] && size > disks_capacity[targetId]) return (HANDLE)-1;
 
     if(disks_targets[targetId] >= 1024) {
         sprintf(szDevicePathName, "\\\\.\\COM%d", disks_targets[targetId] - 1024);

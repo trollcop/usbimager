@@ -260,6 +260,7 @@ void *disks_open(int targetId, uint64_t size)
     FILE *m;
 
     if(targetId < 0 || targetId >= DISKS_MAX || disks_targets[targetId] == -1) return (void*)-1;
+    if(size && disks_capacity[targetId] && size > disks_capacity[targetId]) return (void*)-1;
 
     if(disks_targets[targetId] >= 1024) {
         k = disks_targets[targetId] - 1024;

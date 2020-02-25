@@ -136,9 +136,9 @@ ifeq ($(DEBUG),)
 	$(STRIP) $(TARGET)
 endif
 ifneq ($(GRP),)
-	chgrp $(GRP) $(TARGET)
-	chmod g+s $(TARGET)
-	@(ls -la $(TARGET)|grep $(GRP)|grep sr) || echo -e "\n\nWARNING - Your user is not member of the '$(GRP)' group, can't grant access. Run the following two commands manually:\n\n  sudo chgrp $(GRP) $(TARGET)\n  sudo chmod g+s $(TARGET)\n\n"
+	chgrp $(GRP) $(TARGET) || true
+	chmod g+s $(TARGET) || true
+	@(ls -la $(TARGET)|grep $(GRP)|grep sr) || printf "\n\nWARNING - Your user is not member of the '$(GRP)' group, can't grant access. Run the following two commands manually:\n\n  sudo chgrp $(GRP) $(TARGET)\n  sudo chmod g+s $(TARGET)\n\n"
 endif
 
 ####### install and package creation #######

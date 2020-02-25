@@ -270,6 +270,7 @@ void *disks_open(int targetId, uint64_t size)
     struct statfs *buf;
 
     if(targetId < 0 || targetId >= DISKS_MAX || disks_targets[targetId] == -1) return (void*)-1;
+    if(size && disks_capacity[targetId] && size > disks_capacity[targetId]) return (void*)-1;
     currTarget = disks_targets[targetId];
 
     if(currTarget >= 1024) {
