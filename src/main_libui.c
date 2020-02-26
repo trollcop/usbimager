@@ -334,9 +334,13 @@ int main(int argc, char **argv)
     uiLabel *sep;
     int i;
     char *lc = getenv("LANG"), btntext[256];
-    char help[] = "USBImager " USBIMAGER_VERSION " - MIT license, Copyright (C) 2020 bzt\r\n\r\n"
-                "./usbimager [-v|-vv|-s|-S|-1|-2|-3|-4|-5|-6|-7|-8|-9]\r\n\r\n"
-                "https://gitlab.com/bztsrc/usbimager\r\n\r\n";
+    char help[] = "USBImager " USBIMAGER_VERSION
+#ifdef USBIMAGER_BUILD
+        " (build " USBIMAGER_BUILD ")"
+#endif
+        " - MIT license, Copyright (C) 2020 bzt\r\n\r\n"
+        "./usbimager [-v|-vv|-s|-S|-1|-2|-3|-4|-5|-6|-7|-8|-9]\r\n\r\n"
+        "https://gitlab.com/bztsrc/usbimager\r\n\r\n";
 
     if(argc > 1 && argv[1] && argv[1][0] == '-') {
         if(!strcmp(argv[1], "--version")) {

@@ -33,7 +33,7 @@ CC = gcc
 LD = gcc
 STRIP = strip
 # setting DISKS_TEST to 1 will add a test.bin "device" to the target disks list
-CFLAGS = -DDISKS_TEST=0 -Wall -Wextra -pedantic --std=c99 -O3 -fvisibility=hidden -I./zlib -I./bzip2 -I./xz
+CFLAGS = -DDISKS_TEST=1 -Wall -Wextra -pedantic --std=c99 -O3 -fvisibility=hidden -I./zlib -I./bzip2 -I./xz
 LDFLAGS =
 LIBS =
 DECOMPRESSORS = zlib/libz.a bzip2/libbz2.a xz/libxz.a

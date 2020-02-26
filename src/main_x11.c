@@ -99,8 +99,8 @@ static int fncmp(const void *a, const void *b)
     switch(sorting) {
         case 0: return strcmp(A->name, B->name);
         case 1: return strcmp(B->name, A->name);
-        case 2: return (int)(A->size - B->size);
-        case 3: return (int)(B->size - A->size);
+        case 2: return A->size > B->size;
+        case 3: return B->size > A->size;
         case 4: return (int)(A->time - B->time);
         case 5: return (int)(B->time - A->time);
     }
@@ -1372,9 +1372,13 @@ int main(int argc, char **argv)
     char colorName[16], *title = "USBImager " USBIMAGER_VERSION;
     int i, ser;
     char *lc = getenv("LANG");
-    char help[] = "USBImager " USBIMAGER_VERSION " - MIT license, Copyright (C) 2020 bzt\r\n\r\n"
-                "./usbimager [-v|-vv|-s|-S|-1|-2|-3|-4|-5|-6|-7|-8|-9]\r\n\r\n"
-                "https://gitlab.com/bztsrc/usbimager\r\n\r\n";
+    char help[] = "USBImager " USBIMAGER_VERSION
+#ifdef USBIMAGER_BUILD
+        " (build " USBIMAGER_BUILD ")"
+#endif
+        " - MIT license, Copyright (C) 2020 bzt\r\n\r\n"
+        "./usbimager [-v|-vv|-s|-S|-1|-2|-3|-4|-5|-6|-7|-8|-9]\r\n\r\n"
+        "https://gitlab.com/bztsrc/usbimager\r\n\r\n";
 
     if(argc > 1 && argv[1] && argv[1][0] == '-') {
         if(!strcmp(argv[1], "--version")) {

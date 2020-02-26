@@ -465,7 +465,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszArgum
                             bs.X = 132; bs.Y = 32767;
                             SetConsoleScreenBufferSize(ConsoleHandle, bs);
                         }
-                        printf("USBImager " USBIMAGER_VERSION " - MIT license, Copyright (C) 2020 bzt\r\n\r\n"
+                        printf("USBImager " USBIMAGER_VERSION
+#ifdef USBIMAGER_BUILD
+                            " (build " USBIMAGER_BUILD ")"
+#endif
+                            " - MIT license, Copyright (C) 2020 bzt\r\n\r\n"
                             "usbimager.exe [-v|-vv|-s|-S|-1|-2|-3|-4|-5|-6|-7|-8|-9]\r\n\r\n"
                             "https://gitlab.com/bztsrc/usbimager\r\n\r\n");
                     }
@@ -546,7 +550,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszArgum
             break;
         }
     if(verbose) printf("GetUserDefaultLangID %04x '%s', dict '%s', serial %d, buffer_size %d MiB\r\n",
-        lid, loc, lang[-1], disks_serial, buffer_size/1024/1024);
+        lid, loc, dict[i][0], disks_serial, buffer_size/1024/1024);
 
     ret = DialogBoxParam(hInstance, MAKEINTRESOURCE(IDC_MAINDLG), NULL, MainDlgProc, (LPARAM) hInstance);
 
