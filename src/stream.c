@@ -29,8 +29,27 @@
 
 #include <time.h>
 #include <errno.h>
+#include <sys/types.h>
 #include "lang.h"
 #include "stream.h"
+
+#ifdef WINVER
+#include <windows.h>
+extern int _fileno(FILE *f);
+#else
+extern int fileno(FILE *f);
+#endif
+#if !defined(WINVER) && !defined(MACOSX)
+uint64_t mytell (FILE * stream)
+{ fpos_t pos; return (fgetpos(stream, &pos)) ? 0L : (uint64_t)(pos.__pos); }
+int myseek (FILE* stream, uint64_t offset)
+{ fpos_t pos = {0}; pos.__pos = offset; return fsetpos(stream, &pos); }
+#else
+uint64_t mytell (FILE * stream)
+{ fpos_t pos; return (fgetpos(stream, &pos)) ? 0LL : (uint64_t)(pos); }
+int myseek (FILE* stream, uint64_t offset)
+{ fpos_t pos = (fpos_t)offset; return fsetpos(stream, &pos); }
+#endif
 
 int verbose = 0;
 int buffer_size = 1024*1024;
@@ -95,8 +114,10 @@ int stream_status(stream_t *ctx, char *str)
         sprintf(str, "%6" PRIu64 " MiB %s%s%s",
             (ctx->readSize >> 20), lang[L_SOFAR], rem[0] ? ", " : "", rem);
 #endif
-    return ctx->fileSize ? (ctx->readSize * 1000) / (ctx->fileSize * 10) :
+    d = ctx->fileSize ? (ctx->readSize * 1000) / (ctx->fileSize * 10) :
         (ctx->cmrdSize * 1000) / (ctx->compSize * 10 + 1);
+    /* readSize can be greater than fileSize because it's rounded up to 512 bytes */
+    return d > 100 ? 100 : d;
 }
 
 /**
@@ -105,7 +126,11 @@ int stream_status(stream_t *ctx, char *str)
 int stream_open(stream_t *ctx, char *fn, int uncompr)
 {
     unsigned char hdr[65536], *buff;
+    uint64_t fs = 0;
     int x, y;
+#ifndef WINVER
+    struct stat st;
+#endif
 
     errno = 0;
     memset(ctx, 0, sizeof(stream_t));
@@ -134,6 +159,12 @@ int stream_open(stream_t *ctx, char *fn, int uncompr)
 
     ctx->f = fopen(fn, "rb");
     if(!ctx->f) return 1;
+#ifdef WINVER
+    fs = (uint64_t)_filelengthi64(_fileno(ctx->f));
+#else
+    if(!fstat(fileno(ctx->f), &st))
+        fs = (uint64_t)st.st_size;
+#endif
     memset(hdr, 0, sizeof(hdr));
     if(!uncompr)
         fread(hdr, sizeof(hdr), 1, ctx->f);
@@ -142,9 +173,9 @@ int stream_open(stream_t *ctx, char *fn, int uncompr)
     if(hdr[0] == 0x1f && hdr[1] == 0x8b) {
         /* gzip */
         if(verbose) printf(" gzip\r\n");
-        fseek(ctx->f, -4L, SEEK_END);
+        myseek(ctx->f, fs - 4L);
         fread(&ctx->fileSize, 4, 1, ctx->f);
-        ctx->compSize = (uint64_t)ftell(ctx->f) - 8;
+        ctx->compSize = fs - 8;
         buff = hdr + 3;
         x = *buff++; buff += 6;
         if(x & 4) { y = *buff++; y += (*buff++ << 8); buff += y; }
@@ -152,23 +183,21 @@ int stream_open(stream_t *ctx, char *fn, int uncompr)
         if(x & 16) { while(*buff++ != 0); }
         if(x & 2) buff += 2;
         ctx->compSize -= (uint64_t)(buff - hdr);
-        fseek(ctx->f, (uint64_t)(buff - hdr), SEEK_SET);
+        myseek(ctx->f, (uint64_t)(buff - hdr));
         ctx->type = TYPE_DEFLATE;
     } else
     if(hdr[0] == 'B' && hdr[1] == 'Z' && hdr[2] == 'h') {
         /* bzip2 */
         if(verbose) printf(" bzip2\r\n");
-        fseek(ctx->f, 0L, SEEK_END);
-        ctx->compSize = (uint64_t)ftell(ctx->f);
-        fseek(ctx->f, 0L, SEEK_SET);
+        ctx->compSize = fs;
+        myseek(ctx->f, 0L);
         ctx->type = TYPE_BZIP2;
     } else
     if(hdr[0] == 0xFD && hdr[1] == '7' && hdr[2] == 'z' && hdr[3] == 'X' && hdr[4] == 'Z') {
         /* xz */
         if(verbose) printf(" xz\r\n");
-        fseek(ctx->f, 0L, SEEK_END);
-        ctx->compSize = (uint64_t)ftell(ctx->f);
-        fseek(ctx->f, 0L, SEEK_SET);
+        ctx->compSize = fs;
+        myseek(ctx->f, 0L);
         ctx->type = TYPE_XZ;
     } else
     if(hdr[0] == 'P' && hdr[1] == 'K' && hdr[2] == 3 && hdr[3] == 4) {
@@ -199,13 +228,12 @@ int stream_open(stream_t *ctx, char *fn, int uncompr)
                     }
             if(!ctx->compSize || !ctx->fileSize) { fclose(ctx->f); return 4; }
         }
-        fseek(ctx->f, (uint64_t)(30 + hdr[26] + (hdr[27]<<8) + hdr[28] + (hdr[29]<<8)), SEEK_SET);
+        myseek(ctx->f, (uint64_t)(30 + hdr[26] + (hdr[27]<<8) + hdr[28] + (hdr[29]<<8)));
     } else {
         /* uncompressed image */
         if(verbose) printf(" raw image\r\n");
-        fseek(ctx->f, 0L, SEEK_END);
-        ctx->fileSize = (uint64_t)ftell(ctx->f);
-        fseek(ctx->f, 0L, SEEK_SET);
+        ctx->fileSize = fs;
+        myseek(ctx->f, 0L);
         ctx->type = TYPE_PLAIN;
     }
     switch(ctx->type) {
@@ -224,10 +252,10 @@ int stream_open(stream_t *ctx, char *fn, int uncompr)
             if (!ctx->xz) { fclose(ctx->f); return 4; }
         break;
     }
-    if(!ctx->compSize && !ctx->fileSize) { fclose(ctx->f); return 1; }
-    if(verbose) printf("  type %d compSize %" PRIu64 " fileSize %" PRIu64
+    if(verbose) printf(" type %d compSize %" PRIu64 " fileSize %" PRIu64
         " data offset %" PRIu64 "\r\n",
-        ctx->type, ctx->compSize, ctx->fileSize, (uint64_t)ftell(ctx->f));
+        ctx->type, ctx->compSize, ctx->fileSize, mytell(ctx->f));
+    if(!ctx->compSize && !ctx->fileSize) { fclose(ctx->f); return 1; }
 
     ctx->start = time(NULL);
     return 0;

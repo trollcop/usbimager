@@ -94,8 +94,10 @@ char *main_errorMessage = NULL;
 static int fncmp(const void *a, const void *b)
 {
     filelist_t *A = (filelist_t*)a, *B = (filelist_t*)b;
-    if(A->type && !B->type) return 1;
-    if(!A->type && B->type) return -1;
+    if(sorting < 4) {
+        if(A->type && !B->type) return 1;
+        if(!A->type && B->type) return -1;
+    }
     switch(sorting) {
         case 0: return strcmp(A->name, B->name);
         case 1: return strcmp(B->name, A->name);

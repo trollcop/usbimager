@@ -33,6 +33,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <time.h>
+#include <sys/stat.h>
 #include <inttypes.h>   /* for PRI* defines */
 #include "main.h"
 #include "zlib.h"
