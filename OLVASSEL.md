@@ -46,19 +46,19 @@ Fícsörök
 Összehasonlítás
 ---------------
 
-| Leírás                    | balenaEtcher  | WIN32 Disk Imager | USBImager |
-|---------------------------|---------------|-------------------|-----------|
-| Többplatformos            | ✔             | ✗                 | ✔         |
-| Minimum Windows           | Win 7         | Win XP            | Win XP    |
-| Minimum MacOSX            | ?             | ✗                 | 10.14     |
-| Elérhető Raspbian-on      | ✗             | ✗                 | ✔         |
-| Program mérete (1)        | 130 Mb        | ✗                 | 256 Kb    |
-| Függőségek                | sok, ~300 Mb  | Qt                | ✗ nincs   |
-| Kémkedik (nem GDPR-komp.) | ✔             | ✗                 | ✗         |
-| Natív interfész           | ✗             | ✗                 | ✔         |
-| Tömörített lemezképek     | ✔             | ✗                 | ✔         |
-| Nyers kiírási idő (2)     | 23:16         | 23:28             | 24:05     |
-| Tömörített kiírás (2)     | 01:12:51      | ✗                 | 30:47     |
+| Leírás                          | balenaEtcher  | WIN32 Disk Imager | USBImager |
+|---------------------------------|---------------|-------------------|-----------|
+| Többplatformos                  | ✔             | ✗                 | ✔         |
+| Minimum Windows                 | Win 7         | Win XP            | Win XP    |
+| Minimum MacOSX                  | ?             | ✗                 | 10.14     |
+| Elérhető Raspbian-on            | ✗             | ✗                 | ✔         |
+| Program mérete (1)              | 130 Mb        | ✗                 | 256 Kb    |
+| Függőségek                      | sok, ~300 Mb  | Qt                | ✗ nincs   |
+| Kémkedés, magánszféra megsértés | ✔             | ✗                 | ✗         |
+| Natív interfész                 | ✗             | ✗                 | ✔         |
+| Tömörített lemezképek           | ✔             | ✗                 | ✔         |
+| Nyers kiírási idő (2)           | 23:16         | 23:28             | 24:05     |
+| Tömörített kiírás (2)           | 01:12:51      | ✗                 | 30:47     |
 
 (1) - a szállítható futtatható mérete Windowson. A WIN32 Disk Imagerhez nem tudtam letölteni előre lefordított hivatalos csomagokat, csak forrást.
 

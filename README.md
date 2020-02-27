@@ -44,19 +44,19 @@ Features
 Comparition
 -----------
 
-| Description               | balenaEtcher  | WIN32 Disk Imager | USBImager |
-|---------------------------|---------------|-------------------|-----------|
-| Multiplatform             | ✔             | ✗                 | ✔         |
-| Minimum Windows           | Win 7         | Win XP            | Win XP    |
-| Minimum MacOSX            | ?             | ✗                 | 10.14     |
-| Available on Raspbian     | ✗             | ✗                 | ✔         |
-| Program size (1)          | 130 Mb        | ✗                 | 256 Kb    |
-| Dependencies              | lots, ~300 Mb | Qt                | ✗ none    |
-| Spyware (non GDPR comp.)  | ✔             | ✗                 | ✗         |
-| Native interface          | ✗             | ✗                 | ✔         |
-| Compressed images         | ✔             | ✗                 | ✔         |
-| Raw write time (2)        | 23:16         | 23:28             | 24:05     |
-| Compressed write time (2) | 01:12:51      | ✗                 | 30:47     |
+| Description                    | balenaEtcher  | WIN32 Disk Imager | USBImager |
+|--------------------------------|---------------|-------------------|-----------|
+| Multiplatform                  | ✔             | ✗                 | ✔         |
+| Minimum Windows                | Win 7         | Win XP            | Win XP    |
+| Minimum MacOSX                 | ?             | ✗                 | 10.14     |
+| Available on Raspbian          | ✗             | ✗                 | ✔         |
+| Program size (1)               | 130 Mb        | ✗                 | 256 Kb    |
+| Dependencies                   | lots, ~300 Mb | Qt                | ✗ none    |
+| Spyware and privacy violation  | ✔             | ✗                 | ✗         |
+| Native interface               | ✗             | ✗                 | ✔         |
+| Compressed images              | ✔             | ✗                 | ✔         |
+| Raw write time (2)             | 23:16         | 23:28             | 24:05     |
+| Compressed write time (2)      | 01:12:51      | ✗                 | 30:47     |
 
 (1) - the portable executable's size on Windows platform. I couldn't download an official pre-compiled version of WIN32 Disk Imager, just the source.
 
