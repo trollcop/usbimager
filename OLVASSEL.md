@@ -53,7 +53,7 @@ Fícsörök
 | Minimum MacOSX                  | ?             | ✗                 | 10.14     |
 | Elérhető Raspbian-on            | ✗             | ✗                 | ✔         |
 | Program mérete (1)              | 130 Mb        | ✗                 | 256 Kb    |
-| Függőségek                      | sok, ~300 Mb  | Qt                | ✗ nincs   |
+| Függőségek                      | sok, ~300 Mb  | Qt, ~8 Mb         | ✗ nincs   |
 | Kémkedés, magánszféra megsértés | ✔             | ✗                 | ✗         |
 | Natív interfész                 | ✗             | ✗                 | ✔         |
 | Tömörített lemezképek           | ✔             | ✗                 | ✔         |

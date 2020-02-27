@@ -51,7 +51,7 @@ Comparition
 | Minimum MacOSX                 | ?             | ✗                 | 10.14     |
 | Available on Raspbian          | ✗             | ✗                 | ✔         |
 | Program size (1)               | 130 Mb        | ✗                 | 256 Kb    |
-| Dependencies                   | lots, ~300 Mb | Qt                | ✗ none    |
+| Dependencies                   | lots, ~300 Mb | Qt, ~8 Mb         | ✗ none    |
 | Spyware and privacy violation  | ✔             | ✗                 | ✗         |
 | Native interface               | ✗             | ✗                 | ✔         |
 | Compressed images              | ✔             | ✗                 | ✔         |
