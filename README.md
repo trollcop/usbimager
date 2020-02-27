@@ -50,8 +50,9 @@ Comparition
 | Minimum Windows           | Win 7         | Win XP            | Win XP    |
 | Minimum MacOSX            | ?             | ✗                 | 10.14     |
 | Available on Raspbian     | ✗             | ✗                 | ✔         |
-| Program size (1)          | 130 Mb        | ?                 | 256 Kb    |
+| Program size (1)          | 130 Mb        | ✗                 | 256 Kb    |
 | Dependencies              | lots, ~300 Mb | Qt                | ✗ none    |
+| Spyware (non GDPR comp.)  | ✔             | ✗                 | ✗         |
 | Native interface          | ✗             | ✗                 | ✔         |
 | Compressed images         | ✔             | ✗                 | ✔         |
 | Raw write time (2)        | 23:16         | 23:28             | 24:05     |

@@ -51,9 +51,10 @@ Fícsörök
 | Többplatformos            | ✔             | ✗                 | ✔         |
 | Minimum Windows           | Win 7         | Win XP            | Win XP    |
 | Minimum MacOSX            | ?             | ✗                 | 10.14     |
-| Program mérete (1)        | 130 Mb        | ?                 | 256 Kb    |
-| Függőségek                | sok, ~300 Mb  | Qt                | ✗ nincs   |
 | Elérhető Raspbian-on      | ✗             | ✗                 | ✔         |
+| Program mérete (1)        | 130 Mb        | ✗                 | 256 Kb    |
+| Függőségek                | sok, ~300 Mb  | Qt                | ✗ nincs   |
+| Kémkedik (nem GDPR-komp.) | ✔             | ✗                 | ✗         |
 | Natív interfész           | ✗             | ✗                 | ✔         |
 | Tömörített lemezképek     | ✔             | ✗                 | ✔         |
 | Nyers kiírási idő (2)     | 23:16         | 23:28             | 24:05     |
