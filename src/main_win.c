@@ -446,6 +446,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszArgum
     wchar_t *d;
 
     char *cmdline = GetCommandLineA();
+    if(cmdline) cmdline = strrchr(cmdline, ' '); else cmdline = NULL;
     for(; cmdline && cmdline[0] && cmdline[0] != '-'; cmdline++);
     if(cmdline && cmdline[0] == '-') {
         for(; cmdline[0]; cmdline++)

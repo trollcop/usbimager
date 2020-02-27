@@ -81,10 +81,10 @@ void disks_refreshlist() {
             szLbText[0] = (wchar_t)letter; szLbText[1] = (wchar_t)':';
             j = 2;
             if (totalNumberOfBytes > 0) {
-                int sizeInGbTimes10 = (int)((ULONG)(10 * (totalNumberOfBytes + 1024L*1024L*1024L-1L)) >> 30L);
+                long long int sizeInGbTimes10 = ((long long int)(10 * (totalNumberOfBytes + 1024LL*1024LL*1024LL-1LL)) >> 30LL);
                 char unit = 'G';
-                if(!sizeInGbTimes10) { unit = 'M'; sizeInGbTimes10 = (int)((ULONG)(10 * (totalNumberOfBytes + 1024L*1024L-1L)) >> 20L); }
-                sprintf(siz, " [%d.%d %ciB]", sizeInGbTimes10 / 10, sizeInGbTimes10 % 10, unit);
+                if(!sizeInGbTimes10) { unit = 'M'; sizeInGbTimes10 = ((long long int)(10 * (totalNumberOfBytes + 1024LL*1024LL-1LL)) >> 20LL); }
+                sprintf(siz, " [%d.%d %ciB]", (int)(sizeInGbTimes10 / 10), (int)(sizeInGbTimes10 % 10), unit);
                 for(c = siz; *c; c++, j++) szLbText[j] = (wchar_t)*c;
             }
             if (DeviceIoControl(hTargetDevice, IOCTL_STORAGE_QUERY_PROPERTY, &Query,
