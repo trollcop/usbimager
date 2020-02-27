@@ -54,13 +54,17 @@ Comparition
 | Dependencies                   | lots, ~300 Mb | Qt, ~8 Mb         | ✗ none    |
 | Spyware and privacy violation  | ✔             | ✗                 | ✗         |
 | Native interface               | ✗             | ✗                 | ✔         |
+| Guarantee on data writes (2)   | ✗             | ✗                 | ✔         |
+| Verify data written            | ✔             | ✗                 | ✔         |
 | Compressed images              | ✔             | ✗                 | ✔         |
-| Raw write time (2)             | 23:16         | 23:28             | 24:05     |
-| Compressed write time (2)      | 01:12:51      | ✗                 | 30:47     |
+| Raw write time (3)             | 23:16         | 23:28             | 24:05     |
+| Compressed write time (3)      | 01:12:51      | ✗                 | 30:47     |
 
 (1) - the portable executable's size on Windows platform. I couldn't download an official pre-compiled version of WIN32 Disk Imager, just the source.
 
-(2) - measurements performed by @CaptainMidnight on Windows 10 Pro using a SanDisk Ulta 32GB A1 device. Raw image file size was 31,166,976 Kb, the bzip2 compressed image size was 1,887,044 Kb. WIN32 Disk Imager was unable to uncompress the image file, therefore the resulting card was unbootable.
+(2) - USBImager uses only non-buffered IO operations to make sure data is physically written to disk
+
+(3) - measurements performed by @CaptainMidnight on Windows 10 Pro using a SanDisk Ulta 32GB A1 device. Raw image file size was 31,166,976 Kb, the bzip2 compressed image size was 1,887,044 Kb. WIN32 Disk Imager was unable to uncompress the image file, therefore the resulting card was unbootable.
 
 Screenshots
 -----------

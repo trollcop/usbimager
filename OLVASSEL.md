@@ -56,13 +56,17 @@ Fícsörök
 | Függőségek                      | sok, ~300 Mb  | Qt, ~8 Mb         | ✗ nincs   |
 | Kémkedés, magánszféra megsértés | ✔             | ✗                 | ✗         |
 | Natív interfész                 | ✗             | ✗                 | ✔         |
+| Garantált kiírás (2)            | ✗             | ✗                 | ✔         |
+| Kiírt adatok ellenőrzése        | ✔             | ✗                 | ✔         |
 | Tömörített lemezképek           | ✔             | ✗                 | ✔         |
-| Nyers kiírási idő (2)           | 23:16         | 23:28             | 24:05     |
-| Tömörített kiírás (2)           | 01:12:51      | ✗                 | 30:47     |
+| Nyers kiírási idő (3)           | 23:16         | 23:28             | 24:05     |
+| Tömörített kiírás (3)           | 01:12:51      | ✗                 | 30:47     |
 
 (1) - a szállítható futtatható mérete Windowson. A WIN32 Disk Imagerhez nem tudtam letölteni előre lefordított hivatalos csomagokat, csak forrást.
 
-(2) - a méréseket @CaptainMidnight végezte Windows 10 Pro alatt egy SanDisk Ulta 32GB A1 kártyával. A nyers lemezkép mérete 31,166,976 Kb volt, míg a bzip2 tömörítetté 1,887,044 Kb. WIN32 Disk Imager nem kezel tömörített lemezképeket, így a végeredménye nem volt bebootolható.
+(2) - USBImager csak nem-bufferelt IO utasításokat használ, hogy a fizikális lemezreírás biztos legyen
+
+(3) - a méréseket @CaptainMidnight végezte Windows 10 Pro alatt egy SanDisk Ulta 32GB A1 kártyával. A nyers lemezkép mérete 31,166,976 Kb volt, míg a bzip2 tömörítetté 1,887,044 Kb. WIN32 Disk Imager nem kezel tömörített lemezképeket, így a végeredménye nem volt bebootolható.
 
 Képernyőképek
 -------------
