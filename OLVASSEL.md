@@ -103,6 +103,8 @@ Ennél a műveletnél a fájl formátuma és a tömörítése automatikusan dete
 Bizonyos tömörített fájlok nem tárolják a kicsomagolt méretet, ezeknél a státuszban "x MiB ezidáig" szerepel. A hátralévő idejük nem lesz pontos,
 csak egy közelítés a becslésre a tömörített pozíció / tömörített méret arányában (magyarán a mértékegysége sacc/kb).
 
+Ha az "Ellenőrzés" be van pipálva, akkor minden kiírt blokkot visszaolvas, és összehasonlít az eredeti lemezképpel.
+
 ### Lemezkép készítése eszközről
 
 1. kattints a harmadik sorra és válassz eszközt

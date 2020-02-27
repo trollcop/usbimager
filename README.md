@@ -99,6 +99,8 @@ compressed files do not store the uncompressed file size, for those you will see
 less accurate, just an approximation of an estimation using the ratio of compressed position / compressed size (in short it is truly
 nothing more than a rough estimate).
 
+If "Verify" is clicked, then each block is read back from the disk and compared to the original image.
+
 ### Creating Backup Image File from Device
 
 1. select a device by clicking on the 3rd row
