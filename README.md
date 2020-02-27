@@ -41,6 +41,26 @@ Features
 
 (* - for archives with multiple files, the first file in the archive is used as input)
 
+Comparition
+-----------
+
+| Description               | balenaEtcher  | WIN32 Disk Imager | USBImager |
+|---------------------------|---------------|-------------------|-----------|
+| Multiplatform             | ✔             | ✗                 | ✔         |
+| Minimum MacOSX            | ?             | ✗                 | 10.14     |
+| Available on Raspbian     | ✗             | ✗                 | ✔         |
+| Program size (1)          | 130 Mb        | ?                 | 256 Kb    |
+| Dependencies              | lots, ~300 Mb | Qt                | ✗ none    |
+| Minimum Windows           | Win 7         | Win XP            | Win XP    |
+| Native interface          | ✗             | ✗                 | ✔         |
+| Compressed images         | ✔             | ✗                 | ✔         |
+| Raw write time (2)        | 23:16         | 23:28             | 24:05     |
+| Compressed write time (2) | 01:12:51      | ✗                 | 30:47     |
+
+(1) - the portable executable's size on Windows platform. I couldn't download an official pre-compiled version of WIN32 Disk Imager, just the source.
+
+(2) - measurements performed by @CaptainMidnight on Windows 10 Pro using a SanDisk Ulta 32GB A1 device. Raw image file size was 31,166,976 Kb, the bzip2 compressed image size was 1,887,044 Kb. WIN32 Disk Imager was unable to uncompress the image file, therefore the resulting card was unbootable.
+
 Screenshots
 -----------
 
