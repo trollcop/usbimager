@@ -109,6 +109,10 @@ csak egy közelítés a becslésre a tömörített pozíció / tömörített mé
 
 Ha az "Ellenőrzés" be van pipálva, akkor minden kiírt blokkot visszaolvas, és összehasonlít az eredeti lemezképpel.
 
+Az utolsó opció, a legördülő állítja, hogy mekkora legyen a buffer. Ekkora adagokban fogja a lemezképet kezeli. Vedd figyelembe, hogy a
+tényleges memóriaigény ennek háromszorosa, mivel van egy buffer a tömörített adatoknak, egy a kicsomagolt adatoknak, és egy az ellenőrzésre
+visszaolvasott adatoknak.
+
 ### Lemezkép készítése eszközről
 
 1. kattints a harmadik sorra és válassz eszközt
@@ -142,9 +146,8 @@ közül, amik ugyanazt állítják, csak a legutolsót veszi figyelembe (pl "-12
 A '-v' és '-vv' kapcsolók szószátyárrá teszik az USBImager-t, és mindenféle részletes infókat fog kiírni a konzolra. Ez utóbbi a szabvány
 kimenet (stdout) Linux és MacOSX alatt (szóval terminálból használd), míg Windowson egy külön ablakot nyit az üzeneteknek.
 
-A szám kapcsolók a buffer méretét állítják a kettő hatványa Megabájtra (0 = 1M, 1 = 2M, 2 = 4M, 3 = 8M, 4 = 16M, ... 9 = 512M). Vedd
-figyelembe, hogy a tényleges memóriaigény ennek háromszorosa, mivel van egy buffer a tömörített adatoknak, egy a kicsomagolt adatoknak, és
-egy az ellenőrzésre visszaolvasott adatoknak. Ha nincs megadva, a buffer méret alapértelmezetten 1 Megabájt.
+A szám kapcsolók a buffer méretét állítják a kettő hatványa Megabájtra (0 = 1M, 1 = 2M, 2 = 4M, 3 = 8M, 4 = 16M, ... 9 = 512M). Ha nincs
+megadva, a buffer méret alapértelmezetten 1 Megabájt.
 
 Ha az USBImager-t '-s' (kisbetű) kapcsolóval indítod, akkor a soros portra is engedi küldeni a lemezképeket. Ehhez szükséges, hogy a
 felhasználó az "uucp" illetve a "dialout" csoport tagja legyen (disztribúciónként eltérő, használd a "ls -la /dev|grep tty" parancsot).

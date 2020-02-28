@@ -105,6 +105,10 @@ nothing more than a rough estimate).
 
 If "Verify" is clicked, then each block is read back from the disk and compared to the original image.
 
+The last option, the selection box selects the buffer siye to use. The image file will be processed in that big chunks. Keep in
+mind that the actual memory requirement is threefold, because there's one buffer for the compressed data, one for the uncompressed data,
+and one for the data read back for verification.
+
 ### Creating Backup Image File from Device
 
 1. select a device by clicking on the 3rd row
@@ -138,9 +142,8 @@ the same thing, only the last taken into account (for example "-124" is the same
 The '-v' and '-vv' flags will make USBImager to be verbose, and it will print out details to the console. That is stdout on Linux and MacOSX
 (so run this in a Terminal), and on Windows a spearate window will be opened for messages.
 
-The number flags sets the buffer size to the power of two Megabytes (0 = 1M, 1 = 2M, 2 = 4M, 3 = 8M, 4 = 16M, ... 9 = 512M). Keep in
-mind that the actual memory requirement is threefold, because there's one buffer for the compressed data, one for the uncompressed data,
-and one for the data read back for verification. When not specified, buffer size defaults to 1 Megabyte.
+The number flags sets the buffer size to the power of two Megabytes (0 = 1M, 1 = 2M, 2 = 4M, 3 = 8M, 4 = 16M, ... 9 = 512M). When not
+specified, buffer size defaults to 1 Megabyte.
 
 If you start USBImager with the '-s' flag (lowercase), then it will allow you to send images to serial ports as well. For this, your user
 has to be the member of the "uucp" or "dialout" groups (differs in distributions, use "ls -la /dev/|grep tty" to see which one). In this
