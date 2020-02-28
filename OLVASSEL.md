@@ -79,7 +79,7 @@ Használat
 Ha nem tudod írni a céleszközt (folyton "hozzáférés megtagadva" hibaüzenetet kapsz), akkor:
 
 
-__Windows__: jobbklikk és használd a "Futtatás rendszergazdaként" opciót.
+__Windows__: jobbklikk az usbimager.exe-n és használd a "Futtatás rendszergazdaként" opciót.
 
 __MacOSX__: menj a rendszerbeállításokhoz "System Preferences", aztán "Security & Privacy" és "Pricavy". Add hozzá az USBImager-t a
 "Full Disk Access" listához. Alternatívaként indíthatod Terminálból a *sudo /Applications/USBImager.app/Contents/Mac/usbimager* paranccsal.

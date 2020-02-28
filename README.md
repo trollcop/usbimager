@@ -76,9 +76,9 @@ Usage
 
 If you can't write to the target device (you get "permission denied" errors), then:
 
-__Windows__: right click and use the "Run as Administrator" option.
+__Windows__: right-click on usbimager.exe and use the "Run as Administrator" option.
 
-__MacOSX__: Go to "System Preferences", "Security & Privacy" and "Pricavy". Add USBImager to the list of "Full Disk Access". Alternatively
+__MacOSX__: go to "System Preferences", "Security & Privacy" and "Pricavy". Add USBImager to the list of "Full Disk Access". Alternatively
 run from a Terminal as *sudo /Applications/USBImager.app/Contents/Mac/usbimager*.
 
 __Linux__: add you user to the "disk" group (see "ls -la /dev|grep -e ^b" to find out which group your OS is using). __Should be no need__ for
