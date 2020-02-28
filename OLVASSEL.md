@@ -3,7 +3,7 @@ USBImager
 
 <img src="https://gitlab.com/bztsrc/usbimager/raw/master/src/misc/icon32.png">
 Az [USBImager](https://gitlab.com/bztsrc/usbimager) egy igen igen faék egyszerűségű ablakos alkalmazás, amivel
-tömörített lemezképeket lehet USB meghajtókra írni. Elérhető Windows, MaxOSX és Linux rendszereken. A felülete
+tömörített lemezképeket lehet USB meghajtókra írni és lementeni. Elérhető Windows, MaxOSX és Linux rendszereken. A felülete
 annyira egyszerű, amennyire csak lehetséges, teljesen salang mentes.
 
 | Platform     | Felület      | Leírás                       |
@@ -81,14 +81,13 @@ Ha nem tudod írni a céleszközt (folyton "hozzáférés megtagadva" hibaüzene
 
 __Windows__: jobbklikk az usbimager.exe-n és használd a "Futtatás rendszergazdaként" opciót.
 
-__MacOSX__: menj a rendszerbeállításokhoz "System Preferences", aztán "Security & Privacy" és "Pricavy". Add hozzá az USBImager-t a
+__MacOSX__: menj a rendszerbeállításokhoz "System Preferences", aztán "Security & Privacy" és "Privacy". Add hozzá az USBImager-t a
 "Full Disk Access" listához. Alternatívaként indíthatod Terminálból a *sudo /Applications/USBImager.app/Contents/Mac/usbimager* paranccsal.
 
-__Linux__: add hozzá a felhasználódat a "disk" csoportokhoz (az "ls -la /dev|grep -e ^b" parancs kiírja, melyik csoportban vannak az oprendszered
+__Linux__: ez valószínűleg nem fordulhat elő, mivel az USBImager setgid bittel érkezik. Ha mégsem, akkor a *sudo chgrp disk usbimager && sudo chmod g+s usbimager*
+parancs beállítja. Alternatívaként add hozzá a felhasználódat a "disk" csoportokhoz (az "ls -la /dev|grep -e ^b" parancs kiírja, melyik csoportban vannak az oprendszered
 alatt a lemezeszközök). __Elvileg nincs szükség__ a *sudo /usr/bin/usbimager*-re, csak győzödj meg róla, hogy a felhasználódnak van írási
-hozzáférése az eszközökhöz, ez a Legalacsonyabb Privilégium Elve (Principle of Least Privilege). Erre az egészre egyébként valószínűleg
-nem lesz szükség, mivel az USBImager setgid bittel érkezik. Ha mégsem, akkor a *sudo chgrp disk usbimager && sudo chmod g+s usbimager*
-parancs beállítja.
+hozzáférése az eszközökhöz, ez a Legalacsonyabb Privilégium Elve (Principle of Least Privilege).
 
 ### Interfész
 

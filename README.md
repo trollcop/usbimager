@@ -2,8 +2,8 @@ USBImager
 =========
 
 <img src="https://gitlab.com/bztsrc/usbimager/raw/master/src/misc/icon32.png">
-[USBImager](https://gitlab.com/bztsrc/usbimager) is a really really simple GUI application that writes compressed disk images to USB drives.
-Available platforms: Windows, MacOSX and Linux. Its interface is as simple as it gets, totally bloat-free.
+[USBImager](https://gitlab.com/bztsrc/usbimager) is a really really simple GUI application that writes compressed disk images to USB drives
+and creates backups. Available platforms: Windows, MacOSX and Linux. Its interface is as simple as it gets, totally bloat-free.
 
 | Platform     | Frontend     | Description                  |
 |--------------|--------------|------------------------------|
@@ -78,13 +78,12 @@ If you can't write to the target device (you get "permission denied" errors), th
 
 __Windows__: right-click on usbimager.exe and use the "Run as Administrator" option.
 
-__MacOSX__: go to "System Preferences", "Security & Privacy" and "Pricavy". Add USBImager to the list of "Full Disk Access". Alternatively
+__MacOSX__: go to "System Preferences", "Security & Privacy" and "Privacy". Add USBImager to the list of "Full Disk Access". Alternatively
 run from a Terminal as *sudo /Applications/USBImager.app/Contents/Mac/usbimager*.
 
-__Linux__: add you user to the "disk" group (see "ls -la /dev|grep -e ^b" to find out which group your OS is using). __Should be no need__ for
-*sudo /usr/bin/usbimager*, just make sure your user has write access to the devices, that's the Principle of Least Privilege. This should not be
-an issue by the way, as USBImager comes with setgid bit set. If not, then you can use *sudo chgrp disk usbimager && sudo chmod g+s usbimager*
-to set it.
+__Linux__:  this should not be an issue as USBImager comes with setgid bit set. If not, then you can use *sudo chgrp disk usbimager && sudo chmod g+s usbimager*
+to set it. Alternatively add your user to the "disk" group (see "ls -la /dev|grep -e ^b" to find out which group your OS is using).
+__Should be no need__ for *sudo /usr/bin/usbimager*, just make sure your user has write access to the devices, that's the Principle of Least Privilege.
 
 ### Interface
 
