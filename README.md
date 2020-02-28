@@ -105,7 +105,7 @@ nothing more than a rough estimate).
 
 If "Verify" is clicked, then each block is read back from the disk and compared to the original image.
 
-The last option, the selection box selects the buffer siye to use. The image file will be processed in that big chunks. Keep in
+The last option, the selection box selects the buffer size to use. The image file will be processed in this big chunks. Keep in
 mind that the actual memory requirement is threefold, because there's one buffer for the compressed data, one for the uncompressed data,
 and one for the data read back for verification.
 
