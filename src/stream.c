@@ -57,17 +57,36 @@ int buffer_size = 1024*1024;
 /**
  * Returns progress percentage and the status string in str
  */
-int stream_status(stream_t *ctx, char *str)
+int stream_status(stream_t *ctx, char *str, int done)
 {
     time_t t = time(NULL);
     uint64_t d = 0;
-    int h,m;
+    int h,m,s;
 #ifdef WINVER
     wchar_t rem[64];
 #else
     char rem[64];
 #endif
-
+    if(done) {
+        memset(str, 0, 2);
+        if(ctx->fileSize && ctx->readSize >= ctx->fileSize
+#ifndef WINVER
+            && !errno
+#endif
+        ) {
+            d = t - ctx->start;
+            h = d / 3600; d %= 3600; m = d / 60; s = d % 60;
+            if(h<0 || h>23) h = 0;
+            if(m<0) m = 0;
+            if(s<0) s = 0;
+#ifdef WINVER
+            wsprintfW((wchar_t*)str, lang[L_DONE], h, m, s);
+#else
+            sprintf(str, lang[L_DONE], h, m, s);
+#endif
+        }
+        return 0;
+    }
     rem[0] = 0;
     if(ctx->start < t) {
         if(ctx->readSize) {
@@ -81,9 +100,8 @@ int stream_status(stream_t *ctx, char *str)
             if(verbose) printf("  average speed %" PRIu64" bytes / sec\r\n", d);
         }
         if(ctx->avgSpeedNum > 2) {
-            if(d)
-                d = (ctx->fileSize ? ctx->fileSize - ctx->readSize : ctx->compSize - ctx->cmrdSize) / d;
-            h = d / 3600; d %= 3600; m = d / 60; if(m<0) m = 0;
+            d = d ? (ctx->fileSize ? ctx->fileSize - ctx->readSize : ctx->compSize - ctx->cmrdSize) / d : 0;
+            h = d / 3600; d %= 3600; m = d / 60; if(h<0 || h>23) h = 0; if(m<0) m = 0;
 #ifdef WINVER
             if(h > 0) wsprintfW(rem, (wchar_t*)lang[h>1 && m>1 ? L_STATHSMS : (h>1 && m<2 ? L_STATHSM :
                     (h==1 && m>0 ? L_STATHMS : L_STATHM))], h, m);

@@ -50,6 +50,7 @@ _CRTIMP __cdecl __MINGW_NOTHROW  FILE * _fdopen (int, const char *);
 
 wchar_t **lang;
 extern char *dict[NUMLANGS][NUMTEXTS + 1];
+int blksizesel = 0;
 
 static HWND mainHwndDlg;
 
@@ -105,6 +106,7 @@ static void onDone(HWND hwndDlg)
     EnableWindow(GetDlgItem(hwndDlg, IDC_MAINDLG_READ), index >= 0 && index < DISKS_MAX && disks_targets[index] >= 1024 ? FALSE : TRUE);
     EnableWindow(GetDlgItem(hwndDlg, IDC_MAINDLG_VERIFY), TRUE);
     EnableWindow(GetDlgItem(hwndDlg, IDC_MAINDLG_COMPRESS), TRUE);
+    EnableWindow(GetDlgItem(hwndDlg, IDC_MAINDLG_BLKSIZE), TRUE);
     SendDlgItemMessage(hwndDlg, IDC_MAINDLG_PROGRESSBAR, PBM_SETPOS, 0, 0);
     ShowWindow(GetDlgItem(hwndDlg, IDC_MAINDLG_STATUS), SW_HIDE);
     ShowWindow(GetDlgItem(hwndDlg, IDC_MAINDLG_STATUS), SW_SHOW);
@@ -120,6 +122,7 @@ static DWORD WINAPI writerRoutine(LPVOID lpParam) {
     DWORD pos = 0;
     HANDLE hTargetDevice;
     LRESULT index = SendDlgItemMessage(hwndDlg, IDC_MAINDLG_TARGET_LIST, CB_GETCURSEL, 0, 0);
+    static wchar_t lpStatus[128];
     static stream_t ctx;
     int ret = 1, len, wlen;
     char *fn;
@@ -156,8 +159,6 @@ static DWORD WINAPI writerRoutine(LPVOID lpParam) {
                         DWORD numberOfBytesWritten, numberOfBytesVerify;
 
                         if (WriteFile(hTargetDevice, ctx.buffer, numberOfBytesRead, &numberOfBytesWritten, NULL)) {
-                            static wchar_t lpStatus[128];
-
                             if(needVerify) {
                                 SetFilePointerEx(hTargetDevice, totalNumberOfBytesWritten, NULL, FILE_BEGIN);
                                 if(!ReadFile(hTargetDevice, ctx.verifyBuf, numberOfBytesWritten, &numberOfBytesVerify, NULL) ||
@@ -169,7 +170,7 @@ static DWORD WINAPI writerRoutine(LPVOID lpParam) {
                                 totalNumberOfBytesWritten.QuadPart += numberOfBytesWritten;
                             }
 
-                            pos = (DWORD) stream_status(&ctx, (char*)&lpStatus);
+                            pos = (DWORD) stream_status(&ctx, (char*)&lpStatus, 0);
                             SendDlgItemMessage(hwndDlg, IDC_MAINDLG_PROGRESSBAR, PBM_SETPOS, pos, 0);
                             SetWindowTextW(GetDlgItem(hwndDlg, IDC_MAINDLG_STATUS), lpStatus);
                             ShowWindow(GetDlgItem(hwndDlg, IDC_MAINDLG_STATUS), SW_HIDE);
@@ -207,8 +208,8 @@ static DWORD WINAPI writerRoutine(LPVOID lpParam) {
         main_errorMessage = NULL;
     }
 
-    SetWindowTextW(GetDlgItem(hwndDlg, IDC_MAINDLG_STATUS),
-        ctx.fileSize && ctx.readSize == ctx.fileSize ? lang[L_DONE] : L"");
+    stream_status(&ctx, (char*)&lpStatus, 1);
+    SetWindowTextW(GetDlgItem(hwndDlg, IDC_MAINDLG_STATUS), lpStatus);
     onDone(hwndDlg);
     if(verbose) printf("Worker thread finished.\r\n");
     return 0;
@@ -222,6 +223,7 @@ INT_PTR MainDlgWriteClick(HWND hwndDlg) {
     EnableWindow(GetDlgItem(hwndDlg, IDC_MAINDLG_READ), FALSE);
     EnableWindow(GetDlgItem(hwndDlg, IDC_MAINDLG_VERIFY), FALSE);
     EnableWindow(GetDlgItem(hwndDlg, IDC_MAINDLG_COMPRESS), FALSE);
+    EnableWindow(GetDlgItem(hwndDlg, IDC_MAINDLG_BLKSIZE), FALSE);
     SendDlgItemMessage(hwndDlg, IDC_MAINDLG_PROGRESSBAR, PBM_SETPOS, 0, 0);
     SetWindowTextW(GetDlgItem(hwndDlg, IDC_MAINDLG_STATUS), L"");
     ShowWindow(GetDlgItem(hwndDlg, IDC_MAINDLG_STATUS), SW_HIDE);
@@ -246,6 +248,7 @@ static DWORD WINAPI readerRoutine(LPVOID lpParam) {
     int size, wlen, len, needCompress = IsDlgButtonChecked(hwndDlg, IDC_MAINDLG_COMPRESS);
     DWORD numberOfBytesRead;
     char *fn = NULL;
+    static wchar_t lpStatus[128];
     static stream_t ctx;
     wchar_t home[MAX_PATH], d[16], t[8], wFn[MAX_PATH+512];
 
@@ -277,8 +280,7 @@ static DWORD WINAPI readerRoutine(LPVOID lpParam) {
                 size = ctx.fileSize - ctx.readSize < (uint64_t)buffer_size ? (int)(ctx.fileSize - ctx.readSize) : buffer_size;
                 if(ReadFile(src, ctx.buffer, size, &numberOfBytesRead, NULL)) {
                     if(stream_write(&ctx, ctx.buffer, size)) {
-                        static wchar_t lpStatus[128];
-                        DWORD pos = (DWORD) stream_status(&ctx, (char*)&lpStatus);
+                        DWORD pos = (DWORD) stream_status(&ctx, (char*)&lpStatus, 0);
                         SendDlgItemMessage(hwndDlg, IDC_MAINDLG_PROGRESSBAR, PBM_SETPOS, pos, 0);
                         SetWindowTextW(GetDlgItem(hwndDlg, IDC_MAINDLG_STATUS), lpStatus);
                         ShowWindow(GetDlgItem(hwndDlg, IDC_MAINDLG_STATUS), SW_HIDE);
@@ -300,7 +302,8 @@ static DWORD WINAPI readerRoutine(LPVOID lpParam) {
         MainDlgMsgBox(hwndDlg, lang[src == (HANDLE)-1 ? L_TRGERR : (src == (HANDLE)-2 ? L_UMOUNTERR : (src == (HANDLE)-4 ? L_COMMERR : L_OPENTRGERR))]);
     }
     if(fn) free(fn);
-    SetWindowTextW(GetDlgItem(hwndDlg, IDC_MAINDLG_STATUS), ctx.fileSize && ctx.readSize >= ctx.fileSize ? lang[L_DONE] : L"");
+    stream_status(&ctx, (char*)&lpStatus, 1);
+    SetWindowTextW(GetDlgItem(hwndDlg, IDC_MAINDLG_STATUS), lpStatus);
     onDone(hwndDlg);
     SendDlgItemMessage(hwndDlg, IDC_MAINDLG_SOURCE, EM_SETSEL, 0, -1);
     SendDlgItemMessage(hwndDlg, IDC_MAINDLG_SOURCE, WM_COPY, 0, 0);
@@ -316,6 +319,7 @@ INT_PTR MainDlgReadClick(HWND hwndDlg) {
     EnableWindow(GetDlgItem(hwndDlg, IDC_MAINDLG_READ), FALSE);
     EnableWindow(GetDlgItem(hwndDlg, IDC_MAINDLG_VERIFY), FALSE);
     EnableWindow(GetDlgItem(hwndDlg, IDC_MAINDLG_COMPRESS), FALSE);
+    EnableWindow(GetDlgItem(hwndDlg, IDC_MAINDLG_BLKSIZE), FALSE);
     SendDlgItemMessage(hwndDlg, IDC_MAINDLG_PROGRESSBAR, PBM_SETPOS, 0, 0);
     SetWindowTextW(GetDlgItem(hwndDlg, IDC_MAINDLG_STATUS), L"");
     ShowWindow(GetDlgItem(hwndDlg, IDC_MAINDLG_STATUS), SW_HIDE);
@@ -373,6 +377,8 @@ INT_PTR MainDlgSelectClick(HWND hwndDlg) {
 static INT_PTR CALLBACK MainDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     HICON wrico, rdico;
     UNREFERENCED_PARAMETER(lParam);
+    LRESULT index;
+    wchar_t tmp[16];
 
     switch (uMsg) {
         case WM_INITDIALOG:
@@ -387,6 +393,11 @@ static INT_PTR CALLBACK MainDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
             SetDlgItemTextW(hwndDlg, IDC_MAINDLG_READ, lang[L_READ]);
             SetWindowTextW(GetDlgItem(hwndDlg, IDC_MAINDLG_VERIFY), lang[L_VERIFY]);
             SetWindowTextW(GetDlgItem(hwndDlg, IDC_MAINDLG_COMPRESS), lang[L_COMPRESS]);
+            for(index = 0; index < 10; index++) {
+                wsprintfW(tmp, L"%dM", (1<<index));
+                SendDlgItemMessageW(mainHwndDlg, IDC_MAINDLG_BLKSIZE, CB_ADDSTRING, 0, (LPARAM)tmp);
+            }
+            SendDlgItemMessage(hwndDlg, IDC_MAINDLG_BLKSIZE, CB_SETCURSEL, blksizesel, 0);
             MainDlgRefreshTarget(hwndDlg);
             return TRUE;
 
@@ -420,6 +431,11 @@ static INT_PTR CALLBACK MainDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
 
                 case IDC_MAINDLG_COMPRESS:
                     CheckDlgButton(hwndDlg, IDC_MAINDLG_COMPRESS, IsDlgButtonChecked(hwndDlg, IDC_MAINDLG_COMPRESS) ? BST_UNCHECKED : BST_CHECKED);
+                    return TRUE;
+
+                case IDC_MAINDLG_BLKSIZE:
+                    index = SendDlgItemMessage(hwndDlg, IDC_MAINDLG_BLKSIZE, CB_GETCURSEL, 0, 0);
+                    buffer_size = (1ULL<<index) * 1024ULL * 1024ULL;
                     return TRUE;
 
                 default:
@@ -477,15 +493,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszArgum
                 break;
                 case 's': disks_serial = 1; break;
                 case 'S': disks_serial = 2; break;
-                case '1': buffer_size = 2*1024*1024; break;
-                case '2': buffer_size = 4*1024*1024; break;
-                case '3': buffer_size = 8*1024*1024; break;
-                case '4': buffer_size = 16*1024*1024; break;
-                case '5': buffer_size = 32*1024*1024; break;
-                case '6': buffer_size = 64*1024*1024; break;
-                case '7': buffer_size = 128*1024*1024; break;
-                case '8': buffer_size = 256*1024*1024; break;
-                case '9': buffer_size = 512*1024*1024; break;
+                case '1': blksizesel = 1; buffer_size = 2*1024*1024; break;
+                case '2': blksizesel = 2; buffer_size = 4*1024*1024; break;
+                case '3': blksizesel = 3; buffer_size = 8*1024*1024; break;
+                case '4': blksizesel = 4; buffer_size = 16*1024*1024; break;
+                case '5': blksizesel = 5; buffer_size = 32*1024*1024; break;
+                case '6': blksizesel = 6; buffer_size = 64*1024*1024; break;
+                case '7': blksizesel = 7; buffer_size = 128*1024*1024; break;
+                case '8': blksizesel = 8; buffer_size = 256*1024*1024; break;
+                case '9': blksizesel = 9; buffer_size = 512*1024*1024; break;
             }
     }
     char *loc;

@@ -76,7 +76,7 @@ typedef struct {
 /**
  * Returns progress percentage and the status string in str
  */
-int stream_status(stream_t *ctx, char *str);
+int stream_status(stream_t *ctx, char *str, int done);
 
 /**
  * Open file and determine the source's format

@@ -85,7 +85,7 @@ to set it.
 1. row: image file
 2. row: operations, write and read respectively
 3. row: device selection
-4. row: options, verify write and compress output respectively
+4. row: options: verify write, compress output and buffer size respectively
 
 For X11 I made everything from scratch to avoid dependencies. Clicking and keyboard navigation works as expected: <kbd>Tab</kbd> and <kbd>Shift</kbd> +
 <kbd>Tab</kbd> switches the input field, <kbd>Enter</kbd> selects. Plus in Open File dialog <kbd>Left</kbd> / <kbd>BackSpace</kbd> goes one directory up,

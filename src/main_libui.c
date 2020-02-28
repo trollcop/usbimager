@@ -45,10 +45,12 @@ static uiBox *targetCont;
 static uiCombobox *target;
 static uiCheckbox *verify;
 static uiCheckbox *compr;
+static uiCombobox *blksize;
 static uiButton *writeButton;
 static uiButton *readButton;
 static uiProgressBar *pbar;
 static uiLabel *status;
+static int blksizesel = 0;
 pthread_t thrd;
 pthread_attr_t tha;
 char *main_errorMessage;
@@ -74,6 +76,7 @@ static void onDone(void *data)
         uiControlEnable(uiControl(readButton));
     uiControlEnable(uiControl(verify));
     uiControlEnable(uiControl(compr));
+    uiControlEnable(uiControl(blksize));
     uiProgressBarSetValue(pbar, 0);
     uiLabelSetText(status, (char*)data);
     main_errorMessage = NULL;
@@ -85,7 +88,7 @@ static void onProgress(void *data)
     int pos = 0;
 
     if(data)
-        pos = stream_status((stream_t*)data, textstat);
+        pos = stream_status((stream_t*)data, textstat, 0);
 
     uiProgressBarSetValue(pbar, pos);
     uiLabelSetText(status, !data ? lang[L_WAITING] : textstat);
@@ -108,6 +111,7 @@ static void *writerRoutine(void *data)
 {
     int dst, needVerify = uiCheckboxChecked(verify), numberOfBytesRead;
     int numberOfBytesWritten, numberOfBytesVerify, targetId = uiComboboxSelected(target);
+    static char lpStatus[128];
     static stream_t ctx;
     (void)data;
 
@@ -158,7 +162,8 @@ static void *writerRoutine(void *data)
         if(errno) main_errorMessage = strerror(errno);
         uiQueueMain(onThreadError, lang[dst == 2 ? L_ENCZIPERR : (dst == 3 ? L_CMPZIPERR : (dst == 4 ? L_CMPERR : L_SRCERR))]);
     }
-    uiQueueMain(onDone, !errno && ctx.fileSize && ctx.readSize >= ctx.fileSize ? lang[L_DONE] : "");
+    stream_status(&ctx, lpStatus, 1);
+    uiQueueMain(onDone, &lpStatus);
     if(verbose) printf("Worker thread finished.\r\n");
     return NULL;
 }
@@ -174,6 +179,7 @@ static void onWriteButtonClicked(uiButton *b, void *data)
     uiControlDisable(uiControl(readButton));
     uiControlDisable(uiControl(verify));
     uiControlDisable(uiControl(compr));
+    uiControlDisable(uiControl(blksize));
     uiProgressBarSetValue(pbar, 0);
     uiLabelSetText(status, "");
     main_errorMessage = NULL;
@@ -188,6 +194,7 @@ static void onWriteButtonClicked(uiButton *b, void *data)
 static void *readerRoutine(void *data)
 {
     int src, size, needCompress = uiCheckboxChecked(compr), numberOfBytesRead;
+    static char lpStatus[128];
     static stream_t ctx;
     char *env, fn[PATH_MAX];
     struct stat st;
@@ -247,7 +254,8 @@ static void *readerRoutine(void *data)
     } else {
         uiQueueMain(onThreadError, lang[src == -1 ? L_TRGERR : (src == -2 ? L_UMOUNTERR : (src == -4 ? L_COMMERR : L_OPENTRGERR))]);
     }
-    uiLabelSetText(status, !errno && ctx.fileSize && ctx.readSize >= ctx.fileSize ? lang[L_DONE] : "");
+    stream_status(&ctx, lpStatus, 1);
+    uiQueueMain(onDone, &lpStatus);
     if(verbose) printf("Worker thread finished.\r\n");
     return NULL;
 }
@@ -264,6 +272,7 @@ static void onReadButtonClicked(uiButton *b, void *data)
     uiControlDisable(uiControl(readButton));
     uiControlDisable(uiControl(verify));
     uiControlDisable(uiControl(compr));
+    uiControlDisable(uiControl(blksize));
     uiProgressBarSetValue(pbar, 0);
     uiLabelSetText(status, "");
     main_errorMessage = NULL;
@@ -292,6 +301,14 @@ static void refreshTarget(uiCombobox *cb, void *data)
         uiControlEnable(uiControl(readButton));
     }
     uiButtonSetText(writeButton, btntext);
+}
+
+static void refreshBlkSize(uiCombobox *cb, void *data)
+{
+    int current = uiComboboxSelected(blksize);
+    (void)cb;
+    (void)data;
+    buffer_size = (1UL << current) * 1024UL * 1024UL;
 }
 
 static void onSelectClicked(uiButton *b, void *data)
@@ -359,15 +376,15 @@ int main(int argc, char **argv)
                 break;
                 case 's': disks_serial = 1; break;
                 case 'S': disks_serial = 2; break;
-                case '1': buffer_size = 2*1024*1024; break;
-                case '2': buffer_size = 4*1024*1024; break;
-                case '3': buffer_size = 8*1024*1024; break;
-                case '4': buffer_size = 16*1024*1024; break;
-                case '5': buffer_size = 32*1024*1024; break;
-                case '6': buffer_size = 64*1024*1024; break;
-                case '7': buffer_size = 128*1024*1024; break;
-                case '8': buffer_size = 256*1024*1024; break;
-                case '9': buffer_size = 512*1024*1024; break;
+                case '1': blksizesel = 1; buffer_size = 2*1024*1024; break;
+                case '2': blksizesel = 2; buffer_size = 4*1024*1024; break;
+                case '3': blksizesel = 3; buffer_size = 8*1024*1024; break;
+                case '4': blksizesel = 4; buffer_size = 16*1024*1024; break;
+                case '5': blksizesel = 5; buffer_size = 32*1024*1024; break;
+                case '6': blksizesel = 6; buffer_size = 64*1024*1024; break;
+                case '7': blksizesel = 7; buffer_size = 128*1024*1024; break;
+                case '8': blksizesel = 8; buffer_size = 256*1024*1024; break;
+                case '9': blksizesel = 9; buffer_size = 512*1024*1024; break;
             }
     }
 
@@ -433,10 +450,19 @@ int main(int argc, char **argv)
     refreshTarget(target, NULL);
 
     verify = uiNewCheckbox(lang[L_VERIFY]);
-    uiGridAppend(grid, uiControl(verify), 0, 3, 4, 1, 0, uiAlignFill, 0, uiAlignFill);
+    uiGridAppend(grid, uiControl(verify), 0, 3, 3, 1, 0, uiAlignFill, 0, uiAlignFill);
 
     compr = uiNewCheckbox(lang[L_COMPRESS]);
-    uiGridAppend(grid, uiControl(compr), 4, 3, 4, 1, 0, uiAlignFill, 0, uiAlignFill);
+    uiGridAppend(grid, uiControl(compr), 3, 3, 4, 1, 0, uiAlignFill, 0, uiAlignFill);
+
+    blksize = uiNewCombobox();
+    uiGridAppend(grid, uiControl(blksize), 7, 3, 1, 1, 0, uiAlignFill, 0, uiAlignFill);
+    for(i = 0; i < 10; i++) {
+        sprintf(btntext, "%3dM", (1<<i));
+        uiComboboxAppend(blksize, btntext);
+    }
+    uiComboboxSetSelected(blksize, blksizesel);
+    uiComboboxOnSelected(blksize, refreshBlkSize, NULL);
 
     pbar = uiNewProgressBar();
     uiGridAppend(grid, uiControl(pbar), 0, 4, 8, 1, 0, uiAlignFill, 4, uiAlignFill);

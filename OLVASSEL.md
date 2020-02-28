@@ -88,7 +88,7 @@ a "sudo chgrp disk usbimager && sudo chmod g+s usbimager" parancs beállítja.
 1. sor: lemezkép fájl
 2. sor: műveletek, írás és olvasás ebben a sorrendben
 3. sor: eszköz kiválasztás
-4. sor: opciók, írás ellenőrzés és kimenet tömörítése
+4. sor: opciók: írás ellenőrzése, kimenet tömörítése és buffer méret rendre
 
 Az X11 esetén mindent a nulláról írtam meg, hogy elkerüljem a függőségeket. A kattintás és a billentyűnavigáció a megszokott: <kbd>Tab</kbd>
 és <kbd>Shift</kbd> + <kbd>Tab</kbd> váltogat a mezők között, <kbd>Enter</kbd> a kiválasztás. Plusz a fájl tallózásakor a <kbd>Bal nyíl</kbd>

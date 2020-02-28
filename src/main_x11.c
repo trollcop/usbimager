@@ -85,9 +85,10 @@ static Pixmap icons_act, icons_ina;
 static Cursor loading, pointer;
 
 static char source[PATH_MAX], targetList[DISKS_MAX][128], status[128];
+static char blksizeList[10][128];
 static int fonth = 0, fonta = 0, inactive = 0, pressedBtn = 0, half;
 static int needVerify = 0, needCompress = 0, progress = 0, numTargetList = 0, targetId = -1;
-static int mainsel = -1, sorting = 0, shift = 0;
+static int mainsel = -1, sorting = 0, shift = 0, blksizesel = 0;
 
 char *main_errorMessage = NULL;
 
@@ -305,16 +306,17 @@ static void mainCheckbox(Window win, int x, int y, int sel, int checked)
     XDrawLine(dpy, win, gc, x+fonth-2, y+2, x+fonth-2, y+fonth-3);
     XSetForeground(dpy, gc, colors[color_inpbrd3].pixel);
     XDrawLine(dpy, win, gc, x+3, y+fonth-2, x+fonth-2, y+fonth-2);
-    XSetForeground(dpy, gc, colors[inactive ? color_winbg : color_inputbg].pixel);
+    XSetForeground(dpy, gc, colors[inactive ? color_winbg : (checked ? color_inpdrk : color_inputbg)].pixel);
     XFillRectangle(dpy, win, gc, x+3, y+3, fonth-5, fonth-5);
 
     if(checked) {
+        XDrawRectangle(dpy, win, gc, x+2, y+2, fonth-4, fonth-4);
         XSetForeground(dpy, gc, colors[inactive ? color_btnbg3 : color_inplght].pixel);
         XDrawLine(dpy, win, gc, x+2, y+fonth/2, x+fonth/2-1, y+fonth-3);
         XDrawLine(dpy, win, gc, x+5, y+fonth/2, x+fonth/2+2, y+fonth-3);
         XDrawLine(dpy, win, gc, x+fonth/2, y+fonth-3, x+fonth-4, y+3);
         XDrawLine(dpy, win, gc, x+fonth/2+1, y+fonth-3, x+fonth-2, y+3);
-        XSetForeground(dpy, gc, colors[inactive ? color_btnbrd1 : color_inpdrk].pixel);
+        XSetForeground(dpy, gc, colors[inactive ? color_btnbrd1 : color_inputbg].pixel);
         XDrawLine(dpy, win, gc, x+3, y+fonth/2, x+fonth/2, y+fonth-3);
         XDrawLine(dpy, win, gc, x+4, y+fonth/2, x+fonth/2+1, y+fonth-3);
         XDrawLine(dpy, win, gc, x+fonth/2+1, y+fonth-3, x+fonth-3, y+3);
@@ -385,6 +387,78 @@ static Window mainModal(int *mw, int *mh, int bgcolor)
     return win;
 }
 
+static int mainCombo(int sel, int num, char *list, int dx, int dy, int w)
+{
+    XWindowAttributes  wa;
+    XSetWindowAttributes swa;
+    XEvent e;
+    KeySym k;
+    Window win, child, root = RootWindow(dpy, scr);
+    int x, y;
+
+    XTranslateCoordinates(dpy, mainwin, root, 0, 0, &x, &y, &child);
+    XGetWindowAttributes(dpy, mainwin, &wa);
+    x -= wa.x - wa.border_width; y -= wa.y;
+    if(sel < 0 || sel >= num) sel = 0;
+    if(!w) w = wa.width-25;
+    if(dx<0) dx += wa.width;
+    win = XCreateSimpleWindow(dpy, root, x+dx, y+dy-sel*(fonth+8),
+        w, num*(fonth+8), 0, 0, colors[color_inputbg].pixel);
+    XSelectInput(dpy, win, ExposureMask | ButtonPressMask | ButtonReleaseMask | PointerMotionMask |
+        KeyPressMask | KeyReleaseMask | FocusChangeMask | LeaveWindowMask);
+    swa.override_redirect = True;
+    XChangeWindowAttributes(dpy, win, CWOverrideRedirect, &swa);
+    XMapWindow(dpy, win);
+    XRaiseWindow(dpy, win);
+    while(1) {
+        XNextEvent(dpy, &e);
+        if(e.type == MotionNotify) {
+            x = e.xmotion.y / (fonth+8);
+            if(x != targetId) {
+                sel = x;
+                e.type = Expose; e.xexpose.count = 0;
+            }
+        }
+        if(e.type == KeyPress) {
+            k = XLookupKeysym(&e.xkey, 0);
+            switch(k) {
+                case XK_Shift_L:
+                case XK_Shift_R: shift |= 1; break;
+                case XK_Up:
+                    if(sel > 0) sel--;
+                break;
+                case XK_Down:
+                    if(sel + 1 < num) sel++;
+                break;
+            }
+            e.type = Expose; e.xexpose.count = 0;
+        }
+        if(e.type == KeyRelease) {
+            k = XLookupKeysym(&e.xkey, 0);
+            if(k == XK_Escape) { sel = -1; break; }
+            switch(k) {
+                case XK_Shift_L:
+                case XK_Shift_R: shift &= ~1; break;
+                case XK_space:
+                case XK_Return: e.type = ButtonRelease; break;
+            }
+        }
+        if(e.type == Expose && !e.xexpose.count) {
+            for(x = 0; x < num; x++) {
+                XSetForeground(dpy, gc, colors[sel == x ? color_inpdrk : color_inputbg].pixel);
+                XFillRectangle(dpy, win, gc, 0, x*(fonth+8), wa.width - 25, fonth+8);
+                mainPrint(win, sel == x ? shdgc : txtgc, 4, 4 + x*(fonth+8), w - 4, 0, list + x*128);
+            }
+        }
+        if(e.type == ButtonRelease) { break; }
+        if(e.type == FocusOut || e.type == LeaveNotify) { sel = -1; break; }
+        XFlush(dpy);
+    }
+    XDestroyWindow(dpy, win);
+    XSync(dpy, True);
+    return sel;
+}
+
 static void mainRedraw()
 {
     XRectangle clip = { 17, 25+fonth, 0, fonth+8 };
@@ -452,10 +526,17 @@ static void mainRedraw()
     XDrawLine(dpy, mainwin, txtgc, wa.width - 20, 46+2*fonth+fonth/2, wa.width - 20, 46+2*fonth+fonth/2);
 
     mainCheckbox(mainwin, 15, 59+3*fonth, mainsel==4, needVerify);
-    mainPrint(mainwin, txtgc, 20 + fonth, 59+3*fonth, half - 15 - fonth, 0, lang[L_VERIFY]);
-    mainCheckbox(mainwin, half + 10, 59+3*fonth, mainsel==5, needCompress);
-    mainPrint(mainwin, txtgc, half + 15 + fonth, 59+3*fonth, half - 15 - fonth, 0, lang[L_COMPRESS]);
-
+    if(half > 55 + fonth) mainPrint(mainwin, txtgc, 20 + fonth, 59+3*fonth, half - 45 - fonth, 0, lang[L_VERIFY]);
+    mainCheckbox(mainwin, half - 25 > 20 + fonth ? half - 25: 20 + fonth, 59+3*fonth, mainsel==5, needCompress);
+    x = half - 20 + fonth > 25 + 2*fonth ? half - 20 + fonth : 25 + 2*fonth;
+    if(wa.width-70-x > 0) mainPrint(mainwin, txtgc, x, 59+3*fonth, wa.width-60-x, 0, lang[L_COMPRESS]);
+    if(wa.width-80-2*fonth > 0) {
+        mainButton(mainwin, wa.width-60, 55+3*fonth, 50, mainsel==6, pressedBtn == 5 ? 1 : 0, 4, blksizeList[blksizesel]);
+        XDrawLine(dpy, mainwin, txtgc, wa.width - 23, 58+3*fonth+fonth/2, wa.width - 17, 58+3*fonth+fonth/2);
+        XDrawLine(dpy, mainwin, txtgc, wa.width - 22, 59+3*fonth+fonth/2, wa.width - 18, 59+3*fonth+fonth/2);
+        XDrawLine(dpy, mainwin, txtgc, wa.width - 21, 60+3*fonth+fonth/2, wa.width - 19, 60+3*fonth+fonth/2);
+        XDrawLine(dpy, mainwin, txtgc, wa.width - 20, 61+3*fonth+fonth/2, wa.width - 20, 61+3*fonth+fonth/2);
+    }
     mainProgress(mainwin, 10, 70+4*fonth, wa.width - 20, progress);
     XSetForeground(dpy, gc, colors[color_winbg].pixel);
     XFillRectangle(dpy, mainwin, gc, 10, 80+4*fonth, wa.width - 20, fonth);
@@ -500,7 +581,7 @@ void main_onProgress(void *data)
         progress = 0;
         strcpy(status, lang[L_WAITING]);
     } else
-        progress = stream_status(ctx, status);
+        progress = stream_status(ctx, status, 0);
 
     if(XPending(dpy)) {
         XNextEvent(dpy, &e);
@@ -651,7 +732,7 @@ static void *writerRoutine()
         if(errno) main_errorMessage = strerror(errno);
         onThreadError(lang[dst == 2 ? L_ENCZIPERR : (dst == 3 ? L_CMPZIPERR : (dst == 4 ? L_CMPERR : L_SRCERR))]);
     }
-    strcpy(status, !errno && ctx.fileSize && ctx.readSize >= ctx.fileSize ? lang[L_DONE] : "");
+    stream_status(&ctx, status, 1);
     if(verbose) printf("Worker thread finished.\r\n");
     return NULL;
 }
@@ -738,7 +819,7 @@ static void *readerRoutine()
     } else {
         onThreadError(lang[src == -1 ? L_TRGERR : (src == -2 ? L_UMOUNTERR : (src == -4 ? L_COMMERR : L_OPENTRGERR))]);
     }
-    strcpy(status, !errno && ctx.fileSize && ctx.readSize >= ctx.fileSize ? lang[L_DONE] : "");
+    stream_status(&ctx, status, 1);
     if(verbose) printf("Worker thread finished.\r\n");
     return NULL;
 }
@@ -766,6 +847,29 @@ static void refreshTarget()
     numTargetList = 0;
     disks_refreshlist();
 }
+
+static void onTargetClicked()
+{
+    int sel;
+
+    refreshTarget();
+    if(numTargetList < 1) return;
+    sel = mainCombo(targetId, numTargetList, (char*)&targetList[0][0], 15, 40+2*fonth+20, 0);
+    if(sel != -1) targetId = sel;
+    mainRedraw();
+    XRaiseWindow(dpy, mainwin);
+}
+
+static void onBlkSizeClicked()
+{
+    int sel;
+
+    sel = mainCombo(blksizesel, 10, (char*)&blksizeList[0][0], -55, 55+3*fonth+20, 45);
+    if(sel != -1) { blksizesel = sel; buffer_size = (1UL<<sel) * 1024UL * 1024UL; }
+    mainRedraw();
+    XRaiseWindow(dpy, mainwin);
+}
+
 
 static void onSelectClicked(int byKey)
 {
@@ -1291,81 +1395,6 @@ ok:             if(selFile >=0 && selFile < numFiles) {
     XRaiseWindow(dpy, mainwin);
 }
 
-static void onTargetClicked()
-{
-    XWindowAttributes  wa;
-    XSetWindowAttributes swa;
-    XEvent e;
-    KeySym k;
-    Window win, child, root = RootWindow(dpy, scr);
-    int x, y, sel;
-
-    refreshTarget();
-    if(numTargetList < 1) return;
-
-    XTranslateCoordinates(dpy, mainwin, root, 0, 0, &x, &y, &child);
-    XGetWindowAttributes(dpy, mainwin, &wa);
-    x -= wa.x - wa.border_width; y -= wa.y;
-    win = XCreateSimpleWindow(dpy, root, x+15, y+40+2*fonth+20-(targetId < 0 ? 0 : targetId)*(fonth+8),
-        wa.width-25, numTargetList*(fonth+8), 0, 0, colors[color_inputbg].pixel);
-    XSelectInput(dpy, win, ExposureMask | ButtonPressMask | ButtonReleaseMask | PointerMotionMask |
-        KeyPressMask | KeyReleaseMask | FocusChangeMask | LeaveWindowMask);
-    swa.override_redirect = True;
-    XChangeWindowAttributes(dpy, win, CWOverrideRedirect, &swa);
-    XMapWindow(dpy, win);
-    XRaiseWindow(dpy, win);
-    sel = targetId;
-    if(sel < 0 || sel >= numTargetList) sel = 0;
-    while(1) {
-        XNextEvent(dpy, &e);
-        if(e.type == MotionNotify) {
-            x = e.xmotion.y / (fonth+8);
-            if(x != targetId) {
-                sel = x;
-                e.type = Expose; e.xexpose.count = 0;
-            }
-        }
-        if(e.type == KeyPress) {
-            k = XLookupKeysym(&e.xkey, 0);
-            switch(k) {
-                case XK_Shift_L:
-                case XK_Shift_R: shift |= 1; break;
-                case XK_Up:
-                    if(sel > 0) sel--;
-                break;
-                case XK_Down:
-                    if(sel + 1 < numTargetList) sel++;
-                break;
-            }
-            e.type = Expose; e.xexpose.count = 0;
-        }
-        if(e.type == KeyRelease) {
-            k = XLookupKeysym(&e.xkey, 0);
-            if(k == XK_Escape) break;
-            switch(k) {
-                case XK_Shift_L:
-                case XK_Shift_R: shift &= ~1; break;
-                case XK_space:
-                case XK_Return: e.type = ButtonRelease; break;
-            }
-        }
-        if(e.type == Expose && !e.xexpose.count) {
-            for(x = 0; x < numTargetList; x++) {
-                XSetForeground(dpy, gc, colors[sel == x ? color_inpdrk : color_inputbg].pixel);
-                XFillRectangle(dpy, win, gc, 0, x*(fonth+8), wa.width - 25, fonth+8);
-                mainPrint(win, sel == x ? shdgc : txtgc, 4, 4 + x*(fonth+8), wa.width - 29, 0, targetList[x]);
-            }
-        }
-        if(e.type == ButtonRelease) { targetId = sel; break; }
-        if(e.type == FocusOut || e.type == LeaveNotify) break;
-        XFlush(dpy);
-    }
-    XDestroyWindow(dpy, win);
-    XSync(dpy, True);
-    mainRedraw();
-    XRaiseWindow(dpy, mainwin);
-}
-
 int main(int argc, char **argv)
 {
     XEvent e;
@@ -1399,15 +1428,15 @@ int main(int argc, char **argv)
                 break;
                 case 's': disks_serial = 1; break;
                 case 'S': disks_serial = 2; break;
-                case '1': buffer_size = 2*1024*1024; break;
-                case '2': buffer_size = 4*1024*1024; break;
-                case '3': buffer_size = 8*1024*1024; break;
-                case '4': buffer_size = 16*1024*1024; break;
-                case '5': buffer_size = 32*1024*1024; break;
-                case '6': buffer_size = 64*1024*1024; break;
-                case '7': buffer_size = 128*1024*1024; break;
-                case '8': buffer_size = 256*1024*1024; break;
-                case '9': buffer_size = 512*1024*1024; break;
+                case '1': blksizesel = 1; buffer_size = 2*1024*1024; break;
+                case '2': blksizesel = 2; buffer_size = 4*1024*1024; break;
+                case '3': blksizesel = 3; buffer_size = 8*1024*1024; break;
+                case '4': blksizesel = 4; buffer_size = 16*1024*1024; break;
+                case '5': blksizesel = 5; buffer_size = 32*1024*1024; break;
+                case '6': blksizesel = 6; buffer_size = 64*1024*1024; break;
+                case '7': blksizesel = 7; buffer_size = 128*1024*1024; break;
+                case '8': blksizesel = 8; buffer_size = 256*1024*1024; break;
+                case '9': blksizesel = 9; buffer_size = 512*1024*1024; break;
             }
     }
 
@@ -1485,6 +1514,8 @@ int main(int argc, char **argv)
 
     memset(source, 0, sizeof(source));
     memset(status, 0, sizeof(status));
+    for(i = 0; i < 10; i++)
+        sprintf(blksizeList[i], "%3dM", (1<<i));
     refreshTarget();
 
     while(1) {
@@ -1502,10 +1533,10 @@ int main(int argc, char **argv)
                     if(mainsel == -1) mainsel = 0;
                     else {
                         if(shift) {
-                            if(mainsel > 0) mainsel--; else mainsel = 3;
+                            if(mainsel > 0) mainsel--; else mainsel = 6;
                             if(ser && mainsel == 2) mainsel--;
                         } else {
-                            if(mainsel < 5) mainsel++; else mainsel = 0;
+                            if(mainsel < 6) mainsel++; else mainsel = 0;
                             if(ser && mainsel == 2) mainsel++;
                         }
                     }
@@ -1516,6 +1547,7 @@ int main(int argc, char **argv)
                         case -1: mainsel = 0; pressedBtn = 1; break;
                         case 4: needVerify ^= 1; break;
                         case 5: needCompress ^= 1; break;
+                        case 6: pressedBtn = 5; break;
                         default: pressedBtn = mainsel + 1; break;
                     }
                 break;
@@ -1541,7 +1573,8 @@ int main(int argc, char **argv)
             } else
             if(e.xbutton.y >=40 + 2*fonth && e.xbutton.y < 40 + 3*fonth + 8) pressedBtn = 4; else
             if(e.xbutton.y >=55 + 3*fonth && e.xbutton.y < 55 + 4*fonth + 8) {
-                if(e.xbutton.x < half) needVerify ^= 1;
+                if(e.xbutton.x < (half - 25 > 20 + fonth ? half - 25: 20 + fonth)) needVerify ^= 1;
+                else if(2*half-80-2*fonth > 0 && e.xbutton.x > 2*half - 60) pressedBtn = 5;
                 else needCompress ^= 1;
             }
             mainRedraw();
@@ -1554,6 +1587,7 @@ int main(int argc, char **argv)
                 case 2: onWriteButtonClicked(); break;
                 case 3: if(!ser) onReadButtonClicked(); break;
                 case 4: onTargetClicked(); break;
+                case 5: onBlkSizeClicked(); break;
             }
         }
         XFlush(dpy);
