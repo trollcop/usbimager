@@ -133,6 +133,7 @@ other platforms the Desktop always exists, but if by any chance not, then the cu
 | Flag      | Description         |
 |-----------|---------------------|
 | -v/-vv    | Be verbose          |
+| -Lxx      | Force language      |
 | -1..9     | Set buffer size     |
 | -s/-S     | Use serial devices  |
 | --version | Prints version      |
@@ -146,6 +147,9 @@ the same thing, only the last taken into account (for example "-124" is the same
 
 The '-v' and '-vv' flags will make USBImager to be verbose, and it will print out details to the console. That is stdout on Linux and MacOSX
 (so run this in a Terminal), and on Windows a spearate window will be opened for messages.
+
+The last two character of '-Lxx' flag can be "en", "es", "de", "fr" etc. Using this flag forces a specific language dictionary and avoids
+automatic detection. If there's no such dictionary, then English is used.
 
 The number flags sets the buffer size to the power of two Megabytes (0 = 1M, 1 = 2M, 2 = 4M, 3 = 8M, 4 = 16M, ... 9 = 512M). When not
 specified, buffer size defaults to 1 Megabyte.

@@ -1411,7 +1411,7 @@ int main(int argc, char **argv)
         " (build " USBIMAGER_BUILD ")"
 #endif
         " - MIT license, Copyright (C) 2020 bzt\r\n\r\n"
-        "./usbimager [-v|-vv|-s|-S|-1|-2|-3|-4|-5|-6|-7|-8|-9]\r\n\r\n"
+        "./usbimager [-v|-vv|-s|-S|-1|-2|-3|-4|-5|-6|-7|-8|-9|-L(xx)]\r\n\r\n"
         "https://gitlab.com/bztsrc/usbimager\r\n\r\n";
 
     if(argc > 1 && argv[1] && argv[1][0] == '-') {
@@ -1440,6 +1440,7 @@ int main(int argc, char **argv)
                 case '7': blksizesel = 7; buffer_size = 128*1024*1024; break;
                 case '8': blksizesel = 8; buffer_size = 256*1024*1024; break;
                 case '9': blksizesel = 9; buffer_size = 512*1024*1024; break;
+                case 'L': lc = &argv[1][++i]; ++i; break;
             }
     }
 

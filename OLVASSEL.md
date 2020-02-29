@@ -138,6 +138,7 @@ home mappába lesz lementve. A többi platformon mindig van Asztal, ha mégse ta
 | Kapcsoló  | Leírás                  |
 |-----------|-------------------------|
 | -v/-vv    | Részletes kimenet       |
+| -Lxx      | Nyelvkód kikényszerítés |
 | -1..9     | Buffer méret beállítása |
 | -s/-S     | Soros portok használata |
 | --version | Kiírja a verziót        |
@@ -151,6 +152,9 @@ közül, amik ugyanazt állítják, csak a legutolsót veszi figyelembe (pl "-12
 
 A '-v' és '-vv' kapcsolók szószátyárrá teszik az USBImager-t, és mindenféle részletes infókat fog kiírni a konzolra. Ez utóbbi a szabvány
 kimenet (stdout) Linux és MacOSX alatt (szóval terminálból használd), míg Windowson egy külön ablakot nyit az üzeneteknek.
+
+A '-Lxx' kapcsoló utolsó két karaktere "en", "es", "de", "fr" stb. lehet. Ez a kapcsoló felülbírája a detektált nyelvet, és a megadott
+szótárat használja. Ha nincs ilyen szótár, akkor angol nyelvre vált.
 
 A szám kapcsolók a buffer méretét állítják a kettő hatványa Megabájtra (0 = 1M, 1 = 2M, 2 = 4M, 3 = 8M, 4 = 16M, ... 9 = 512M). Ha nincs
 megadva, a buffer méret alapértelmezetten 1 Megabájt.

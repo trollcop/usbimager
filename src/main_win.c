@@ -461,12 +461,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszArgum
     UNREFERENCED_PARAMETER(hPrevInstance);
     UNREFERENCED_PARAMETER(lpszArgument);
     UNREFERENCED_PARAMETER(nCmdShow);
+    int lid = 0;
     int i, j, ret;
     unsigned int c;
     char *s;
     wchar_t *d;
 
-    char *cmdline = GetCommandLineA();
+    char *cmdline = GetCommandLineA(), *loc = NULL;
     if(cmdline) cmdline = strrchr(cmdline, ' '); else cmdline = NULL;
     for(; cmdline && cmdline[0] && cmdline[0] != '-'; cmdline++);
     if(cmdline && cmdline[0] == '-') {
@@ -492,7 +493,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszArgum
                             " (build " USBIMAGER_BUILD ")"
 #endif
                             " - MIT license, Copyright (C) 2020 bzt\r\n\r\n"
-                            "usbimager.exe [-v|-vv|-s|-S|-1|-2|-3|-4|-5|-6|-7|-8|-9]\r\n\r\n"
+                            "usbimager.exe -[v|vv|s|S|1|2|3|4|5|6|7|8|9|L(xx)]\r\n\r\n"
                             "https://gitlab.com/bztsrc/usbimager\r\n\r\n");
                     }
                 break;
@@ -507,70 +508,71 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszArgum
                 case '7': blksizesel = 7; buffer_size = 128*1024*1024; break;
                 case '8': blksizesel = 8; buffer_size = 256*1024*1024; break;
                 case '9': blksizesel = 9; buffer_size = 512*1024*1024; break;
+                case 'L': loc = ++cmdline; ++cmdline; break;
             }
     }
-    char *loc;
-    int lid = GetUserDefaultLangID();
-    /* see https://docs.microsoft.com/en-us/windows/win32/intl/language-identifier-constants-and-strings */
-    switch(lid & 0xFF) {
-        case 0x01: loc = "ar"; break;   case 0x02: loc = "bg"; break;
-        case 0x03: loc = "ca"; break;   case 0x04: loc = "zh"; break;
-        case 0x05: loc = "cs"; break;   case 0x06: loc = "da"; break;
-        case 0x07: loc = "de"; break;   case 0x08: loc = "el"; break;
-        case 0x0A: loc = "es"; break;   case 0x0B: loc = "fi"; break;
-        case 0x0C: loc = "fr"; break;   case 0x0D: loc = "he"; break;
-        case 0x0E: loc = "hu"; break;   case 0x0F: loc = "is"; break;
-        case 0x10: loc = "it"; break;   case 0x11: loc = "jp"; break;
-        case 0x12: loc = "ko"; break;   case 0x13: loc = "nl"; break;
-        case 0x14: loc = "no"; break;   case 0x15: loc = "pl"; break;
-        case 0x16: loc = "pt"; break;   case 0x17: loc = "rm"; break;
-        case 0x18: loc = "ro"; break;   case 0x19: loc = "ru"; break;
-        case 0x1A: loc = "hr"; break;   case 0x1B: loc = "sk"; break;
-        case 0x1C: loc = "sq"; break;   case 0x1D: loc = "sv"; break;
-        case 0x1E: loc = "th"; break;   case 0x1F: loc = "tr"; break;
-        case 0x20: loc = "ur"; break;   case 0x21: loc = "id"; break;
-        case 0x22: loc = "uk"; break;   case 0x23: loc = "be"; break;
-        case 0x24: loc = "sl"; break;   case 0x25: loc = "et"; break;
-        case 0x26: loc = "lv"; break;   case 0x27: loc = "lt"; break;
-        case 0x29: loc = "fa"; break;   case 0x2A: loc = "vi"; break;
-        case 0x2B: loc = "hy"; break;   case 0x2D: loc = "bq"; break;
-        case 0x2F: loc = "mk"; break;   case 0x36: loc = "af"; break;
-        case 0x37: loc = "ka"; break;   case 0x38: loc = "fo"; break;
-        case 0x39: loc = "hi"; break;   case 0x3A: loc = "mt"; break;
-        case 0x3C: loc = "gd"; break;   case 0x3E: loc = "ms"; break;
-        case 0x3F: loc = "kk"; break;   case 0x40: loc = "ky"; break;
-        case 0x45: loc = "bn"; break;   case 0x47: loc = "gu"; break;
-        case 0x4D: loc = "as"; break;   case 0x4E: loc = "mr"; break;
-        case 0x4F: loc = "sa"; break;   case 0x53: loc = "kh"; break;
-        case 0x54: loc = "lo"; break;   case 0x56: loc = "gl"; break;
-        case 0x5E: loc = "am"; break;   case 0x62: loc = "fy"; break;
-        case 0x68: loc = "ha"; break;   case 0x6D: loc = "ba"; break;
-        case 0x6E: loc = "lb"; break;   case 0x6F: loc = "kl"; break;
-        case 0x7E: loc = "br"; break;   case 0x92: loc = "ku"; break;
-        case 0x09: default: loc = "en"; break;
+    if(!loc) {
+        lid = GetUserDefaultLangID();
+        /* see https://docs.microsoft.com/en-us/windows/win32/intl/language-identifier-constants-and-strings */
+        switch(lid & 0xFF) {
+            case 0x01: loc = "ar"; break;   case 0x02: loc = "bg"; break;
+            case 0x03: loc = "ca"; break;   case 0x04: loc = "zh"; break;
+            case 0x05: loc = "cs"; break;   case 0x06: loc = "da"; break;
+            case 0x07: loc = "de"; break;   case 0x08: loc = "el"; break;
+            case 0x0A: loc = "es"; break;   case 0x0B: loc = "fi"; break;
+            case 0x0C: loc = "fr"; break;   case 0x0D: loc = "he"; break;
+            case 0x0E: loc = "hu"; break;   case 0x0F: loc = "is"; break;
+            case 0x10: loc = "it"; break;   case 0x11: loc = "jp"; break;
+            case 0x12: loc = "ko"; break;   case 0x13: loc = "nl"; break;
+            case 0x14: loc = "no"; break;   case 0x15: loc = "pl"; break;
+            case 0x16: loc = "pt"; break;   case 0x17: loc = "rm"; break;
+            case 0x18: loc = "ro"; break;   case 0x19: loc = "ru"; break;
+            case 0x1A: loc = "hr"; break;   case 0x1B: loc = "sk"; break;
+            case 0x1C: loc = "sq"; break;   case 0x1D: loc = "sv"; break;
+            case 0x1E: loc = "th"; break;   case 0x1F: loc = "tr"; break;
+            case 0x20: loc = "ur"; break;   case 0x21: loc = "id"; break;
+            case 0x22: loc = "uk"; break;   case 0x23: loc = "be"; break;
+            case 0x24: loc = "sl"; break;   case 0x25: loc = "et"; break;
+            case 0x26: loc = "lv"; break;   case 0x27: loc = "lt"; break;
+            case 0x29: loc = "fa"; break;   case 0x2A: loc = "vi"; break;
+            case 0x2B: loc = "hy"; break;   case 0x2D: loc = "bq"; break;
+            case 0x2F: loc = "mk"; break;   case 0x36: loc = "af"; break;
+            case 0x37: loc = "ka"; break;   case 0x38: loc = "fo"; break;
+            case 0x39: loc = "hi"; break;   case 0x3A: loc = "mt"; break;
+            case 0x3C: loc = "gd"; break;   case 0x3E: loc = "ms"; break;
+            case 0x3F: loc = "kk"; break;   case 0x40: loc = "ky"; break;
+            case 0x45: loc = "bn"; break;   case 0x47: loc = "gu"; break;
+            case 0x4D: loc = "as"; break;   case 0x4E: loc = "mr"; break;
+            case 0x4F: loc = "sa"; break;   case 0x53: loc = "kh"; break;
+            case 0x54: loc = "lo"; break;   case 0x56: loc = "gl"; break;
+            case 0x5E: loc = "am"; break;   case 0x62: loc = "fy"; break;
+            case 0x68: loc = "ha"; break;   case 0x6D: loc = "ba"; break;
+            case 0x6E: loc = "lb"; break;   case 0x6F: loc = "kl"; break;
+            case 0x7E: loc = "br"; break;   case 0x92: loc = "ku"; break;
+            case 0x09: default: loc = "en"; break;
+        }
     }
+    for(i = 0; i < NUMLANGS; i++)
+        if(!strncmp(loc, dict[i][0], strlen(dict[i][0]))) break;
+    if(i >= NUMLANGS) { i = 0; loc = "en"; }
 
     lang=(wchar_t**)malloc(NUMTEXTS * sizeof(wchar_t*));
     if(!lang) return 1;
-    for(i = 0; i < NUMLANGS; i++)
-        if(!strcmp(loc, dict[i][0])) {
-            for(j = 0; j < NUMTEXTS; j++) {
-                lang[j] = (wchar_t*)malloc((strlen(dict[i][j+1])+1)*sizeof(wchar_t));
-                if(!lang[j]) return 1;
-                for(s = dict[i][j+1], d = lang[j]; *s; d++) {
-                    if((*s & 128) != 0) {
-                        if(!(*s & 32)) { c = ((*s & 0x1F)<<6)|(*(s+1) & 0x3F); s++; } else
-                        if(!(*s & 16)) { c = ((*s & 0xF)<<12)|((*(s+1) & 0x3F)<<6)|(*(s+2) & 0x3F); s += 2; } else
-                        if(!(*s & 8)) { c = ((*s & 0x7)<<18)|((*(s+1) & 0x3F)<<12)|((*(s+2) & 0x3F)<<6)|(*(s+3) & 0x3F); *s += 3; }
-                        else c = 0;
-                    } else c = *s;
-                    s++;
-                    *d = (wchar_t)c;
-                }
-                *d = 0;
-            }
-            break;
+    for(j = 0; j < NUMTEXTS; j++) {
+        lang[j] = (wchar_t*)malloc((strlen(dict[i][j+1])+1)*sizeof(wchar_t));
+        if(!lang[j]) return 1;
+        for(s = dict[i][j+1], d = lang[j]; *s; d++) {
+            if((*s & 128) != 0) {
+                if(!(*s & 32)) { c = ((*s & 0x1F)<<6)|(*(s+1) & 0x3F); s++; } else
+                if(!(*s & 16)) { c = ((*s & 0xF)<<12)|((*(s+1) & 0x3F)<<6)|(*(s+2) & 0x3F); s += 2; } else
+                if(!(*s & 8)) { c = ((*s & 0x7)<<18)|((*(s+1) & 0x3F)<<12)|((*(s+2) & 0x3F)<<6)|(*(s+3) & 0x3F); *s += 3; }
+                else c = 0;
+            } else c = *s;
+            s++;
+            *d = (wchar_t)c;
         }
+        *d = 0;
+    }
     if(verbose) printf("GetUserDefaultLangID %04x '%s', dict '%s', serial %d, buffer_size %d MiB\r\n",
         lid, loc, dict[i][0], disks_serial, buffer_size/1024/1024);
 
