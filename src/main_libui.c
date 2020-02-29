@@ -128,7 +128,7 @@ static void *writerRoutine(void *data)
                     } else {
                         errno = 0;
                         numberOfBytesWritten = (int)write(dst, ctx.buffer, numberOfBytesRead);
-                        if(verbose) printf("writerRoutine() numberOfBytesRead %d numberOfBytesWritten %d errno=%d\n",
+                        if(verbose) printf("write(%d) numberOfBytesWritten %d errno=%d\n",
                             numberOfBytesRead, numberOfBytesWritten, errno);
                         if(numberOfBytesWritten == numberOfBytesRead) {
                             if(needVerify) {
@@ -184,7 +184,7 @@ static void onWriteButtonClicked(uiButton *b, void *data)
     uiLabelSetText(status, "");
     main_errorMessage = NULL;
 
-    if(verbose) printf("Starting worker thread\r\n");
+    if(verbose) printf("Starting worker thread for writing.\r\n");
     pthread_create(&thrd, &tha, writerRoutine, NULL);
 }
 
@@ -222,7 +222,7 @@ static void *readerRoutine(void *data)
         }
         i = strlen(fn);
         lt = localtime(&now);
-        snprintf(fn + i, sizeof(fn)-1-i, "/usbimager-%04d%02d%02d-%02d%02d.dd%s",
+        snprintf(fn + i, sizeof(fn)-1-i, "/usbimager-%04d%02d%02dT%02d%02d.dd%s",
             lt->tm_year+1900, lt->tm_mon+1, lt->tm_mday, lt->tm_hour, lt->tm_min,
             needCompress ? ".bz2" : "");
         uiEntrySetText(source, fn);
@@ -232,6 +232,7 @@ static void *readerRoutine(void *data)
                 errno = 0;
                 size = ctx.fileSize - ctx.readSize < (uint64_t)buffer_size ? (int)(ctx.fileSize - ctx.readSize) : buffer_size;
                 numberOfBytesRead = (int)read(src, ctx.buffer, size);
+                if(verbose) printf("read(%d) numberOfBytesRead %d errno=%d\n", size, numberOfBytesRead, errno);
                 if(numberOfBytesRead == size) {
                     if(stream_write(&ctx, ctx.buffer, size)) {
                         uiQueueMain(onProgress, &ctx);
@@ -276,7 +277,7 @@ static void onReadButtonClicked(uiButton *b, void *data)
     uiProgressBarSetValue(pbar, 0);
     uiLabelSetText(status, "");
     main_errorMessage = NULL;
-    if(verbose) printf("Starting worker thread\r\n");
+    if(verbose) printf("Starting worker thread for reading.\r\n");
     pthread_create(&thrd, &tha, readerRoutine, NULL);
 }
 

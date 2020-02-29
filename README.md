@@ -120,7 +120,7 @@ and one for the data read back for verification.
 2. click on the second button (Read) in the 2nd row
 3. the image file will be saved on your Desktop, its name is in the 1st row
 
-The generated image file is in the form "usbimager-(date)-(time).dd", generated with the current timestamp. If "Compress" option is checked, then a ".bz2" suffix will
+The generated image file is in the form "usbimager-(date)T(time).dd", generated with the current timestamp. If "Compress" option is checked, then a ".bz2" suffix will
 be added, and the image will be compressed using bzip2. It has much better compression ratio than gzip deflate. For raw images the remaining
 time is accurate, however for compression it highly depends on the time taken by the compression algorithm, which in turn depends on the data,
 so remaining time is just an estimate.

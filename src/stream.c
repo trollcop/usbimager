@@ -164,14 +164,14 @@ int stream_open(stream_t *ctx, char *fn, int uncompr)
     ctx->verifyBuf = (char*)malloc(buffer_size);
     if(!ctx->verifyBuf) {
         main_getErrorMessage();
-        free(ctx->compBuf);
+        free(ctx->compBuf); ctx->compBuf = NULL;
         return 1;
     }
     ctx->buffer = (char*)malloc(buffer_size);
     if(!ctx->buffer) {
         main_getErrorMessage();
-        free(ctx->compBuf);
-        free(ctx->verifyBuf);
+        free(ctx->compBuf); ctx->compBuf = NULL;
+        free(ctx->verifyBuf); ctx->verifyBuf = NULL;
         return 1;
     }
 
@@ -389,16 +389,39 @@ int stream_create(stream_t *ctx, char *fn, int comp, uint64_t size)
     memset(ctx, 0, sizeof(stream_t));
     if(!fn || !*fn || !size) return 1;
 
-    if(verbose) printf("stream_open(%s)\r\n", fn);
+    if(verbose)
+        printf("stream_create(%s) comp %d size %" PRIu64 ")\r\n", fn, comp, size);
+
+    ctx->compBuf = (unsigned char*)malloc(buffer_size);
+    if(!ctx->compBuf) {
+        main_getErrorMessage();
+        return 1;
+    }
+    ctx->buffer = (char*)malloc(buffer_size);
+    if(!ctx->buffer) {
+        main_getErrorMessage();
+        free(ctx->compBuf); ctx->compBuf = NULL;
+        return 1;
+    }
 
     if(comp) {
         ctx->type = TYPE_BZIP2;
         ctx->b = BZ2_bzopen(fn, "wb");
-        if(!ctx->b) return 1;
+        if(!ctx->b) {
+            main_getErrorMessage();
+            free(ctx->buffer); ctx->buffer = NULL;
+            free(ctx->compBuf); ctx->compBuf = NULL;
+            return 1;
+        }
     } else {
         ctx->type = TYPE_PLAIN;
         ctx->f = fopen(fn, "wb");
-        if(!ctx->f) return 1;
+        if(!ctx->f) {
+            main_getErrorMessage();
+            free(ctx->buffer); ctx->buffer = NULL;
+            free(ctx->compBuf); ctx->compBuf = NULL;
+            return 1;
+        }
     }
 
     ctx->fileSize = size;

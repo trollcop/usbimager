@@ -698,7 +698,7 @@ static void *writerRoutine()
                     } else {
                         errno = 0;
                         numberOfBytesWritten = (int)write(dst, ctx.buffer, numberOfBytesRead);
-                        if(verbose) printf("writerRoutine() numberOfBytesRead %d numberOfBytesWritten %d errno=%d\n",
+                        if(verbose) printf("write(%d) numberOfBytesWritten %d errno=%d\n",
                             numberOfBytesRead, numberOfBytesWritten, errno);
                         if(numberOfBytesWritten == numberOfBytesRead) {
                             if(needVerify) {
@@ -745,6 +745,7 @@ static void onWriteButtonClicked()
     XDefineCursor(dpy, mainwin, loading);
     mainRedraw();
     XFlush(dpy);
+    if(verbose) printf("Starting worker thread for writing.\r\n");
     writerRoutine();
     inactive = progress = 0;
     XDefineCursor(dpy, mainwin, pointer);
@@ -786,7 +787,7 @@ static void *readerRoutine()
         }
         i = strlen(fn);
         lt = localtime(&now);
-        snprintf(fn + i, sizeof(fn)-1-i, "/usbimager-%04d%02d%02d-%02d%02d.dd%s",
+        snprintf(fn + i, sizeof(fn)-1-i, "/usbimager-%04d%02d%02dT%02d%02d.dd%s",
             lt->tm_year+1900, lt->tm_mon+1, lt->tm_mday, lt->tm_hour, lt->tm_min,
             needCompress ? ".bz2" : "");
         strcpy(source, fn);
@@ -796,6 +797,7 @@ static void *readerRoutine()
                 errno = 0;
                 size = ctx.fileSize - ctx.readSize < (uint64_t)buffer_size ? (int)(ctx.fileSize - ctx.readSize) : buffer_size;
                 numberOfBytesRead = (int)read(src, ctx.buffer, size);
+                if(verbose) printf("read(%d) numberOfBytesRead %d errno=%d\n", size, numberOfBytesRead, errno);
                 if(numberOfBytesRead == size) {
                     if(stream_write(&ctx, ctx.buffer, size)) {
                         main_onProgress(&ctx);
@@ -832,6 +834,7 @@ static void onReadButtonClicked()
     XDefineCursor(dpy, mainwin, loading);
     mainRedraw();
     XFlush(dpy);
+    if(verbose) printf("Starting worker thread for reading.\r\n");
     readerRoutine();
     inactive = progress = 0;
     XDefineCursor(dpy, mainwin, pointer);

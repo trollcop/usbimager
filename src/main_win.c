@@ -159,6 +159,7 @@ static DWORD WINAPI writerRoutine(LPVOID lpParam) {
                         DWORD numberOfBytesWritten, numberOfBytesVerify;
 
                         if (WriteFile(hTargetDevice, ctx.buffer, numberOfBytesRead, &numberOfBytesWritten, NULL)) {
+                            if(verbose) printf("WriteFile(%d) numberOfBytesWritten %d\r\n", numberOfBytesRead, numberOfBytesWritten);
                             if(needVerify) {
                                 SetFilePointerEx(hTargetDevice, totalNumberOfBytesWritten, NULL, FILE_BEGIN);
                                 if(!ReadFile(hTargetDevice, ctx.verifyBuf, numberOfBytesWritten, &numberOfBytesVerify, NULL) ||
@@ -176,6 +177,7 @@ static DWORD WINAPI writerRoutine(LPVOID lpParam) {
                             ShowWindow(GetDlgItem(hwndDlg, IDC_MAINDLG_STATUS), SW_HIDE);
                             ShowWindow(GetDlgItem(hwndDlg, IDC_MAINDLG_STATUS), SW_SHOW);
                         } else {
+                            if(verbose) printf("WriteFile(%d) numberOfBytesWritten %d ERROR\r\n", numberOfBytesRead, numberOfBytesWritten);
                             main_getErrorMessage();
                             MainDlgMsgBox(hwndDlg, lang[L_WRTRGERR]);
                             break;
@@ -233,7 +235,7 @@ INT_PTR MainDlgWriteClick(HWND hwndDlg) {
         main_errorMessage = NULL;
     }
 
-    if(verbose) printf("Worker thread started.\r\n");
+    if(verbose) printf("Starting worker thread.\r\n");
     CloseHandle(CreateThread(NULL, 0, writerRoutine, hwndDlg, 0, NULL));
     return TRUE;
 }
@@ -261,7 +263,7 @@ static DWORD WINAPI readerRoutine(LPVOID lpParam) {
             wsprintfW(home, L".\\");
         GetDateFormatW(LOCALE_USER_DEFAULT, 0, NULL, L"yyyyMMdd", (LPWSTR)&d, 16);
         GetTimeFormatW(LOCALE_USER_DEFAULT, 0, NULL, L"HHmm", (LPWSTR)&t, 8);
-        wsprintfW(wFn, L"%s\\usbimager-%s-%s.dd%s", home, d, t, needCompress ? L".bz2" : L"");
+        wsprintfW(wFn, L"%s\\usbimager-%sT%s.dd%s", home, d, t, needCompress ? L".bz2" : L"");
         for(wlen = 0; wFn[wlen]; wlen++);
         len = WideCharToMultiByte(CP_UTF8, 0, wFn, wlen, 0, 0, NULL, NULL);
         if(len > 0) {
@@ -279,6 +281,7 @@ static DWORD WINAPI readerRoutine(LPVOID lpParam) {
                 errno = 0;
                 size = ctx.fileSize - ctx.readSize < (uint64_t)buffer_size ? (int)(ctx.fileSize - ctx.readSize) : buffer_size;
                 if(ReadFile(src, ctx.buffer, size, &numberOfBytesRead, NULL)) {
+                    if(verbose) printf("ReadFile(%d) numberOfBytesRead %d\r\n", size, numberOfBytesRead);
                     if(stream_write(&ctx, ctx.buffer, size)) {
                         DWORD pos = (DWORD) stream_status(&ctx, (char*)&lpStatus, 0);
                         SendDlgItemMessage(hwndDlg, IDC_MAINDLG_PROGRESSBAR, PBM_SETPOS, pos, 0);
@@ -289,6 +292,7 @@ static DWORD WINAPI readerRoutine(LPVOID lpParam) {
                         MainDlgMsgBox(hwndDlg, lang[L_WRIMGERR]);
                     }
                 } else {
+                    if(verbose) printf("ReadFile(%d) numberOfBytesRead %d ERROR\r\n", size, numberOfBytesRead);
                     MainDlgMsgBox(hwndDlg, lang[L_RDSRCERR]);
                     break;
                 }
@@ -329,6 +333,7 @@ INT_PTR MainDlgReadClick(HWND hwndDlg) {
         main_errorMessage = NULL;
     }
 
+    if(verbose) printf("Starting worker thread for reading.\r\n");
     CloseHandle(CreateThread(NULL, 0, readerRoutine, hwndDlg, 0, NULL));
     return TRUE;
 }
