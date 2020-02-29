@@ -44,8 +44,8 @@ HANDLE hTargetVolume = NULL;
  * Refresh target device list in the combobox
  */
 void disks_refreshlist() {
-    int i = 0, j;
-    wchar_t szLbText[1024];
+    int i = 0, j, k;
+    wchar_t szLbText[1024], volName[MAX_PATH+1];
     HANDLE hTargetDevice;
     DISK_GEOMETRY diskGeometry;
     DISK_GEOMETRY_EX diskGeometryEx;
@@ -79,6 +79,10 @@ void disks_refreshlist() {
                 totalNumberOfBytes = (long long int)diskGeometry.Cylinders.QuadPart * (long long int)diskGeometry.TracksPerCylinder * (long long int)diskGeometry.SectorsPerTrack * (long long int)diskGeometry.BytesPerSector;
             }
             szLbText[0] = (wchar_t)letter; szLbText[1] = (wchar_t)':';
+            /* don't use GetVolumeInformationByHandleW, that requires Vista / Server 2008 */
+            memset(volName, 0, sizeof(volName)); szLbText[2] = (wchar_t)'\\'; szLbText[3] = 0;
+            k = MAX_PATH;
+            GetVolumeInformationW(szLbText, volName, k, NULL, NULL, NULL, NULL, 0);
             j = 2;
             if (totalNumberOfBytes > 0) {
                 long long int sizeInGbTimes10 = ((long long int)(10 * (totalNumberOfBytes + 1024LL*1024LL*1024LL-1LL)) >> 30LL);
@@ -91,12 +95,24 @@ void disks_refreshlist() {
                 sizeof(STORAGE_PROPERTY_QUERY), pDevDesc, pDevDesc->Size, &bytesReturned,  (LPOVERLAPPED)NULL)) {
                 if (pDevDesc->VendorIdOffset != 0) {
                     szLbText[j++] = (wchar_t)' ';
-                    for(c = (PCHAR)((PBYTE)pDevDesc + pDevDesc->VendorIdOffset); *c; c++, j++) szLbText[j] = (wchar_t)*c;
+                    for(c = (PCHAR)((PBYTE)pDevDesc + pDevDesc->VendorIdOffset); *c == ' '; c++);
+                    for(; *c && j < 1023; c++, j++) szLbText[j] = (wchar_t)*c;
+                    while(j > 0 && szLbText[j-1] == (wchar_t)' ') j--;
                 }
                 if (pDevDesc->ProductIdOffset != 0) {
                     szLbText[j++] = (wchar_t)' ';
-                    for(c = (PCHAR)((PBYTE)pDevDesc + pDevDesc->ProductIdOffset); *c; c++, j++) szLbText[j] = (wchar_t)*c;
+                    for(c = (PCHAR)((PBYTE)pDevDesc + pDevDesc->ProductIdOffset); *c == ' '; c++);
+                    for(; *c && j < 1023; c++, j++) szLbText[j] = (wchar_t)*c;
+                    while(j > 0 && szLbText[j-1] == (wchar_t)' ') j--;
                 }
+            }
+            if(volName[0] && j < 1020) {
+                szLbText[j++] = (wchar_t)' ';
+                szLbText[j++] = (wchar_t)'(';
+                for(k = 0; volName[k] == (wchar_t)' '; k++);
+                for(; volName[k] && j < 1022; j++, k++) szLbText[j] = volName[k];
+                while(j > 0 && szLbText[j-1] == (wchar_t)' ') j--;
+                szLbText[j++] = (wchar_t)')';
             }
             szLbText[j] = 0;
             CloseHandle(hTargetDevice);
