@@ -21,7 +21,7 @@ Telepítés
 3. Élvezd!
 
 A csomagban lévő futtathatót egyből használhatod, nem kell telepíteni, és a többi fájl is csak azért van, hogy beillessze az asztali
-környezetedbe (ikonok és hasonlók). Automatikusan érzékeli az operációs rendszered nyelvét, és ha talál hozzá szótárat, akkor
+környezetedbe (ikonok és hasonlók). Automatikusan érzékeli az operációs rendszeredben beállított nyelvet, és ha talál hozzá szótárat, akkor
 a saját nyelveden köszönt (természetesen tud magyarul).
 
 Fícsörök

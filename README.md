@@ -20,7 +20,7 @@ Installation
 3. Enjoy!
 
 You can use the executable in the archive as-is, the other files only provide integration with your desktop (icons and such). It will autodetect your
-operating system's language, and if dictionary found, it will greet you in your language.
+operating system's configured language, and if dictionary found, it will greet you in your language.
 
 Features
 --------
