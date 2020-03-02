@@ -512,7 +512,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszArgum
             }
     }
     if(!loc) {
-        lid = GetUserDefaultLangID();
+        lid = GetUserDefaultLangID(); /* GetUserDefaultUILanguage(); */
         /* see https://docs.microsoft.com/en-us/windows/win32/intl/language-identifier-constants-and-strings */
         switch(lid & 0xFF) {
             case 0x01: loc = "ar"; break;   case 0x02: loc = "bg"; break;
