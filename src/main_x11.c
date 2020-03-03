@@ -1345,10 +1345,10 @@ ok:             if(selFile >=0 && selFile < numFiles) {
                         else {
                             size >>= 20;
                             if(size < 1024L)
-                                sprintf(tmp, "%u Mb", (unsigned int)size);
+                                sprintf(tmp, "%u %s", (unsigned int)size, lang[L_MIB]);
                             else {
                                 size >>= 10;
-                                sprintf(tmp, "%u Gb", (unsigned int)size);
+                                sprintf(tmp, "%u %s", (unsigned int)size, lang[L_GIB]);
                             }
                         }
                         mainPrint(win, i == selFile ? shdgc : txtgc, mw-fns-14, y+4, (mw-ds) - (mw-fns) - 1, 3, tmp);

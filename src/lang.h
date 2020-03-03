@@ -37,6 +37,8 @@ enum {
     L_READ,
     L_SEND,
     L_SERIAL,
+    L_MIB,
+    L_GIB,
     /* messages */
     L_ERROR,
     L_WAITING,

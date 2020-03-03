@@ -45,14 +45,14 @@ HANDLE hTargetVolume = NULL;
  */
 void disks_refreshlist() {
     int i = 0, j, k;
-    wchar_t szLbText[1024], volName[MAX_PATH+1];
+    wchar_t szLbText[1024], volName[MAX_PATH+1], siz[64], *wc;
     HANDLE hTargetDevice;
     DISK_GEOMETRY diskGeometry;
     DISK_GEOMETRY_EX diskGeometryEx;
     DWORD bytesReturned;
     long long int totalNumberOfBytes = 0;
     STORAGE_PROPERTY_QUERY Query;
-    char Buf[1024] = {0}, letter, *c, siz[64], fn[64] = "\\\\.\\X:";
+    char Buf[1024] = {0}, letter, *c, fn[64] = "\\\\.\\X:";
     PSTORAGE_DEVICE_DESCRIPTOR pDevDesc = (PSTORAGE_DEVICE_DESCRIPTOR)Buf;
     pDevDesc->Size = sizeof(Buf);
     Query.PropertyId = StorageDeviceProperty;
@@ -86,10 +86,10 @@ void disks_refreshlist() {
             j = 2;
             if (totalNumberOfBytes > 0) {
                 long long int sizeInGbTimes10 = ((long long int)(10 * (totalNumberOfBytes + 1024LL*1024LL*1024LL-1LL)) >> 30LL);
-                char unit = 'G';
-                if(!sizeInGbTimes10) { unit = 'M'; sizeInGbTimes10 = ((long long int)(10 * (totalNumberOfBytes + 1024LL*1024LL-1LL)) >> 20LL); }
-                sprintf(siz, " [%d.%d %ciB]", (int)(sizeInGbTimes10 / 10), (int)(sizeInGbTimes10 % 10), unit);
-                for(c = siz; *c; c++, j++) szLbText[j] = (wchar_t)*c;
+                wchar_t *unit = lang[L_GIB];
+                if(!sizeInGbTimes10) { unit = lang[L_MIB]; sizeInGbTimes10 = ((long long int)(10 * (totalNumberOfBytes + 1024LL*1024LL-1LL)) >> 20LL); }
+                wsprintfW(siz, L" [%d.%d %s]", (int)(sizeInGbTimes10 / 10), (int)(sizeInGbTimes10 % 10), unit);
+                for(wc = siz; *wc; wc++, j++) szLbText[j] = *wc;
             }
             if (DeviceIoControl(hTargetDevice, IOCTL_STORAGE_QUERY_PROPERTY, &Query,
                 sizeof(STORAGE_PROPERTY_QUERY), pDevDesc, pDevDesc->Size, &bytesReturned,  (LPOVERLAPPED)NULL)) {

@@ -163,9 +163,9 @@ void disks_refreshlist()
         }
         if(size) {
             int sizeInGbTimes10 = (int)((long int)(10 * (size + 1024L*1024L*1024L-1L)) >> 30L);
-            char unit = 'G';
-            if(!sizeInGbTimes10) { unit = 'M'; sizeInGbTimes10 = (int)((uint64_t)(10 * (size + 1024L*1024L-1L)) >> 20L); }
-            snprintf(str, sizeof(str)-1, "%s [%d.%d %ciB] %s %s", deviceName,
+            char *unit = lang[L_GIB];
+            if(!sizeInGbTimes10) { unit = lang[L_MIB]; sizeInGbTimes10 = (int)((uint64_t)(10 * (size + 1024L*1024L-1L)) >> 20L); }
+            snprintf(str, sizeof(str)-1, "%s [%d.%d %s] %s %s", deviceName,
                 sizeInGbTimes10 / 10, sizeInGbTimes10 % 10, unit, vendorName, productName);
         } else
             snprintf(str, sizeof(str)-1, "%s %s %s", deviceName, vendorName, productName);

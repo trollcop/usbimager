@@ -85,7 +85,7 @@ void disks_refreshlist()
     char str[1024], vendorName[128], productName[128], path[512];
     uint64_t size;
     int i = 0, k, sizeInGbTimes10;
-    char unit, *c, *p;
+    char *unit, *c, *p;
     FILE *f;
 
     memset(disks_targets, 0xff, sizeof(disks_targets));
@@ -117,9 +117,9 @@ void disks_refreshlist()
             str[0] = 0;
             if(size) {
                 sizeInGbTimes10 = (int)((uint64_t)(10 * (size + 1024L*1024L*1024L-1L)) >> 30L);
-                if(!sizeInGbTimes10) { unit = 'M'; sizeInGbTimes10 = (int)((uint64_t)(10 * (size + 1024L*1024L-1L)) >> 20L); }
-                else unit = 'G';
-                snprintf(str, sizeof(str)-1, "%s [%d.%d %ciB] %s %s", de->d_name,
+                if(!sizeInGbTimes10) { unit = lang[L_MIB]; sizeInGbTimes10 = (int)((uint64_t)(10 * (size + 1024L*1024L-1L)) >> 20L); }
+                else unit = lang[L_GIB];
+                snprintf(str, sizeof(str)-1, "%s [%d.%d %s] %s %s", de->d_name,
                     sizeInGbTimes10 / 10, sizeInGbTimes10 % 10, unit, vendorName, productName);
             } else
                 snprintf(str, sizeof(str)-1, "%s %s %s", de->d_name, vendorName, productName);

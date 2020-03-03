@@ -117,20 +117,20 @@ int stream_status(stream_t *ctx, char *str, int done)
     }
 #ifdef WINVER
     if(ctx->fileSize)
-        wsprintfW((wchar_t*)str, L"%6" PRIu64 " MiB / %" PRIu64 " MiB%s%s",
-            (ctx->readSize >> 20),
-            (ctx->fileSize >> 20), rem[0] ? L", " : L"", rem);
+        wsprintfW((wchar_t*)str, L"%6" PRIu64 " %s / %" PRIu64 " %s%s%s",
+            (ctx->readSize >> 20), lang[L_MIB],
+            (ctx->fileSize >> 20), lang[L_MIB], rem[0] ? L", " : L"", rem);
     else
-        wsprintfW((wchar_t*)str, L"%6" PRIu64 " MiB %s%s%s",
-            (ctx->readSize >> 20), lang[L_SOFAR], rem[0] ? L", " : L"", rem);
+        wsprintfW((wchar_t*)str, L"%6" PRIu64 " %s %s%s%s",
+            (ctx->readSize >> 20), lang[L_MIB], lang[L_SOFAR], rem[0] ? L", " : L"", rem);
 #else
     if(ctx->fileSize)
-        sprintf(str, "%6" PRIu64 " MiB / %" PRIu64 " MiB%s%s",
-            (ctx->readSize >> 20),
-            (ctx->fileSize >> 20), rem[0] ? ", " : "", rem);
+        sprintf(str, "%6" PRIu64 " %s / %" PRIu64 " %s%s%s",
+            (ctx->readSize >> 20), lang[L_MIB],
+            (ctx->fileSize >> 20), lang[L_MIB], rem[0] ? ", " : "", rem);
     else
-        sprintf(str, "%6" PRIu64 " MiB %s%s%s",
-            (ctx->readSize >> 20), lang[L_SOFAR], rem[0] ? ", " : "", rem);
+        sprintf(str, "%6" PRIu64 " %s %s%s%s",
+            (ctx->readSize >> 20), lang[L_MIB], lang[L_SOFAR], rem[0] ? ", " : "", rem);
 #endif
     d = ctx->fileSize ? (ctx->readSize * 1000) / (ctx->fileSize * 10) :
         (ctx->cmrdSize * 1000) / (ctx->compSize * 10 + 1);

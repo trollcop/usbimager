@@ -41,6 +41,8 @@ char *dict[NUMLANGS][NUMTEXTS + 1] = {
         "Read",
         "Send",
         "Serial port",
+        "MiB",
+        "GiB",
 
         "Error",
         "Waiting for client",
@@ -102,6 +104,8 @@ char *dict[NUMLANGS][NUMTEXTS + 1] = {
         "Leer",
         "Enviar",
         "Puerto serial",
+        "MiB",
+        "GiB",
 
         "Error",
         "Esperando cliente",
@@ -163,6 +167,8 @@ char *dict[NUMLANGS][NUMTEXTS + 1] = {
         "Lesen",
         "Senden",
         "Serielle Schnittstelle",
+        "MiB",
+        "GiB",
 
         "Fehler",
         "Warten auf Kunden",
@@ -224,6 +230,8 @@ char *dict[NUMLANGS][NUMTEXTS + 1] = {
         "Lis",
         "Envoyer",
         "Port série",
+        "Mio",
+        "Gio",
 
         "Erreur",
         "En attente du client",
@@ -285,6 +293,8 @@ char *dict[NUMLANGS][NUMTEXTS + 1] = {
         "Beolvas",
         "Küld",
         "Soros port",
+        "MiB",
+        "GiB",
 
         "Hiba",
         "Várakozás a kliensre",
@@ -346,6 +356,8 @@ char *dict[NUMLANGS][NUMTEXTS + 1] = {
         "Leggere",
         "Spedire",
         "Porta seriale",
+        "MiB",
+        "GiB",
 
         "Errore",
         "In attesa di client",
@@ -407,6 +419,8 @@ char *dict[NUMLANGS][NUMTEXTS + 1] = {
         "Lezen",
         "Sturen",
         "Seriële poort",
+        "MiB",
+        "GiB",
 
         "Fout",
         "Wachten op verbinding",
@@ -468,6 +482,8 @@ char *dict[NUMLANGS][NUMTEXTS + 1] = {
         "Czytać",
         "Wysłać",
         "Port szeregowy",
+        "MiB",
+        "GiB",
 
         "Błąd",
         "Czekam na klienta",
@@ -529,6 +545,8 @@ char *dict[NUMLANGS][NUMTEXTS + 1] = {
         "Ler",
         "Mandar",
         "Porta serial",
+        "MiB",
+        "GiB",
 
         "Erro",
         "A aguardar cliente",
@@ -590,6 +608,8 @@ char *dict[NUMLANGS][NUMTEXTS + 1] = {
         "Leugh",
         "Cuir",
         "Port sreathach",
+        "MiB",
+        "GiB",
 
         "Mearachd",
         "A ’feitheamh ri neach-dèiligidh",
@@ -651,6 +671,8 @@ char *dict[NUMLANGS][NUMTEXTS + 1] = {
         "Okuma",
         "Gönder",
         "Seri port",
+        "MiB",
+        "GiB",
 
         "Hata",
         "Müşteri bekleniyor",
@@ -712,6 +734,8 @@ char *dict[NUMLANGS][NUMTEXTS + 1] = {
         "Ανάγνωση",
         "Στείλετε",
         "Σειριακή θύρα",
+        "MiB",
+        "GiB",
 
         "Λάθος",
         "Αναμονή για πελάτη",
@@ -773,6 +797,8 @@ char *dict[NUMLANGS][NUMTEXTS + 1] = {
         "Прочитать",
         "Послать",
         "Последовательный порт",
+        "MiB",
+        "GiB",
 
         "Ошибка",
         "Ожидание клиента",
@@ -834,6 +860,8 @@ char *dict[NUMLANGS][NUMTEXTS + 1] = {
         "読んだ",
         "送る",
         "シリアルポート",
+        "MiB",
+        "GiB",
 
         "エラー",
         "クライアントを待っています",
@@ -895,6 +923,8 @@ char *dict[NUMLANGS][NUMTEXTS + 1] = {
         "读",
         "发送",
         "串行端口",
+        "MiB",
+        "GiB",
 
         "错误",
         "等待客户",
@@ -956,6 +986,8 @@ char *dict[NUMLANGS][NUMTEXTS + 1] = {
         "읽다",
         "보내다",
         "시리얼 포트",
+        "MiB",
+        "GiB",
 
         "오류",
         "클라이언트를 기다리는 중",
