@@ -52,7 +52,7 @@ Comparition
 | Available on Raspbian          | ✗             | ✗                 | ✔         |
 | Program size (1)               | 130 Mb        | ✗                 | 256 Kb    |
 | Dependencies                   | lots, ~300 Mb | Qt, ~8 Mb         | ✗ none    |
-| Spyware and privacy violation  | ✔             | ✗                 | ✗         |
+| Spyware-free and ad-free       | ✗             | ✔                 | ✔         |
 | Native interface               | ✗             | ✗                 | ✔         |
 | Guarantee on data writes (2)   | ✗             | ✗                 | ✔         |
 | Verify data written            | ✔             | ✗                 | ✔         |

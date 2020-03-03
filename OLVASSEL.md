@@ -54,7 +54,7 @@ Fícsörök
 | Elérhető Raspbian-on            | ✗             | ✗                 | ✔         |
 | Program mérete (1)              | 130 Mb        | ✗                 | 256 Kb    |
 | Függőségek                      | sok, ~300 Mb  | Qt, ~8 Mb         | ✗ nincs   |
-| Kémkedés, magánszféra megsértés | ✔             | ✗                 | ✗         |
+| Kémkedés- és reklámmentes       | ✗             | ✔                 | ✔         |
 | Natív interfész                 | ✗             | ✗                 | ✔         |
 | Garantált kiírás (2)            | ✗             | ✗                 | ✔         |
 | Kiírt adatok ellenőrzése        | ✔             | ✗                 | ✔         |
