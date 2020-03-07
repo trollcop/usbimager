@@ -1,8 +1,8 @@
-# 
+#
 #  usbimager/Makefile
-# 
+#
 #  Copyright (C) 2020 bzt (bztsrc@gitlab)
-# 
+#
 #  Permission is hereby granted, free of charge, to any person
 #  obtaining a copy of this software and associated documentation
 #  files (the "Software"), to deal in the Software without
@@ -10,10 +10,10 @@
 #  modify, merge, publish, distribute, sublicense, and/or sell copies
 #  of the Software, and to permit persons to whom the Software is
 #  furnished to do so, subject to the following conditions:
-# 
+#
 #  The above copyright notice and this permission notice shall be
 #  included in all copies or substantial portions of the Software.
-# 
+#
 #  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 #  EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 #  MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -22,9 +22,9 @@
 #  WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 #  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
-# 
+#
 #  @brief Project makefile
-# 
+#
 
 ####### overall configuration #######
 
@@ -99,6 +99,7 @@ FRM = linux-gtk
 endif
 SRC += disks_linux.c
 ARCH = $(shell uname -m)
+DEBARCH = $(ARCH:x86_64=amd64)
 endif
 endif
 
@@ -180,6 +181,25 @@ else
 	@rm -rf bin share
 endif
 endif
+
+deb: $(TARGET)
+	@mkdir DEBIAN usr usr/bin usr/share usr/share/applications usr/share/icons usr/share/icons/hicolor usr/share/icons/hicolor/16x16 usr/share/icons/hicolor/16x16/apps usr/share/icons/hicolor/32x32 usr/share/icons/hicolor/32x32/apps usr/share/icons/hicolor/64x64 usr/share/icons/hicolor/64x64/apps usr/share/icons/hicolor/128x128 usr/share/icons/hicolor/128x128/apps
+	@cp $(TARGET) usr/bin
+	@cp misc/usbimager.desktop usr/share/applications
+	@cp misc/icon128.png usr/share/icons/hicolor/128x128/apps/usbimager.png
+	@cp misc/icon64.png usr/share/icons/hicolor/64x64/apps/usbimager.png
+	@cp misc/icon32.png usr/share/icons/hicolor/32x32/apps/usbimager.png
+	@cp misc/icon16.png usr/share/icons/hicolor/16x16/apps/usbimager.png
+	@cat misc/deb_control | sed s/ARCH/$(DEBARCH)/g | sed s/SIZE/`du -s usr|cut -f 1`/g >DEBIAN/control
+	@md5sum `find usr -type f` >DEBIAN/md5sums
+	@cp misc/deb_postinst DEBIAN/postinst
+	@cp ../LICENSE DEBIAN/copyright
+	@chmod +x DEBIAN/postinst
+	@echo "2.0" >debian-binary
+	@tar -czvf data.tar.gz usr
+	@tar -C DEBIAN -czvf control.tar.gz control copyright md5sums postinst
+	@ar r ../usbimager_$(shell cat main.h|grep USBIMAGER_VERSION|cut -d '"' -f 2)_$(DEBARCH).deb debian-binary control.tar.gz data.tar.gz
+	@rm -rf debian-binary control.tar.gz data.tar.gz DEBIAN usr
 
 ####### cleanup #######
 

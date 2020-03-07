@@ -9,7 +9,8 @@ and creates backups. Available platforms: Windows, MacOSX and Linux. Its interfa
 |--------------|--------------|------------------------------|
 | Windows      | [GDI](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager-i686-win-gdi.zip) | native interface |
 | MacOSX       | [Cocoa](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager-intel-macosx-cocoa.zip) | native interface|
-| Linux PC     | [X11](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager-x86_64-linux-x11.zip)<br>[GTK+](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager-x86_64-linux-gtk.zip)  | recommended<br>compatibility (has security issues with accessing raw disks) |
+| Ubuntu LTS   | [X11](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager_0.0.1_amd64.deb) | same as the Linux PC X11 version, but in .deb format |
+| Linux PC     | [X11](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager-x86_64-linux-x11.zip)<br>[GTK+](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager-x86_64-linux-gtk.zip) | recommended<br>compatibility (has security issues with accessing raw disks) |
 | Raspberry Pi | [X11](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager-armv7l-linux-x11.zip) | Raspbian, native interface |
 
 Installation
@@ -21,6 +22,8 @@ Installation
 
 You can use the executable in the archive as-is, the other files only provide integration with your desktop (icons and such). It will autodetect your
 operating system's configured language, and if dictionary found, it will greet you in your language.
+
+On Ubuntu LTS machines you can also download the deb version, which then can be installed by the `dpkg -i usbimager-*.deb` command.
 
 Features
 --------
@@ -201,7 +204,8 @@ Dependencies: libc, libX11 and standard GNU toolchain.
 
 1. in the src directory, run `make`
 2. to create the archive, run `make package`
-3. to install, run `sudo make install`
+3. to create a Debian archive, run `make deb`
+4. to install, run `sudo make install`
 
 You can also compile for GTK+ by using `USE_LIBUI=yes make`. That'll use libui (included), which in turn relies on hell a lot of libraries (pthread, X11,
 wayland, gdk, harfbuzz, pango, cairo, freetype2 etc.) Also note that the GTK version cannot be installed with setgid bit, so that write access to disk

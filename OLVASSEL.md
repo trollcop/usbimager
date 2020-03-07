@@ -10,6 +10,7 @@ annyira egyszerű, amennyire csak lehetséges, teljesen salang mentes.
 |--------------|--------------|------------------------------|
 | Windows      | [GDI](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager-i686-win-gdi.zip) | natív interfész |
 | MacOSX       | [Cocoa](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager-intel-macosx-cocoa.zip) | natív interfész |
+| Ubuntu LTS   | [X11](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager_0.0.1_amd64.deb) | ua. mint a Linux PC X11 verzió, csak .deb formátumban |
 | Linux PC     | [X11](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager-x86_64-linux-x11.zip)<br>[GTK+](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager-x86_64-linux-gtk.zip)  | javalott<br>kompatíbilitás (van egy kis biztonsági kockázat a nyers lemezelérések engedélyezésekor) |
 | Raspberry Pi | [X11](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager-armv7l-linux-x11.zip) | Raspbian, natív interfész |
 
@@ -23,6 +24,8 @@ Telepítés
 A csomagban lévő futtathatót egyből használhatod, nem kell telepíteni, és a többi fájl is csak azért van, hogy beillessze az asztali
 környezetedbe (ikonok és hasonlók). Automatikusan érzékeli az operációs rendszeredben beállított nyelvet, és ha talál hozzá szótárat, akkor
 a saját nyelveden köszönt (természetesen tud magyarul).
+
+Ubuntu LTS rendszeren letöltheted a deb csomagot is, amit aztán a `dpkg -i usbimager-*.deb` paranccsal telepíthetsz.
 
 Fícsörök
 --------
@@ -209,7 +212,8 @@ Függőségek: libc, libX11 és szabvány GNU eszköztár.
 
 1. az src könyvtárban add ki a `make` parancsot
 2. a csomagolt fájl létrehozásához futtasd a `make package` parancsot
-3. a telepítéshez add ki a `sudo make install` parancsot
+3. a Debian archívum létrehozásához futtasd a `make deb` parancsot
+4. a telepítéshez add ki a `sudo make install` parancsot
 
 Lefordíthatod GTK+ támogatással is az `USE_LIBUI=yes make` paranccsal. Ez libui-t fog használni (mellékelve), ami cserébe rengeteg
 függőséget tartalmaz (pthread, X11, wayland, gdk, harfbuzz, pango, cairo, freetype2 stb.) Fontos továbbá, hogy a GTK verzió nem fog futni

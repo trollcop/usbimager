@@ -184,15 +184,17 @@ int stream_open(stream_t *ctx, char *fn, int uncompr)
         fs = (uint64_t)st.st_size;
 #endif
     memset(hdr, 0, sizeof(hdr));
-    if(!uncompr)
-        fread(hdr, sizeof(hdr), 1, ctx->f);
+    if(!uncompr) {
+        if(!fread(hdr, sizeof(hdr), 1, ctx->f)) hdr[0] = 0;
+    }
 
     /* detect input format */
     if(hdr[0] == 0x1f && hdr[1] == 0x8b) {
         /* gzip */
         if(verbose) printf(" gzip\r\n");
         myseek(ctx->f, fs - 4L);
-        fread(&ctx->fileSize, 4, 1, ctx->f);
+        if(!fread(&ctx->fileSize, 4, 1, ctx->f))
+            ctx->fileSize = 0;
         ctx->compSize = fs - 8;
         buff = hdr + 3;
         x = *buff++; buff += 6;
@@ -298,7 +300,7 @@ int stream_read(stream_t *ctx)
 
     switch(ctx->type) {
         case TYPE_PLAIN:
-            fread(ctx->buffer, size, 1, ctx->f);
+            if(!fread(ctx->buffer, size, 1, ctx->f)) size = 0;
         break;
         case TYPE_DEFLATE:
             ctx->zstrm.next_out = (unsigned char*)ctx->buffer;

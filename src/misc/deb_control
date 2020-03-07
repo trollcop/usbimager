@@ -1,0 +1,14 @@
+Package: usbimager
+Version: 0.0.1
+Architecture: ARCH
+Essential: no
+Section: Admin
+Priority: optional
+Depends: xorg
+Maintainer: bzt
+Homepage: https://gitlab.com/bztsrc/usbimager
+Installed-Size: SIZE
+Description: A very minimal GUI app to write compressed images to USB sticks and create backups
+  Uncompresses gz, bzip2, xz and zip (zip64) images on-the-fly and writes them to USB devices.
+  Also capable of sending images through serial port to Raspberry Pi machines, and to create
+  backup image files from USB storage devices.

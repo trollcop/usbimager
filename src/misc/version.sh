@@ -124,8 +124,9 @@ BEGIN
     PUSHBUTTON "&Write", IDC_MAINDLG_WRITE, 5, 20, 150, 16
     PUSHBUTTON "&Read", IDC_MAINDLG_READ, 165, 20, 150, 16
     COMBOBOX IDC_MAINDLG_TARGET_LIST, 5, 40, 310, 71, CBS_DROPDOWNLIST | WS_TABSTOP
-    CHECKBOX "&Verify", IDC_MAINDLG_VERIFY, 10, 60, 150, 14
-    CHECKBOX "&Compress", IDC_MAINDLG_COMPRESS, 170, 60, 150, 14
+    CHECKBOX "&Verify", IDC_MAINDLG_VERIFY, 10, 60, 125, 14
+    CHECKBOX "&Compress", IDC_MAINDLG_COMPRESS, 145, 60, 125, 14
+    COMBOBOX IDC_MAINDLG_BLKSIZE, 275, 60, 40, 71, CBS_DROPDOWNLIST | WS_TABSTOP
     CONTROL "", IDC_MAINDLG_PROGRESSBAR, "msctls_progress32", PBS_SMOOTH, 5, 80, 310, 4
     LTEXT "", IDC_MAINDLG_STATUS, 5, 86, 310, 14, WS_TABSTOP
 END
@@ -142,4 +143,21 @@ Icon=usbimager
 Terminal=false
 StartupNotify=false
 Categories=Application;System;
+EOF
+
+cat <<EOF >deb_control
+Package: usbimager
+Version: $VERSION
+Architecture: ARCH
+Essential: no
+Section: Admin
+Priority: optional
+Depends: xorg
+Maintainer: bzt
+Homepage: https://gitlab.com/bztsrc/usbimager
+Installed-Size: SIZE
+Description: A very minimal GUI app to write compressed images to USB sticks and create backups
+  Uncompresses gz, bzip2, xz and zip (zip64) images on-the-fly and writes them to USB devices.
+  Also capable of sending images through serial port to Raspberry Pi machines, and to create
+  backup image files from USB storage devices.
 EOF

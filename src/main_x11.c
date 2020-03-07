@@ -1300,7 +1300,7 @@ ok:             if(selFile >=0 && selFile < numFiles) {
                     if(f) {
                         while(!feof(f)) {
                             memset(tmp, 0, sizeof(tmp));
-                            fgets(tmp, sizeof(tmp) - 1, f);
+                            if(!fgets(tmp, sizeof(tmp) - 1, f)) tmp[0] = 0;
                             for(s = tmp, x = 0; *s; s++) {
                                 if(!memcmp(s, "<bookmark ", 10)) x = 1;
                                 if(x == 1 && !memcmp(s, "href=", 5)) x = 2;

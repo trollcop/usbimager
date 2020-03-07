@@ -21,5 +21,5 @@ foreach([16,32] as $size){
         fprintf($f,"0x%x,",$p);
     }
 }
-fprintf($f,"\n\t0, 0\n};\n\n");
+fprintf($f,"\n};\n\n");
 fclose($f);

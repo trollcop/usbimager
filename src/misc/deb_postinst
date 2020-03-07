@@ -1,0 +1,4 @@
+#!/bin/sh
+
+chgrp disk /usr/bin/usbimager
+chmod g+s /usr/bin/usbimager
