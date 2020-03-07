@@ -25,7 +25,7 @@ A csomagban lévő futtathatót egyből használhatod, nem kell telepíteni, és
 környezetedbe (ikonok és hasonlók). Automatikusan érzékeli az operációs rendszeredben beállított nyelvet, és ha talál hozzá szótárat, akkor
 a saját nyelveden köszönt (természetesen tud magyarul).
 
-Ubuntu LTS rendszeren letöltheted a deb csomagot is, amit aztán a `dpkg -i usbimager-*.deb` paranccsal telepíthetsz.
+Ubuntu LTS rendszeren letöltheted a deb csomagot is, amit aztán a `sudo dpkg -i usbimager-*.deb` paranccsal telepíthetsz.
 
 Fícsörök
 --------

@@ -23,7 +23,7 @@ Installation
 You can use the executable in the archive as-is, the other files only provide integration with your desktop (icons and such). It will autodetect your
 operating system's configured language, and if dictionary found, it will greet you in your language.
 
-On Ubuntu LTS machines you can also download the deb version, which then can be installed by the `dpkg -i usbimager-*.deb` command.
+On Ubuntu LTS machines you can also download the deb version, which then can be installed by the `sudo dpkg -i usbimager-*.deb` command.
 
 Features
 --------
