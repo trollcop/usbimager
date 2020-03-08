@@ -27,7 +27,7 @@
  *
  */
 
-#define NUMLANGS         16
+#define NUMLANGS         17
 
 enum {
     /* user interface */

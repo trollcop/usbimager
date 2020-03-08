@@ -261,7 +261,7 @@ Hozzájárulások
 Szeretnék köszönetet mondani a következő felhasználóknak: @mattmiller, @MisterEd, @the_scruss, @rpdom, @DarkElvenAngel, és különösen
 @tvjon-nak és @CaptainMidnight-nak amiért több különböző platformon és számos különböző eszközzel is letesztelték az USBImager-t.
 
-Köszönet a fordítások ellenőrzéséért és javításáért: @mline-nak (német), @epoch1970-nek és @JumpZero-nak (francia), @hansotten-nek és @zonstraal-nak (holland), @ller (orosz).
+Köszönet a fordítások ellenőrzéséért és javításáért: @mline-nak (német), @epoch1970-nek és @JumpZero-nak (francia), @hansotten-nek és @zonstraal-nak (holland), @ller (orosz), @zaval (ukrán).
 
 Legjobbakat,
 
