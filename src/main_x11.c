@@ -75,7 +75,7 @@ char **lang = NULL;
 extern char *dict[NUMLANGS][NUMTEXTS + 1];
 
 static Display* dpy;
-static int scr;
+static int scr, frame_left, frame_top;
 static Window mainwin;
 static XColor colors[NUM_COLOR];
 static XFontStruct *font = NULL;
@@ -365,7 +365,7 @@ static Window mainModal(int *mw, int *mh, int bgcolor)
     sh = XHeightOfScreen(wa.screen); if(*mh + 60 > sh) *mh = sh - 60;
     ws = *mw / 20; hs = *mh / 10;
     x -= wa.x; y -= wa.y;
-    nx = x + wa.border_width + wa.width/2; ny = y + 20;
+    nx = x + (frame_left ? frame_left : wa.border_width) + wa.width/2; ny = y + frame_top;
     win = XCreateSimpleWindow(dpy, RootWindow(dpy, scr), nx, ny, 1, 1,
         0, 0, colors[bgcolor].pixel);
     XSelectInput(dpy, win, ExposureMask | ButtonPressMask | ButtonReleaseMask | PointerMotionMask |
@@ -377,7 +377,7 @@ static Window mainModal(int *mw, int *mh, int bgcolor)
     for(i = 1; i < 11; i++) {
         if(nx < i*ws) { x += i*ws-nx; nx = i*ws; XMoveWindow(dpy, mainwin, x, y); }
         if(nx + i*ws > sw) { nx = sw-i*ws; x = nx - wa.width/2; XMoveWindow(dpy, mainwin, x, y); }
-        if(ny + i*hs > sh) { ny = sh-i*hs; y = ny - 20; XMoveWindow(dpy, mainwin, x, y); }
+        if(ny + i*hs > sh) { ny = sh-i*hs; y = ny - frame_top; XMoveWindow(dpy, mainwin, x, y); }
         XSync(dpy, True);
         XMoveResizeWindow(dpy, win, nx-i*ws, ny, i*2*ws, i*hs);
         XFlush(dpy);
@@ -398,10 +398,10 @@ static int mainCombo(int sel, int num, char *list, int dx, int dy, int w)
 
     XTranslateCoordinates(dpy, mainwin, root, 0, 0, &x, &y, &child);
     XGetWindowAttributes(dpy, mainwin, &wa);
-    x -= wa.x - wa.border_width; y -= wa.y;
+    x -= wa.x - wa.border_width; y -= wa.y - frame_top;
     if(sel < 0 || sel >= num) sel = 0;
     if(!w) w = wa.width-25;
-    if(dx<0) dx += wa.width;
+    if(dx<0) dx += wa.width + frame_left + 1; else dx += frame_left;
     win = XCreateSimpleWindow(dpy, root, x+dx, y+dy-sel*(fonth+8),
         w, num*(fonth+8), 0, 0, colors[color_inputbg].pixel);
     XSelectInput(dpy, win, ExposureMask | ButtonPressMask | ButtonReleaseMask | PointerMotionMask |
@@ -414,7 +414,7 @@ static int mainCombo(int sel, int num, char *list, int dx, int dy, int w)
         XNextEvent(dpy, &e);
         if(e.type == MotionNotify) {
             x = e.xmotion.y / (fonth+8);
-            if(x != targetId) {
+            if(x != sel) {
                 sel = x;
                 e.type = Expose; e.xexpose.count = 0;
             }
@@ -857,7 +857,7 @@ static void onTargetClicked()
 
     refreshTarget();
     if(numTargetList < 1) return;
-    sel = mainCombo(targetId, numTargetList, (char*)&targetList[0][0], 15, 40+2*fonth+20, 0);
+    sel = mainCombo(targetId, numTargetList, (char*)&targetList[0][0], 13, 40+2*fonth, 0);
     if(sel != -1) targetId = sel;
     mainRedraw();
     XRaiseWindow(dpy, mainwin);
@@ -867,7 +867,7 @@ static void onBlkSizeClicked()
 {
     int sel;
 
-    sel = mainCombo(blksizesel, 10, (char*)&blksizeList[0][0], -55, 55+3*fonth+20, 45);
+    sel = mainCombo(blksizesel, 10, (char*)&blksizeList[0][0], -58, 56+3*fonth, 45);
     if(sel != -1) { blksizesel = sel; buffer_size = (1UL<<sel) * 1024UL * 1024UL; }
     mainRedraw();
     XRaiseWindow(dpy, mainwin);
@@ -1403,8 +1403,11 @@ int main(int argc, char **argv)
     XEvent e;
     KeySym k;
     XTextProperty title_property;
+    Atom a, t;
     char colorName[16], *title = "USBImager " USBIMAGER_VERSION;
     int i, ser;
+    long *extents;
+    unsigned long n, b;
     char *lc = getenv("LANG");
     char help[] = "USBImager " USBIMAGER_VERSION
 #ifdef USBIMAGER_BUILD
@@ -1521,6 +1524,18 @@ int main(int argc, char **argv)
     for(i = 0; i < 10; i++)
         sprintf(blksizeList[i], "%3dM", (1<<i));
     refreshTarget();
+
+    a = XInternAtom(dpy, "_NET_FRAME_EXTENTS", True);
+    while(XGetWindowProperty(dpy, mainwin, a, 0, 4, False, AnyPropertyType, &t, &i,
+            &n, &b, (unsigned char**)&extents) != Success || n != 4 || b != 0)
+        XNextEvent(dpy, &e);
+    frame_left = extents && extents[0] > 0 && extents[0] < 32 ? extents[0] : 2;
+    frame_top = extents && extents[2] > 0 && extents[2] < 32 ? extents[2] : 16;
+#ifdef USE_UNITY
+    frame_left += 8; frame_top += 8;
+#endif
+    if(extents) free(extents);
+    mainRedraw();
 
     while(1) {
         XNextEvent(dpy, &e);

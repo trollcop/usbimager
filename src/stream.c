@@ -185,7 +185,7 @@ int stream_open(stream_t *ctx, char *fn, int uncompr)
 #endif
     memset(hdr, 0, sizeof(hdr));
     if(!uncompr) {
-        if(!fread(hdr, sizeof(hdr), 1, ctx->f)) hdr[0] = 0;
+        if(!fread(hdr, sizeof(hdr), 1, ctx->f)) {}
     }
 
     /* detect input format */
@@ -300,7 +300,7 @@ int stream_read(stream_t *ctx)
 
     switch(ctx->type) {
         case TYPE_PLAIN:
-            if(!fread(ctx->buffer, size, 1, ctx->f)) size = 0;
+            if(!fread(ctx->buffer, size, 1, ctx->f)) {}
         break;
         case TYPE_DEFLATE:
             ctx->zstrm.next_out = (unsigned char*)ctx->buffer;

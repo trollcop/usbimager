@@ -33,7 +33,7 @@ CC = gcc
 LD = gcc
 STRIP = strip
 # setting DISKS_TEST to 1 will add a test.bin "device" to the target disks list
-CFLAGS = -DDISKS_TEST=0 -D_FILE_OFFSET_BITS=64 -D__USE_FILE_OFFSET64 -D__USE_LARGEFILE -Wall -Wextra -pedantic --std=c99 -O3 -fvisibility=hidden -I./zlib -I./bzip2 -I./xz
+CFLAGS = -DDISKS_TEST=1 -D_FILE_OFFSET_BITS=64 -D__USE_FILE_OFFSET64 -D__USE_LARGEFILE -Wall -Wextra -pedantic --std=c99 -O3 -fvisibility=hidden -I./zlib -I./bzip2 -I./xz
 LDFLAGS =
 LIBS =
 DECOMPRESSORS = zlib/libz.a bzip2/libbz2.a xz/libxz.a
@@ -85,6 +85,9 @@ CFLAGS += -I/usr/include/X11
 LIBS += -lX11
 FRM = linux-x11
 GRP = disk
+ifneq ($(USE_UNITY),)
+CFLAGS += -DUSE_UNITY=1
+endif
 else
 SRC += main_libui.c
 CFLAGS += -pthread

@@ -11,7 +11,8 @@ and creates backups. Available platforms: Windows, MacOSX and Linux. Its interfa
 | MacOSX       | [Cocoa](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager-intel-macosx-cocoa.zip) | native interface|
 | Ubuntu LTS   | [X11](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager_0.0.1_amd64.deb) | same as the Linux PC X11 version, but in .deb format |
 | Linux PC     | [X11](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager-x86_64-linux-x11.zip)<br>[GTK+](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager-x86_64-linux-gtk.zip) | recommended<br>compatibility (has security issues with accessing raw disks) |
-| Raspberry Pi | [X11](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager-armv7l-linux-x11.zip) | Raspbian, native interface |
+| Raspbian     | [X11](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager_0.0.1_armv7l.deb) | same as the Raspberry Pi X11 version, but in .deb format |
+| Raspberry Pi | [X11](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager-armv7l-linux-x11.zip) | native interface |
 
 Installation
 ------------
@@ -23,7 +24,7 @@ Installation
 You can use the executable in the archive as-is, the other files only provide integration with your desktop (icons and such). It will autodetect your
 operating system's configured language, and if dictionary found, it will greet you in your language.
 
-On Ubuntu LTS machines you can also download the deb version, which then can be installed by the `sudo dpkg -i usbimager-*.deb` command.
+On Ubuntu LTS and Raspbian machines you can also download the deb version, which then can be installed by the `sudo dpkg -i usbimager-*.deb` command.
 
 Features
 --------
@@ -215,13 +216,15 @@ manually or run USBImager via sudo, otherwise you'll get "permission denied" err
 Hacking the Source
 ------------------
 
-To compile with debugging, use `DEBUG=yes make`. This will add extra debugging symbols and sorce file refernces to the executable, parsed by both valgrind and gdb.
+To compile with debugging, use `DEBUG=yes make`. This will add extra debugging symbols and sorce file references to the executable, parsed by both valgrind and gdb.
 
 Editing Makefile and changing `DISKS_TEST` to 1 will add a special `test.bin` "device" to the list on all platforms. You can test the decompressors with this.
 
 X11 uses only low-level X11 (no Xft, Xmu nor any other extensions), so it should be trivial to port to other POSIX systems (like BSD or Minix). It does not
 handle locales, but it does use UTF-8 encoding in file names (this only matters for displaying, the file operations can handle any encoding). If you don't
 want this, set the `USEUTF8` define to 0 in the beginning of the main_x11.c file.
+
+That stupid Unity reports bad window frame sizes, by running `USE_UNITY=yes make` it will add 8 pixels to properly position the combobox popups.
 
 The source is clearly separated into 4 layers:
 - stream.c / stream.h is responsible for reading in and uncompressing the data from file as well as compressing and writing out

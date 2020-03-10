@@ -12,20 +12,21 @@ annyira egyszerű, amennyire csak lehetséges, teljesen salang mentes.
 | MacOSX       | [Cocoa](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager-intel-macosx-cocoa.zip) | natív interfész |
 | Ubuntu LTS   | [X11](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager_0.0.1_amd64.deb) | ua. mint a Linux PC X11 verzió, csak .deb formátumban |
 | Linux PC     | [X11](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager-x86_64-linux-x11.zip)<br>[GTK+](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager-x86_64-linux-gtk.zip)  | javalott<br>kompatíbilitás (van egy kis biztonsági kockázat a nyers lemezelérések engedélyezésekor) |
-| Raspberry Pi | [X11](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager-armv7l-linux-x11.zip) | Raspbian, natív interfész |
+| Raspbian     | [X11](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager_0.0.1_armv7l.deb) | ua. mint a Raspberry Pi X11 verzió, csak .deb formátumban |
+| Raspberry Pi | [X11](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager-armv7l-linux-x11.zip) | natív interfész |
 
 Telepítés
 ---------
 
 1. töltsd le a megfelelő `usbimager-*.zip` csomagolt fájlt a gépedhez (kevesebb, mint 192 Kilobájt mind)
 2. csomagold ki: `C:\Program Files` (Windows), `/Applications` (MacOSX) vagy `/usr` (Linux) mappába
-3. Élvezd!
+3. Használd!
 
 A csomagban lévő futtathatót egyből használhatod, nem kell telepíteni, és a többi fájl is csak azért van, hogy beillessze az asztali
 környezetedbe (ikonok és hasonlók). Automatikusan érzékeli az operációs rendszeredben beállított nyelvet, és ha talál hozzá szótárat, akkor
 a saját nyelveden köszönt (természetesen tud magyarul).
 
-Ubuntu LTS rendszeren letöltheted a deb csomagot is, amit aztán a `sudo dpkg -i usbimager-*.deb` paranccsal telepíthetsz.
+Ubuntu LTS és Raspbian rendszeren letöltheted a deb csomagot is, amit aztán a `sudo dpkg -i usbimager-*.deb` paranccsal telepíthetsz.
 
 Fícsörök
 --------
@@ -233,6 +234,8 @@ platformon egységesen elérhető, ezzel a kicsomagolást tudod leteszteni.
 Az X11 csak alacsony szintű hívásokkal operál (nem használ Xft, Xmu vagy más bővítményeket), így könnyű más POSIX rendszerekre portolni (pl.
 BSD-kre vagy Minixre). Nem kezel lokalizációt, de a fájlnevekben támogatja az UTF-8 kódolást (ez csak a megjelenítésnél számít, a fájlműveletek
 bármilyen kódlapot lekezelnek). Ha ezt ki akarod kapcsolni, akkor a main_x11.c fájl elején állítsd a `USEUTF8` define-t 0-ára.
+
+Az az idióta Unity rosszul adja vissza az ablakkeret méretét, ezért a `USE_UNITY=yes make` parancsot futtatva 8 pixelt hozzáad hogy a választómenük pozíciója jó legyen.
 
 A forrás jól elkülöníthetően 4 rétegre van bontva:
 - stream.c / stream.h dolga a fájlok belolvasása, kicsomagolása, valamint tömörítése és kiírása

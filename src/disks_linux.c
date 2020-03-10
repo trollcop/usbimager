@@ -60,7 +60,7 @@ void filegetcontent(char *fn, char *buf, int maxlen)
     f = fopen(fn, "r");
     if(f) {
         memset(tmp, 0, sizeof(tmp));
-        if(!fread(tmp, maxlen - 1, 1, f)) tmp[0] = 0;
+        if(!fread(tmp, maxlen - 1, 1, f)) {}
         fclose(f);
         for(s = tmp; *s && *s <= ' '; s++);
         for(o = buf; *s && *s != '\n';) *o++ = *s++;
