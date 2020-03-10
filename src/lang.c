@@ -132,7 +132,7 @@ char *dict[NUMLANGS][NUMTEXTS + 1] = {
         "Quedan %d minutos",
         "Quedan %d minuto",
         "Queda menos de un minuto",
-        "hasta aquí",
+        "descomprimido",
 
         "Correcto",
         "Domingo",
