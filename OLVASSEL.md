@@ -235,8 +235,6 @@ Az X11 csak alacsony szintű hívásokkal operál (nem használ Xft, Xmu vagy m�
 BSD-kre vagy Minixre). Nem kezel lokalizációt, de a fájlnevekben támogatja az UTF-8 kódolást (ez csak a megjelenítésnél számít, a fájlműveletek
 bármilyen kódlapot lekezelnek). Ha ezt ki akarod kapcsolni, akkor a main_x11.c fájl elején állítsd a `USEUTF8` define-t 0-ára.
 
-Az az idióta Unity rosszul adja vissza az ablakkeret méretét, ezért a `USE_UNITY=yes make` parancsot futtatva 8 pixelt hozzáad hogy a választómenük pozíciója jó legyen.
-
 A forrás jól elkülöníthetően 4 rétegre van bontva:
 - stream.c / stream.h dolga a fájlok belolvasása, kicsomagolása, valamint tömörítése és kiírása
 - disks_*.c / disks.h az a réteg, ami beolvassa és kiírja a lemezszektorokat, minden platformhoz külön van

@@ -1408,7 +1408,7 @@ int main(int argc, char **argv)
     int i, ser;
     long *extents;
     unsigned long n, b;
-    char *lc = getenv("LANG");
+    char *lc = getenv("LANG"), *sd = getenv("XDG_SESSION_DESKTOP");
     char help[] = "USBImager " USBIMAGER_VERSION
 #ifdef USBIMAGER_BUILD
         " (build " USBIMAGER_BUILD ")"
@@ -1529,11 +1529,14 @@ int main(int argc, char **argv)
     while(XGetWindowProperty(dpy, mainwin, a, 0, 4, False, AnyPropertyType, &t, &i,
             &n, &b, (unsigned char**)&extents) != Success || n != 4 || b != 0)
         XNextEvent(dpy, &e);
-    frame_left = extents && extents[0] > 0 && extents[0] < 32 ? extents[0] : 2;
-    frame_top = extents && extents[2] > 0 && extents[2] < 32 ? extents[2] : 16;
-#ifdef USE_UNITY
-    frame_left += 8; frame_top += 8;
-#endif
+    frame_left = extents && extents[0] > 0 && extents[0] < 64 ? extents[0] : 2;
+    frame_top = extents && extents[2] > 0 && extents[2] < 64 ? extents[2] : 16;
+    /* if anybody knows a better way, let me know */
+    if(sd && (!memcmp(sd, "ubuntu", 6) || !memcmp(sd, "Ubuntu", 6) ||
+        !memcmp(sd, "unity", 5) || !memcmp(sd, "Unity", 5))) {
+            frame_left += 8; frame_top += 8;
+    }
+    if(verbose) printf(" X11 frame: left %d top %d\n", frame_left, frame_top);
     if(extents) free(extents);
     mainRedraw();
 

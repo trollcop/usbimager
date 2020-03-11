@@ -224,8 +224,6 @@ X11 uses only low-level X11 (no Xft, Xmu nor any other extensions), so it should
 handle locales, but it does use UTF-8 encoding in file names (this only matters for displaying, the file operations can handle any encoding). If you don't
 want this, set the `USEUTF8` define to 0 in the beginning of the main_x11.c file.
 
-That stupid Unity reports bad window frame sizes, by running `USE_UNITY=yes make` it will add 8 pixels to properly position the combobox popups.
-
 The source is clearly separated into 4 layers:
 - stream.c / stream.h is responsible for reading in and uncompressing the data from file as well as compressing and writing out
 - disks_*.c / disks.h is the layer that reads and writes out data to disks, separated for each platform
