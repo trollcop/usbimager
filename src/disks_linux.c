@@ -42,6 +42,11 @@
 #include "main.h"
 #include "disks.h"
 
+#if USE_UDISKS2
+#include <udisks/udisks.h>
+extern char *main_errorMessage;
+#endif
+
 extern int fdatasync(int);
 int usleep(unsigned long int);
 
@@ -258,6 +263,16 @@ void *disks_open(int targetId, uint64_t size)
     int ret = 0, l, k;
     char deviceName[64], *c, buf[1024], *path, *device;
     FILE *m;
+#if USE_UDISKS2
+    UDisksClient *client;
+    GError *error = NULL;
+    struct stat st;
+    UDisksFilesystem *filesystem;
+    UDisksBlock *block = NULL;
+    GVariantBuilder builder;
+    GList *objects;
+    GList *o;
+#endif
 
     if(targetId < 0 || targetId >= DISKS_MAX || disks_targets[targetId] == -1) return (void*)-1;
     if(size && disks_capacity[targetId] && size > disks_capacity[targetId]) return (void*)-1;
@@ -359,6 +374,7 @@ sererr:         main_getErrorMessage();
 #endif
     sprintf(deviceName, "/dev/sd%c", (char)disks_targets[targetId]);
     if(verbose) printf("disks_open(%s)\r\n", deviceName);
+
     m = fopen("/proc/self/mountinfo", "r");
     if(m) {
         l = strlen(deviceName);
@@ -376,9 +392,37 @@ sererr:         main_getErrorMessage();
                     if(!strcmp(path, "/") || !strcmp(path, "/boot")) { fclose(m); return (void*)-2; }
                     if(verbose) printf("  umount(%s)\r\n", path);
                     if(umount2(path, MNT_FORCE)) {
-                        if(verbose) printf("  errno=%d err=%s\r\n", errno, strerror(errno));
-                        main_getErrorMessage();
-                        return (void*)-2;
+#if USE_UDISKS2
+                        /* fallback to udisks2 umount */
+                        client = udisks_client_new_sync(NULL, NULL);
+                        if(client && !stat(path, &st)) {
+                            objects = g_dbus_object_manager_get_objects(udisks_client_get_object_manager (client));
+                            for (o = objects, filesystem = NULL; o != NULL; o = o->next) {
+                                block = udisks_object_peek_block(UDISKS_OBJECT(o->data));
+                                if(block != NULL && udisks_block_get_device_number(block) == st.st_dev) {
+                                    filesystem = udisks_object_peek_filesystem(g_object_ref(UDISKS_OBJECT(o->data)));
+                                    break;
+                                }
+                            }
+                            g_list_foreach(objects, (GFunc) g_object_unref, NULL);
+                            g_list_free(objects);
+                            g_variant_builder_init(&builder, G_VARIANT_TYPE_VARDICT);
+                            error = NULL;
+                            if(!filesystem || !udisks_filesystem_call_unmount_sync(filesystem,
+                                g_variant_builder_end(&builder), NULL, &error)) {
+                                    main_errorMessage = error ? error->message : "No block device???";
+                                    if(verbose) printf("  udisks2 umount err=%s\r\n", main_errorMessage);
+                                    g_object_unref(client);
+                                    return (void*)-2;
+                            }
+                            g_object_unref(client);
+                        } else
+#endif
+                        {
+                            if(verbose) printf("  errno=%d err=%s\r\n", errno, strerror(errno));
+                            main_getErrorMessage();
+                            return (void*)-2;
+                        }
                     }
                 }
             }
@@ -390,8 +434,32 @@ sererr:         main_getErrorMessage();
     ret = open(deviceName, O_RDWR | O_SYNC | O_EXCL);
     if(verbose) printf("  fd=%d errno=%d err=%s\r\n", ret, errno, strerror(errno));
     if(ret < 0 || errno) {
-        main_getErrorMessage();
-        return NULL;
+#if USE_UDISKS2
+        /* fallback to udisks2 open_device */
+        client = udisks_client_new_sync(NULL, NULL);
+        if(client && !stat(deviceName, &st)) {
+            objects = g_dbus_object_manager_get_objects(udisks_client_get_object_manager(client));
+            for(o = objects, block = NULL; o != NULL; o = o->next) {
+                block = udisks_object_peek_block(UDISKS_OBJECT(o->data));
+                if(block != NULL && udisks_block_get_device_number(block) == st.st_rdev) break;
+                else block = NULL;
+            }
+            error = NULL; main_errorMessage = NULL;
+            if(!block || !udisks_block_call_open_device_sync(block, "rw", NULL, NULL,
+                (GVariant *)&ret, NULL, NULL, &error)) {
+                    main_errorMessage = error ? error->message : "No block device???";
+                    ret = 0;
+            }
+            if(verbose) printf("  udisks2 open_device fd=%d err=%s\r\n", ret, main_errorMessage);
+            g_list_foreach(objects, (GFunc)g_object_unref, NULL);
+            g_list_free(objects);
+            g_object_unref(client);
+        } else
+#endif
+        {
+            main_getErrorMessage();
+            return NULL;
+        }
     }
     return (void*)((long int)ret);
 }

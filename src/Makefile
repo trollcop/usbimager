@@ -97,6 +97,10 @@ LIBS += -lgtk-3 -lgdk-3 -lgobject-2.0 -lglib-2.0
 endif
 FRM = linux-gtk
 endif
+ifneq ($(USE_UDISKS2),)
+CFLAGS += -DUSE_UDISKS2=1
+LIBS += -ludisks2
+endif
 SRC += disks_linux.c
 ARCH = $(shell uname -m)
 DEBARCH = $(ARCH:x86_64=amd64)
@@ -169,9 +173,10 @@ ifneq ($(MACOSX),)
 	zip -r -9 ../usbimager-$(ARCH)-$(FRM).zip USBImager.app
 	@rm -rf USBImager.app
 else
-	@mkdir bin share share/applications share/icons share/icons/hicolor share/icons/hicolor/16x16 share/icons/hicolor/16x16/apps share/icons/hicolor/32x32 share/icons/hicolor/32x32/apps share/icons/hicolor/64x64 share/icons/hicolor/64x64/apps share/icons/hicolor/128x128 share/icons/hicolor/128x128/apps
+	@mkdir bin share share/applications share/man share/man/man8 share/icons share/icons/hicolor share/icons/hicolor/16x16 share/icons/hicolor/16x16/apps share/icons/hicolor/32x32 share/icons/hicolor/32x32/apps share/icons/hicolor/64x64 share/icons/hicolor/64x64/apps share/icons/hicolor/128x128 share/icons/hicolor/128x128/apps
 	@cp $(TARGET) bin
 	@cp misc/usbimager.desktop share/applications
+	@cp misc/usbimager.8.gz share/man/man8
 	@cp misc/icon128.png share/icons/hicolor/128x128/apps/usbimager.png
 	@cp misc/icon64.png share/icons/hicolor/64x64/apps/usbimager.png
 	@cp misc/icon32.png share/icons/hicolor/32x32/apps/usbimager.png
@@ -183,9 +188,10 @@ endif
 endif
 
 deb: $(TARGET)
-	@mkdir DEBIAN usr usr/bin usr/share usr/share/applications usr/share/icons usr/share/icons/hicolor usr/share/icons/hicolor/16x16 usr/share/icons/hicolor/16x16/apps usr/share/icons/hicolor/32x32 usr/share/icons/hicolor/32x32/apps usr/share/icons/hicolor/64x64 usr/share/icons/hicolor/64x64/apps usr/share/icons/hicolor/128x128 usr/share/icons/hicolor/128x128/apps
+	@mkdir DEBIAN usr usr/bin usr/share usr/share/applications usr/share/man usr/share/man/man8 usr/share/icons usr/share/icons/hicolor usr/share/icons/hicolor/16x16 usr/share/icons/hicolor/16x16/apps usr/share/icons/hicolor/32x32 usr/share/icons/hicolor/32x32/apps usr/share/icons/hicolor/64x64 usr/share/icons/hicolor/64x64/apps usr/share/icons/hicolor/128x128 usr/share/icons/hicolor/128x128/apps
 	@cp $(TARGET) usr/bin
 	@cp misc/usbimager.desktop usr/share/applications
+	@cp misc/usbimager.8.gz usr/share/man/man8
 	@cp misc/icon128.png usr/share/icons/hicolor/128x128/apps/usbimager.png
 	@cp misc/icon64.png usr/share/icons/hicolor/64x64/apps/usbimager.png
 	@cp misc/icon32.png usr/share/icons/hicolor/32x32/apps/usbimager.png
