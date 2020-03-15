@@ -901,9 +901,9 @@ static void onSelectClicked(int byKey)
     XEvent e;
     KeySym k;
     Window win;
-    char *s, *t, fn[PATH_MAX], path[PATH_MAX/FILENAME_MAX][FILENAME_MAX], **mounts = NULL, *recent;
+    char *s, *t, fn[PATH_MAX], path[PATH_MAX/FILENAME_MAX+64][FILENAME_MAX], **mounts = NULL, *recent;
     char tmp[PATH_MAX+FILENAME_MAX+1];
-    int i, j, x, y, mw = 800, mh = 600, pathlen = 0, pathX[PATH_MAX/FILENAME_MAX+1], numMounts = 0;
+    int i, j, x, y, mw = 800, mh = 600, pathlen = 0, pathX[PATH_MAX/FILENAME_MAX+64], numMounts = 0;
     int refresh = 1, pressedPath = -1, pressedBtn = -1, allfiles = 0, fns = 220, ds = 120, sel = -1;
     int scrollMounts = 0, overMount = -1, numFiles = 0, scrollFiles = 0, selFile = -1, lastFile = -2;
     filelist_t *files = NULL;

@@ -266,6 +266,7 @@ void *disks_open(int targetId, uint64_t size)
 #if USE_UDISKS2
     UDisksClient *client;
     GError *error = NULL;
+    GVariant *var = NULL;
     struct stat st;
     UDisksFilesystem *filesystem;
     UDisksBlock *block = NULL;
@@ -394,8 +395,7 @@ sererr:         main_getErrorMessage();
                     if(umount2(path, MNT_FORCE)) {
 #if USE_UDISKS2
                         /* fallback to udisks2 umount */
-                        client = udisks_client_new_sync(NULL, NULL);
-                        if(client && !stat(path, &st)) {
+                        if((errno == EPERM || errno == EACCES) && !stat(path, &st) && (client = udisks_client_new_sync(NULL, NULL))) {
                             objects = g_dbus_object_manager_get_objects(udisks_client_get_object_manager (client));
                             for (o = objects, filesystem = NULL; o != NULL; o = o->next) {
                                 block = udisks_object_peek_block(UDISKS_OBJECT(o->data));
@@ -436,8 +436,7 @@ sererr:         main_getErrorMessage();
     if(ret < 0 || errno) {
 #if USE_UDISKS2
         /* fallback to udisks2 open_device */
-        client = udisks_client_new_sync(NULL, NULL);
-        if(client && !stat(deviceName, &st)) {
+        if((errno == EPERM || errno == EACCES) && !stat(deviceName, &st) && (client = udisks_client_new_sync(NULL, NULL))) {
             objects = g_dbus_object_manager_get_objects(udisks_client_get_object_manager(client));
             for(o = objects, block = NULL; o != NULL; o = o->next) {
                 block = udisks_object_peek_block(UDISKS_OBJECT(o->data));
@@ -445,11 +444,15 @@ sererr:         main_getErrorMessage();
                 else block = NULL;
             }
             error = NULL; main_errorMessage = NULL;
-            if(!block || !udisks_block_call_open_device_sync(block, "rw", NULL, NULL,
-                (GVariant *)&ret, NULL, NULL, &error)) {
+            g_variant_builder_init(&builder, G_VARIANT_TYPE("a{sv}"));
+            g_variant_builder_add(&builder, "{sv}", "O_SYNC", g_variant_new_int32(O_SYNC));
+            g_variant_builder_add(&builder, "{sv}", "O_EXCL", g_variant_new_int32(O_EXCL));
+            if(!block || !udisks_block_call_open_device_sync(block, "rw", g_variant_builder_end(&builder), NULL,
+                &var, NULL, NULL, &error) || !var) {
                     main_errorMessage = error ? error->message : "No block device???";
                     ret = 0;
-            }
+            } else
+                ret = (int)g_variant_get_int32(var);
             if(verbose) printf("  udisks2 open_device fd=%d err=%s\r\n", ret, main_errorMessage);
             g_list_foreach(objects, (GFunc)g_object_unref, NULL);
             g_list_free(objects);
