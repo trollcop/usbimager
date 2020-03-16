@@ -273,6 +273,7 @@ void *disks_open(int targetId, uint64_t size)
     UDisksFilesystem *filesystem;
     UDisksBlock *block = NULL;
     GVariantBuilder builder;
+    GVariant *options;
     GList *objects;
     GList *o;
 #endif
@@ -447,11 +448,12 @@ sererr:         main_getErrorMessage();
             }
             error = NULL; main_errorMessage = NULL;
             g_variant_builder_init(&builder, G_VARIANT_TYPE("a{sv}"));
-            g_variant_builder_add(&builder, "{sv}", "O_SYNC", g_variant_new_int32(O_SYNC));
-            g_variant_builder_add(&builder, "{sv}", "O_EXCL", g_variant_new_int32(O_EXCL));
+            g_variant_builder_add(&builder, "{sv}", "flags", g_variant_new_int32(O_SYNC | O_EXCL));
+            options = g_variant_builder_end(&builder);
+            g_variant_ref_sink(options);
             fdlist = g_unix_fd_list_new();
-            if(!block || !udisks_block_call_open_device_sync(block, "rw", g_variant_builder_end(&builder), NULL,
-                NULL, &fdlist, NULL, &error) || !(fds = g_unix_fd_list_steal_fds(fdlist, &numfd)) || !fds || !numfd) {
+            if(!block || !udisks_block_call_open_device_sync(block, "rw", options, NULL, NULL, &fdlist, NULL, &error) ||
+               !(fds = g_unix_fd_list_steal_fds(fdlist, &numfd)) || !fds || !numfd) {
                     main_errorMessage = error ? error->message : "No block device???";
                     ret = 0;
             } else
@@ -461,6 +463,7 @@ sererr:         main_getErrorMessage();
             g_list_foreach(objects, (GFunc)g_object_unref, NULL);
             g_list_free(objects);
             g_object_unref(fdlist);
+            g_object_unref(options);
             g_object_unref(client);
         } else
 #endif
