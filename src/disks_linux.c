@@ -44,6 +44,7 @@
 
 #if USE_UDISKS2
 #include <udisks/udisks.h>
+#include <gio/gunixfdlist.h>
 extern char *main_errorMessage;
 #endif
 
@@ -266,7 +267,8 @@ void *disks_open(int targetId, uint64_t size)
 #if USE_UDISKS2
     UDisksClient *client;
     GError *error = NULL;
-    GVariant *var = NULL;
+    GUnixFDList *fdlist;
+    gint *fds = NULL, numfd;
     struct stat st;
     UDisksFilesystem *filesystem;
     UDisksBlock *block = NULL;
@@ -447,15 +449,18 @@ sererr:         main_getErrorMessage();
             g_variant_builder_init(&builder, G_VARIANT_TYPE("a{sv}"));
             g_variant_builder_add(&builder, "{sv}", "O_SYNC", g_variant_new_int32(O_SYNC));
             g_variant_builder_add(&builder, "{sv}", "O_EXCL", g_variant_new_int32(O_EXCL));
+            fdlist = g_unix_fd_list_new();
             if(!block || !udisks_block_call_open_device_sync(block, "rw", g_variant_builder_end(&builder), NULL,
-                &var, NULL, NULL, &error) || !var) {
+                NULL, &fdlist, NULL, &error) || !(fds = g_unix_fd_list_steal_fds(fdlist, &numfd)) || !fds || !numfd) {
                     main_errorMessage = error ? error->message : "No block device???";
                     ret = 0;
             } else
-                ret = (int)g_variant_get_int32(var);
+                ret = fds[0];
             if(verbose) printf("  udisks2 open_device fd=%d err=%s\r\n", ret, main_errorMessage);
+            if(fds) g_free(fds);
             g_list_foreach(objects, (GFunc)g_object_unref, NULL);
             g_list_free(objects);
+            g_object_unref(fdlist);
             g_object_unref(client);
         } else
 #endif

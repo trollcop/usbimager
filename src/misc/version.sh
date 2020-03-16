@@ -152,7 +152,7 @@ Architecture: ARCH
 Essential: no
 Section: Admin
 Priority: optional
-Depends: xorg
+Depends: xorg, udisks2
 Maintainer: bzt
 Homepage: https://gitlab.com/bztsrc/usbimager
 Installed-Size: SIZE

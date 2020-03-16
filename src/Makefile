@@ -98,7 +98,7 @@ endif
 FRM = linux-gtk
 endif
 ifneq ($(USE_UDISKS2),)
-CFLAGS += -DUSE_UDISKS2=1 $(shell pkg-config --cflags udisks2)
+CFLAGS += -DUSE_UDISKS2=1 $(shell pkg-config --cflags udisks2) -I/usr/include/gio-unix-2.0
 LIBS += $(shell pkg-config --libs udisks2)
 endif
 SRC += disks_linux.c
