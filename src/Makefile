@@ -79,6 +79,7 @@ ARCH = intel
 else
 # Linux
 LINUX = 1
+ARCH = $(shell uname -m)
 ifeq ($(USE_LIBUI),)
 SRC += main_x11.c
 CFLAGS += -I/usr/include/X11
@@ -89,7 +90,11 @@ else
 SRC += main_libui.c
 CFLAGS += -pthread
 LDFLAGS += -pthread
+ifeq ($(ARCH),x86_64)
 LIBS += libui/linux.a
+else
+LIBS += libui/raspbian.a
+endif
 ifneq ("$(wildchard /usr/bin/pkg-config)","")
 LIBS += $(shell pkg-config --libs gtk+-3.0)
 else
@@ -102,7 +107,6 @@ CFLAGS += -DUSE_UDISKS2=1 $(shell pkg-config --cflags udisks2) -I/usr/include/gi
 LIBS += $(shell pkg-config --libs udisks2)
 endif
 SRC += disks_linux.c
-ARCH = $(shell uname -m)
 DEBARCH = $(ARCH:x86_64=amd64)
 endif
 endif

@@ -9,9 +9,9 @@ and creates backups. Available platforms: Windows, MacOSX and Linux. Its interfa
 |--------------|--------------|------------------------------|
 | Windows      | [GDI](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager-i686-win-gdi.zip) | native interface |
 | MacOSX       | [Cocoa](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager-intel-macosx-cocoa.zip) | native interface|
-| Ubuntu LTS   | [X11](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager_0.0.1_amd64.deb) | same as the Linux PC X11 version, but in .deb format |
-| Linux PC     | [X11](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager-x86_64-linux-x11.zip)<br>[GTK+](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager-x86_64-linux-gtk.zip) | recommended<br>compatibility (has security issues with accessing raw disks) |
-| Raspbian     | [X11](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager_0.0.1_armv7l.deb) | same as the Raspberry Pi X11 version, but in .deb format |
+| Ubuntu LTS   | [X11](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager_0.0.1_amd64.deb) | same as the Linux PC GTK version with udisks2 support, but in .deb format |
+| Linux PC     | [X11](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager-x86_64-linux-x11.zip)<br>[GTK+](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager-x86_64-linux-gtk.zip) | recommended<br>compatibility (has security issues with accessing raw disks without udisks2) |
+| Raspbian     | [X11](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager_0.0.1_armv7l.deb) | same as the Raspberry Pi GTK version with udisks2 support, but in .deb format |
 | Raspberry Pi | [X11](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager-armv7l-linux-x11.zip) | native interface |
 
 Installation
@@ -211,7 +211,7 @@ Dependencies: libc, libX11 and standard GNU toolchain.
 You can also compile for GTK+ by using `USE_LIBUI=yes make`. That'll use libui (included), which in turn relies on hell a lot of libraries (pthread, X11,
 wayland, gdk, harfbuzz, pango, cairo, freetype2 etc.) Also note that the GTK version cannot be installed with setgid bit, so that write access to disk
 devices cannot be guaranteed. The X11 version gains "disk" group membership on execution automatically. For GTK you'll have to add your user to that group
-manually or run USBImager via sudo, otherwise you'll get "permission denied" errors.
+manually or run USBImager via sudo, otherwise you'll get "permission denied" errors. Alternatively compile with `USE_LIBUI=yes USE_UDISKS2=yes make`.
 
 Hacking the Source
 ------------------
