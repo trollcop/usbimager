@@ -11,7 +11,7 @@ and creates backups. Available platforms: Windows, MacOSX and Linux. Its interfa
 | MacOSX       | [Cocoa](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager-intel-macosx-cocoa.zip) | native interface|
 | Ubuntu LTS   | [GTK+](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager_0.0.1_amd64.deb) | same as the Linux PC GTK version with udisks2 support, but in .deb format |
 | Linux PC     | [X11](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager-x86_64-linux-x11.zip)<br>[GTK+](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager-x86_64-linux-gtk.zip) | recommended<br>compatibility (has security issues with accessing raw disks without udisks2) |
-| Raspbian     | [GTK+](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager_0.0.1_armv7l.deb) | same as the Raspberry Pi GTK version with udisks2 support, but in .deb format |
+| Raspbian     | [GTK+](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager_0.0.1_armhf.deb) | same as the Raspberry Pi GTK version with udisks2 support, but in .deb format |
 | Raspberry Pi | [X11](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager-armv7l-linux-x11.zip) | native interface |
 
 Installation

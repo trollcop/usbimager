@@ -12,7 +12,7 @@ annyira egyszerű, amennyire csak lehetséges, teljesen salang mentes.
 | MacOSX       | [Cocoa](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager-intel-macosx-cocoa.zip) | natív interfész |
 | Ubuntu LTS   | [GTK+](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager_0.0.1_amd64.deb) | ua. mint a Linux PC GTK verzió udisks2-vel, csak .deb formátumban |
 | Linux PC     | [X11](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager-x86_64-linux-x11.zip)<br>[GTK+](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager-x86_64-linux-gtk.zip)  | javalott<br>kompatíbilitás (van egy kis biztonsági kockázat a nyers lemezelérések engedélyezésekor udisks2 nélkül) |
-| Raspbian     | [GTK+](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager_0.0.1_armv7l.deb) | ua. mint a Raspberry Pi GTK verzió udisks2-vel, csak .deb formátumban |
+| Raspbian     | [GTK+](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager_0.0.1_armhf.deb) | ua. mint a Raspberry Pi GTK verzió udisks2-vel, csak .deb formátumban |
 | Raspberry Pi | [X11](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager-armv7l-linux-x11.zip) | natív interfész |
 
 Telepítés

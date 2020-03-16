@@ -107,7 +107,8 @@ CFLAGS += -DUSE_UDISKS2=1 $(shell pkg-config --cflags udisks2) -I/usr/include/gi
 LIBS += $(shell pkg-config --libs udisks2)
 endif
 SRC += disks_linux.c
-DEBARCH = $(ARCH:x86_64=amd64)
+TMP = $(ARCH:x86_64=amd64)
+DEBARCH = $(TMP:armv7l=armhf)
 endif
 endif
 
@@ -202,12 +203,16 @@ deb: $(TARGET)
 	@cp misc/icon16.png usr/share/icons/hicolor/16x16/apps/usbimager.png
 	@cat misc/deb_control | sed s/ARCH/$(DEBARCH)/g | sed s/SIZE/`du -s usr|cut -f 1`/g >DEBIAN/control
 	@md5sum `find usr -type f` >DEBIAN/md5sums
-	@cp misc/deb_postinst DEBIAN/postinst
 	@cp ../LICENSE DEBIAN/copyright
-	@chmod +x DEBIAN/postinst
 	@echo "2.0" >debian-binary
 	@tar -czvf data.tar.gz usr
+ifeq ($(USE_LIBUI),)
+	@cp misc/deb_postinst DEBIAN/postinst
+	@chmod +x DEBIAN/postinst
 	@tar -C DEBIAN -czvf control.tar.gz control copyright md5sums postinst
+else
+	@tar -C DEBIAN -czvf control.tar.gz control copyright md5sums
+endif
 	@ar r ../usbimager_$(shell cat main.h|grep USBIMAGER_VERSION|cut -d '"' -f 2)_$(DEBARCH).deb debian-binary control.tar.gz data.tar.gz
 	@rm -rf debian-binary control.tar.gz data.tar.gz DEBIAN usr
 

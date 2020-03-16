@@ -152,7 +152,7 @@ Architecture: ARCH
 Essential: no
 Section: Admin
 Priority: optional
-Depends: libgtk-3, udisks2
+Depends: udisks2
 Maintainer: bzt
 Homepage: https://gitlab.com/bztsrc/usbimager
 Installed-Size: SIZE
