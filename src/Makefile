@@ -37,7 +37,9 @@ CFLAGS = -DDISKS_TEST=0 -D_FILE_OFFSET_BITS=64 -D__USE_FILE_OFFSET64 -D__USE_LAR
 LDFLAGS =
 LIBS =
 DECOMPRESSORS = zlib/libz.a bzip2/libbz2.a xz/libxz.a
+DESTDIR ?= /usr
 
+VERSION = $(shell cat main.h|grep USBIMAGER_VERSION|cut -d '"' -f 2)
 SRC = $(filter-out $(wildcard main_*.c) $(wildcard disks_*.c),$(wildcard *.c))
 OBJ =
 
@@ -154,19 +156,25 @@ endif
 ####### install and package creation #######
 
 install: $(TARGET)
-	install -m 755 -g bin $(TARGET) /usr/bin
-	cp misc/usbimager.desktop /usr/share/applications
-	cp misc/icon128.png /usr/share/icons/hicolor/128x128/apps/usbimager.png
-	cp misc/icon64.png /usr/share/icons/hicolor/64x64/apps/usbimager.png
-	cp misc/icon32.png /usr/share/icons/hicolor/32x32/apps/usbimager.png
-	cp misc/icon16.png /usr/share/icons/hicolor/16x16/apps/usbimager.png
+	@mkdir $(DESTDIR)/bin $(DESTDIR)/share $(DESTDIR)/share/applications $(DESTDIR)/share/man $(DESTDIR)/share/man/man8 $(DESTDIR)/share/icons $(DESTDIR)/share/icons/hicolor $(DESTDIR)/share/icons/hicolor/16x16 $(DESTDIR)/share/icons/hicolor/16x16/apps $(DESTDIR)/share/icons/hicolor/32x32 $(DESTDIR)/share/icons/hicolor/32x32/apps $(DESTDIR)/share/icons/hicolor/64x64 $(DESTDIR)/share/icons/hicolor/64x64/apps $(DESTDIR)/share/icons/hicolor/128x128 $(DESTDIR)/share/icons/hicolor/128x128/apps 2>/dev/null || true
+ifneq ($(GRP),)
+	install -m 2755 -g $(GRP) $(TARGET) $(DESTDIR)/bin
+else
+	install -m 2755 -g disk $(TARGET) $(DESTDIR)/bin
+endif
+	cp misc/usbimager.desktop $(DESTDIR)/share/applications
+	cp misc/usbimager.8.gz $(DESTDIR)/share/man/man8
+	cp misc/icon128.png $(DESTDIR)/share/icons/hicolor/128x128/apps/usbimager.png
+	cp misc/icon64.png $(DESTDIR)/share/icons/hicolor/64x64/apps/usbimager.png
+	cp misc/icon32.png $(DESTDIR)/share/icons/hicolor/32x32/apps/usbimager.png
+	cp misc/icon16.png $(DESTDIR)/share/icons/hicolor/16x16/apps/usbimager.png
 
 package: $(TARGET)
 ifneq ($(WIN),)
 	@mkdir USBImager
 	@cp $(TARGET) USBImager
 	@rm ../usbimager-$(ARCH)-$(FRM).zip 2>/dev/null || true
-	zip -r -9 ../usbimager-$(ARCH)-$(FRM).zip USBImager
+	zip -r -9 ../usbimager_$(VERSION)-$(ARCH)-$(FRM).zip USBImager
 	@rm -rf USBImager
 else
 ifneq ($(MACOSX),)
@@ -175,7 +183,7 @@ ifneq ($(MACOSX),)
 	@cp misc/Info.plist USBImager.app/Contents
 	@cp misc/usbimager.icns USBImager.app/Contents/Resources
 	@rm ../usbimager-$(ARCH)-$(FRM).zip 2>/dev/null || true
-	zip -r -9 ../usbimager-$(ARCH)-$(FRM).zip USBImager.app
+	zip -r -9 ../usbimager_$(VERSION)-$(ARCH)-$(FRM).zip USBImager.app
 	@rm -rf USBImager.app
 else
 	@mkdir bin share share/applications share/man share/man/man8 share/icons share/icons/hicolor share/icons/hicolor/16x16 share/icons/hicolor/16x16/apps share/icons/hicolor/32x32 share/icons/hicolor/32x32/apps share/icons/hicolor/64x64 share/icons/hicolor/64x64/apps share/icons/hicolor/128x128 share/icons/hicolor/128x128/apps
@@ -187,7 +195,7 @@ else
 	@cp misc/icon32.png share/icons/hicolor/32x32/apps/usbimager.png
 	@cp misc/icon16.png share/icons/hicolor/16x16/apps/usbimager.png
 	@rm ../usbimager-$(ARCH)-$(FRM).zip 2>/dev/null || true
-	zip -r -9 ../usbimager-$(ARCH)-$(FRM).zip bin share
+	zip -r -9 ../usbimager_$(VERSION)-$(ARCH)-$(FRM).zip bin share
 	@rm -rf bin share
 endif
 endif
@@ -213,7 +221,7 @@ ifeq ($(USE_LIBUI),)
 else
 	@tar -C DEBIAN -czvf control.tar.gz control copyright md5sums
 endif
-	@ar r ../usbimager_$(shell cat main.h|grep USBIMAGER_VERSION|cut -d '"' -f 2)_$(DEBARCH).deb debian-binary control.tar.gz data.tar.gz
+	@ar r ../usbimager_$(VERSION)-$(DEBARCH).deb debian-binary control.tar.gz data.tar.gz
 	@rm -rf debian-binary control.tar.gz data.tar.gz DEBIAN usr
 
 ####### cleanup #######
