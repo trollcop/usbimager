@@ -173,7 +173,7 @@ package: $(TARGET)
 ifneq ($(WIN),)
 	@mkdir USBImager
 	@cp $(TARGET) USBImager
-	@rm ../usbimager-$(ARCH)-$(FRM).zip 2>/dev/null || true
+	@rm ../usbimager_$(VERSION)-$(ARCH)-$(FRM).zip 2>/dev/null || true
 	zip -r -9 ../usbimager_$(VERSION)-$(ARCH)-$(FRM).zip USBImager
 	@rm -rf USBImager
 else
@@ -182,7 +182,7 @@ ifneq ($(MACOSX),)
 	@cp $(TARGET) USBImager.app/Contents/MacOS
 	@cp misc/Info.plist USBImager.app/Contents
 	@cp misc/usbimager.icns USBImager.app/Contents/Resources
-	@rm ../usbimager-$(ARCH)-$(FRM).zip 2>/dev/null || true
+	@rm ../usbimager_$(VERSION)-$(ARCH)-$(FRM).zip 2>/dev/null || true
 	zip -r -9 ../usbimager_$(VERSION)-$(ARCH)-$(FRM).zip USBImager.app
 	@rm -rf USBImager.app
 else
@@ -194,7 +194,7 @@ else
 	@cp misc/icon64.png share/icons/hicolor/64x64/apps/usbimager.png
 	@cp misc/icon32.png share/icons/hicolor/32x32/apps/usbimager.png
 	@cp misc/icon16.png share/icons/hicolor/16x16/apps/usbimager.png
-	@rm ../usbimager-$(ARCH)-$(FRM).zip 2>/dev/null || true
+	@rm ../usbimager_$(VERSION)-$(ARCH)-$(FRM).zip 2>/dev/null || true
 	zip -r -9 ../usbimager_$(VERSION)-$(ARCH)-$(FRM).zip bin share
 	@rm -rf bin share
 endif

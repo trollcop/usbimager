@@ -8,17 +8,17 @@ annyira egyszerű, amennyire csak lehetséges, teljesen salang mentes.
 
 | Platform     | Felület      | Leírás                       |
 |--------------|--------------|------------------------------|
-| Windows      | [GDI](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager-i686-win-gdi.zip) | natív interfész |
-| MacOSX       | [Cocoa](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager-intel-macosx-cocoa.zip) | natív interfész |
-| Ubuntu LTS   | [GTK+](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager_0.0.1_amd64.deb) | ua. mint a Linux PC GTK verzió udisks2-vel, csak .deb formátumban |
-| Linux PC     | [X11](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager-x86_64-linux-x11.zip)<br>[GTK+](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager-x86_64-linux-gtk.zip)  | javalott<br>kompatíbilitás (van egy kis biztonsági kockázat a nyers lemezelérések engedélyezésekor udisks2 nélkül) |
-| Raspbian     | [GTK+](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager_0.0.1_armhf.deb) | ua. mint a Raspberry Pi GTK verzió udisks2-vel, csak .deb formátumban |
-| Raspberry Pi | [X11](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager-armv7l-linux-x11.zip) | natív interfész |
+| Windows      | [GDI](https://gitlab.com/bztsrc/usbimager/raw/binaries/usbimager_1.0.0-i686-win-gdi.zip) | natív interfész |
+| MacOSX       | [Cocoa](https://gitlab.com/bztsrc/usbimager/raw/binaries/usbimager_1.0.0-intel-macosx-cocoa.zip) | natív interfész |
+| Ubuntu LTS   | [GTK+](https://gitlab.com/bztsrc/usbimager/raw/binaries/usbimager_1.0.0-amd64.deb) | ua. mint a Linux PC GTK verzió udisks2-vel, csak .deb formátumban |
+| Linux PC     | [X11](https://gitlab.com/bztsrc/usbimager/raw/binaries/usbimager_1.0.0-x86_64-linux-x11.zip)<br>[GTK+](https://gitlab.com/bztsrc/usbimager/raw/binaries/usbimager_1.0.0-x86_64-linux-gtk.zip)  | javalott<br>kompatíbilitás (van egy kis biztonsági kockázat a nyers lemezelérések engedélyezésekor udisks2 nélkül) |
+| Raspbian     | [GTK+](https://gitlab.com/bztsrc/usbimager/raw/binaries/usbimager_1.0.0-armhf.deb) | ua. mint a Raspberry Pi GTK verzió udisks2-vel, csak .deb formátumban |
+| Raspberry Pi | [X11](https://gitlab.com/bztsrc/usbimager/raw/binaries/usbimager_1.0.0-armv7l-linux-x11.zip) | natív interfész |
 
 Telepítés
 ---------
 
-1. töltsd le a megfelelő `usbimager-*.zip` csomagolt fájlt a gépedhez (kevesebb, mint 192 Kilobájt mind)
+1. töltsd le a megfelelő `usbimager_*.zip` csomagolt fájlt a [releases oldal](https://gitlab.com/bztsrc/usbimager/-/releases)ról a gépedhez (kevesebb, mint 192 Kilobájt mind)
 2. csomagold ki: `C:\Program Files` (Windows), `/Applications` (MacOSX) vagy `/usr` (Linux) mappába
 3. Használd!
 
@@ -26,7 +26,7 @@ A csomagban lévő futtathatót egyből használhatod, nem kell telepíteni, és
 környezetedbe (ikonok és hasonlók). Automatikusan érzékeli az operációs rendszeredben beállított nyelvet, és ha talál hozzá szótárat, akkor
 a saját nyelveden köszönt (természetesen tud magyarul).
 
-Ubuntu LTS és Raspbian rendszeren letöltheted a deb csomagot is, amit aztán a `sudo dpkg -i usbimager-*.deb` paranccsal telepíthetsz.
+Ubuntu LTS és Raspbian rendszeren letöltheted a deb csomagot is, amit aztán a `sudo dpkg -i usbimager_*.deb` paranccsal telepíthetsz.
 
 Fícsörök
 --------

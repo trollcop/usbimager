@@ -7,24 +7,24 @@ and creates backups. Available platforms: Windows, MacOSX and Linux. Its interfa
 
 | Platform     | Frontend     | Description                  |
 |--------------|--------------|------------------------------|
-| Windows      | [GDI](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager-i686-win-gdi.zip) | native interface |
-| MacOSX       | [Cocoa](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager-intel-macosx-cocoa.zip) | native interface|
-| Ubuntu LTS   | [GTK+](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager_0.0.1_amd64.deb) | same as the Linux PC GTK version with udisks2 support, but in .deb format |
-| Linux PC     | [X11](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager-x86_64-linux-x11.zip)<br>[GTK+](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager-x86_64-linux-gtk.zip) | recommended<br>compatibility (has security issues with accessing raw disks without udisks2) |
-| Raspbian     | [GTK+](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager_0.0.1_armhf.deb) | same as the Raspberry Pi GTK version with udisks2 support, but in .deb format |
-| Raspberry Pi | [X11](https://gitlab.com/bztsrc/usbimager/raw/master/usbimager-armv7l-linux-x11.zip) | native interface |
+| Windows      | [GDI](https://gitlab.com/bztsrc/usbimager/raw/binaries/usbimager_1.0.0-i686-win-gdi.zip) | native interface |
+| MacOSX       | [Cocoa](https://gitlab.com/bztsrc/usbimager/raw/binaries/usbimager_1.0.0-intel-macosx-cocoa.zip) | native interface|
+| Ubuntu LTS   | [GTK+](https://gitlab.com/bztsrc/usbimager/raw/binaries/usbimager_1.0.0-amd64.deb) | same as the Linux PC GTK version with udisks2 support, but in .deb format |
+| Linux PC     | [X11](https://gitlab.com/bztsrc/usbimager/raw/binaries/usbimager_1.0.0-x86_64-linux-x11.zip)<br>[GTK+](https://gitlab.com/bztsrc/usbimager/raw/binaries/usbimager_1.0.0-x86_64-linux-gtk.zip) | recommended<br>compatibility (has security issues with accessing raw disks without udisks2) |
+| Raspbian     | [GTK+](https://gitlab.com/bztsrc/usbimager/raw/binaries/usbimager_1.0.0-armhf.deb) | same as the Raspberry Pi GTK version with udisks2 support, but in .deb format |
+| Raspberry Pi | [X11](https://gitlab.com/bztsrc/usbimager/raw/binaries/usbimager_1.0.0-armv7l-linux-x11.zip) | native interface |
 
 Installation
 ------------
 
-1. download one of the `usbimager-*.zip` archives above for your desktop (less than 192 Kilobytes each)
+1. download one of the `usbimager_*.zip` archives from the [releases page](https://gitlab.com/bztsrc/usbimager/-/releases) for your desktop (less than 192 Kilobytes each)
 2. extract to: `C:\Program Files` (Windows), `/Applications` (MacOSX) or `/usr` (Linux)
 3. Enjoy!
 
 You can use the executable in the archive as-is, the other files only provide integration with your desktop (icons and such). It will autodetect your
 operating system's configured language, and if dictionary found, it will greet you in your language.
 
-On Ubuntu LTS and Raspbian machines you can also download the deb version, which then can be installed by the `sudo dpkg -i usbimager-*.deb` command.
+On Ubuntu LTS and Raspbian machines you can also download the deb version, which then can be installed by the `sudo dpkg -i usbimager_*.deb` command.
 
 Features
 --------
