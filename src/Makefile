@@ -37,7 +37,9 @@ CFLAGS = -DDISKS_TEST=0 -D_FILE_OFFSET_BITS=64 -D__USE_FILE_OFFSET64 -D__USE_LAR
 LDFLAGS =
 LIBS =
 DECOMPRESSORS = zlib/libz.a bzip2/libbz2.a xz/libxz.a
-DESTDIR ?= /usr
+DESTDIR ?= /
+PREFIX ?= usr
+DESTDIR=$(DESTDIR)$(PREFIX)
 
 VERSION = $(shell cat main.h|grep USBIMAGER_VERSION|cut -d '"' -f 2)
 SRC = $(filter-out $(wildcard main_*.c) $(wildcard disks_*.c),$(wildcard *.c))
