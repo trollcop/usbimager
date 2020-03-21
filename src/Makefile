@@ -37,9 +37,8 @@ CFLAGS = -DDISKS_TEST=0 -D_FILE_OFFSET_BITS=64 -D__USE_FILE_OFFSET64 -D__USE_LAR
 LDFLAGS =
 LIBS =
 DECOMPRESSORS = zlib/libz.a bzip2/libbz2.a xz/libxz.a
-DESTDIR ?= /
-PREFIX ?= usr
-DESTDIR=$(DESTDIR)$(PREFIX)
+PREFIX ?= usr/
+INSTDIR=$(DESTDIR:/=)/$(PREFIX)
 
 VERSION = $(shell cat main.h|grep USBIMAGER_VERSION|cut -d '"' -f 2)
 SRC = $(filter-out $(wildcard main_*.c) $(wildcard disks_*.c),$(wildcard *.c))
@@ -158,18 +157,18 @@ endif
 ####### install and package creation #######
 
 install: $(TARGET)
-	@mkdir $(DESTDIR)/bin $(DESTDIR)/share $(DESTDIR)/share/applications $(DESTDIR)/share/man $(DESTDIR)/share/man/man8 $(DESTDIR)/share/icons $(DESTDIR)/share/icons/hicolor $(DESTDIR)/share/icons/hicolor/16x16 $(DESTDIR)/share/icons/hicolor/16x16/apps $(DESTDIR)/share/icons/hicolor/32x32 $(DESTDIR)/share/icons/hicolor/32x32/apps $(DESTDIR)/share/icons/hicolor/64x64 $(DESTDIR)/share/icons/hicolor/64x64/apps $(DESTDIR)/share/icons/hicolor/128x128 $(DESTDIR)/share/icons/hicolor/128x128/apps 2>/dev/null || true
+	@mkdir $(INSTDIR)/bin $(INSTDIR)/share $(INSTDIR)/share/applications $(INSTDIR)/share/man $(INSTDIR)/share/man/man8 $(INSTDIR)/share/icons $(INSTDIR)/share/icons/hicolor $(INSTDIR)/share/icons/hicolor/16x16 $(INSTDIR)/share/icons/hicolor/16x16/apps $(INSTDIR)/share/icons/hicolor/32x32 $(INSTDIR)/share/icons/hicolor/32x32/apps $(INSTDIR)/share/icons/hicolor/64x64 $(INSTDIR)/share/icons/hicolor/64x64/apps $(INSTDIR)/share/icons/hicolor/128x128 $(INSTDIR)/share/icons/hicolor/128x128/apps 2>/dev/null || true
 ifneq ($(GRP),)
-	install -m 2755 -g $(GRP) $(TARGET) $(DESTDIR)/bin
+	install -m 2755 -g $(GRP) $(TARGET) $(INSTDIR)/bin
 else
-	install -m 2755 -g disk $(TARGET) $(DESTDIR)/bin
+	install -m 2755 -g disk $(TARGET) $(INSTDIR)/bin
 endif
-	cp misc/usbimager.desktop $(DESTDIR)/share/applications
-	cp misc/usbimager.8.gz $(DESTDIR)/share/man/man8
-	cp misc/icon128.png $(DESTDIR)/share/icons/hicolor/128x128/apps/usbimager.png
-	cp misc/icon64.png $(DESTDIR)/share/icons/hicolor/64x64/apps/usbimager.png
-	cp misc/icon32.png $(DESTDIR)/share/icons/hicolor/32x32/apps/usbimager.png
-	cp misc/icon16.png $(DESTDIR)/share/icons/hicolor/16x16/apps/usbimager.png
+	cp misc/usbimager.desktop $(INSTDIR)/share/applications
+	cp misc/usbimager.8.gz $(INSTDIR)/share/man/man8
+	cp misc/icon128.png $(INSTDIR)/share/icons/hicolor/128x128/apps/usbimager.png
+	cp misc/icon64.png $(INSTDIR)/share/icons/hicolor/64x64/apps/usbimager.png
+	cp misc/icon32.png $(INSTDIR)/share/icons/hicolor/32x32/apps/usbimager.png
+	cp misc/icon16.png $(INSTDIR)/share/icons/hicolor/16x16/apps/usbimager.png
 
 package: $(TARGET)
 ifneq ($(WIN),)
