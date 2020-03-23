@@ -51,6 +51,12 @@ extern char *main_errorMessage;
 extern int fdatasync(int);
 int usleep(unsigned long int);
 
+/* disks_targets:
+ * -1: invalid
+ * 0 - 31: mmcblk devices
+ * 'a' - 'z': sdX devices
+ * 1024+: serial devices
+ */
 int disks_serial = 0, disks_targets[DISKS_MAX];
 uint64_t disks_capacity[DISKS_MAX];
 char *serials[DISKS_MAX], *skip[DISKS_MAX];
@@ -140,11 +146,10 @@ void disks_refreshlist()
             for(k = 0; k < j && strcmp(de->d_name, skip[k]); k++);
             if(k != j) continue;
             if(verbose > 1) printf("\n");
-/* some mmc card driver do not set this...
+            /* some mmc card driver do not set this... */
             sprintf(path, "/sys/block/%s/removable", de->d_name);
             filegetcontent(path, vendorName, 2);
-            if(vendorName[0] != '1') continue;
-*/
+            if(de->d_name[0] == 's' && vendorName[0] != '1') continue;
             sprintf(path, "/sys/block/%s/ro", de->d_name);
             filegetcontent(path, vendorName, 2);
             if(vendorName[0] != '0') continue;
@@ -168,7 +173,7 @@ void disks_refreshlist()
                 snprintf(str, sizeof(str)-1, "%s %s %s", de->d_name, vendorName, productName);
             str[128] = 0;
             disks_capacity[i] = size;
-            disks_targets[i++] = de->d_name[2];
+            disks_targets[i++] = de->d_name[0] == 's' ? de->d_name[2] : atoi(de->d_name + 6);
             main_addToCombobox(str);
             if(i >= DISKS_MAX) break;
         }
@@ -414,7 +419,10 @@ sererr:         main_getErrorMessage();
         return (void*)((long int)ret);
     }
 #endif
-    sprintf(deviceName, "/dev/sd%c", (char)disks_targets[targetId]);
+    if((char)disks_targets[targetId] >= 'a')
+        sprintf(deviceName, "/dev/sd%c", (char)disks_targets[targetId]);
+    else
+        sprintf(deviceName, "/dev/mmcblk%d", disks_targets[targetId]);
     if(verbose) printf("disks_open(%s)\r\n", deviceName);
 
     m = fopen("/proc/self/mountinfo", "r");
