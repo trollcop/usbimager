@@ -17,7 +17,7 @@ and creates backups. Available platforms: Windows, MacOSX and Linux. Its interfa
 Installation
 ------------
 
-1. download one of the `usbimager_*.zip` archives from the [releases page](https://gitlab.com/bztsrc/usbimager/-/releases) for your desktop (less than 192 Kilobytes each)
+1. download one of the `usbimager_*.zip` archives from the [repo](https://gitlab.com/bztsrc/usbimager/tree/binaries) for your desktop (less than 192 Kilobytes each)
 2. extract to: `C:\Program Files` (Windows), `/Applications` (MacOSX) or `/usr` (Linux)
 3. Enjoy!
 

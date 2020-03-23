@@ -18,7 +18,7 @@ annyira egyszerű, amennyire csak lehetséges, teljesen salang mentes.
 Telepítés
 ---------
 
-1. töltsd le a megfelelő `usbimager_*.zip` csomagolt fájlt a [releases oldal](https://gitlab.com/bztsrc/usbimager/-/releases)ról a gépedhez (kevesebb, mint 192 Kilobájt mind)
+1. töltsd le a megfelelő `usbimager_*.zip` csomagolt fájlt a [repó](https://gitlab.com/bztsrc/usbimager/tree/binaries)ból a gépedhez (kevesebb, mint 192 Kilobájt mind)
 2. csomagold ki: `C:\Program Files` (Windows), `/Applications` (MacOSX) vagy `/usr` (Linux) mappába
 3. Használd!
 

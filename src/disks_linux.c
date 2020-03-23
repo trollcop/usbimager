@@ -53,7 +53,7 @@ int usleep(unsigned long int);
 
 int disks_serial = 0, disks_targets[DISKS_MAX];
 uint64_t disks_capacity[DISKS_MAX];
-char *serials[DISKS_MAX];
+char *serials[DISKS_MAX], *skip[DISKS_MAX];
 int serialdrivers = 0;
 
 /* helper to read a string from a file */
@@ -88,10 +88,10 @@ void disks_refreshlist()
 {
     DIR *dir;
     struct dirent *de;
-    char str[1024], vendorName[128], productName[128], path[512];
+    char str[1024], vendorName[128], productName[128], path[512], *skip[6];
     uint64_t size;
-    int i = 0, k, sizeInGbTimes10;
-    char *unit, *c, *p;
+    int i = 0, j = 0, k, sizeInGbTimes10;
+    char *unit, *c, *p, *d;
     FILE *f;
 
     memset(disks_targets, 0xff, sizeof(disks_targets));
@@ -100,14 +100,51 @@ void disks_refreshlist()
     disks_targets[i++] = 'T';
     main_addToCombobox("sdT ./test.bin");
 #endif
+    /* get list of system disks */
+    f = fopen("/proc/self/mountinfo", "r");
+    if(f) {
+        while(!feof(f)) {
+            if(fgets(str, sizeof(str), f)) {
+                for(k = 0, c = str, p = d = NULL; k < 11 && *c && *c != '\n';) {
+                    if(k == 5 || k == 10) *c++ = 0;
+                    while(*c == ' ' || *c == '\t') c++;
+                    if(k == 4) p = c;
+                    if(k == 9) d = c;
+                    k++;
+                    while(*c && *c != ' ' && *c != '\t' && *c != '\n') c++;
+                }
+                if(p && d && !memcmp(d, "/dev/", 5) && (!strcmp(p, "/") || !strcmp(p, "/boot")
+                    || !strcmp(p, "/home") || !strcmp(p, "/var") || !strcmp(p, "/usr"))) {
+                        if(d[5] == 'm')
+                            for(c = d + 5; *c && *c != 'p'; c++);
+                        else
+                            for(c = d + 5; *c && (*c < '0' || *c > '9'); c++);
+                        *c = 0;
+                        skip[j] = malloc(c - d - 5 + 1);
+                        if(skip[j]) {
+                            memcpy(skip[j], d + 5, c - d - 5 + 1);
+                            j++;
+                            if(j >= 6) break;
+                        } else break;
+                }
+            }
+        }
+        fclose(f);
+    }
+
     dir = opendir("/sys/block");
     if(dir) {
         while((de = readdir(dir))) {
-            if(de->d_name[0] != 's' || de->d_name[1] != 'd') continue;
+            if((de->d_name[0] != 's' || de->d_name[1] != 'd') &&
+                (de->d_name[0] != 'm' || de->d_name[1] != 'm')) continue;
+            for(k = 0; k < j && strcmp(de->d_name, skip[k]); k++);
+            if(k != j) continue;
             if(verbose > 1) printf("\n");
+/* some mmc card driver do not set this...
             sprintf(path, "/sys/block/%s/removable", de->d_name);
             filegetcontent(path, vendorName, 2);
             if(vendorName[0] != '1') continue;
+*/
             sprintf(path, "/sys/block/%s/ro", de->d_name);
             filegetcontent(path, vendorName, 2);
             if(vendorName[0] != '0') continue;
@@ -137,6 +174,7 @@ void disks_refreshlist()
         }
         closedir(dir);
     }
+    for(k = 0; k < j; k++) free(skip[k]);
     if(disks_serial) {
         if(!serialdrivers) {
             f = fopen("/proc/tty/drivers", "r");

@@ -452,6 +452,7 @@ int main(int argc, char **argv)
     refreshTarget(target, NULL);
 
     verify = uiNewCheckbox(lang[L_VERIFY]);
+    uiCheckboxSetChecked(verify, 1);
     uiGridAppend(grid, uiControl(verify), 0, 3, 3, 1, 0, uiAlignFill, 0, uiAlignFill);
 
     compr = uiNewCheckbox(lang[L_COMPRESS]);

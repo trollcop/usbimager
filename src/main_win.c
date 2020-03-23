@@ -404,6 +404,7 @@ static INT_PTR CALLBACK MainDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
             }
             SendDlgItemMessage(hwndDlg, IDC_MAINDLG_BLKSIZE, CB_SETCURSEL, blksizesel, 0);
             MainDlgRefreshTarget(hwndDlg);
+            CheckDlgButton(hwndDlg, IDC_MAINDLG_VERIFY, BST_CHECKED);
             return TRUE;
 
         case WM_CLOSE:

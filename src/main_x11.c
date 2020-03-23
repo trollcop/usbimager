@@ -87,7 +87,7 @@ static Cursor loading, pointer;
 static char source[PATH_MAX], targetList[DISKS_MAX][128], status[128];
 static char blksizeList[10][128];
 static int fonth = 0, fonta = 0, inactive = 0, pressedBtn = 0, half;
-static int needVerify = 0, needCompress = 0, progress = 0, numTargetList = 0, targetId = -1;
+static int needVerify = 1, needCompress = 0, progress = 0, numTargetList = 0, targetId = -1;
 static int mainsel = -1, sorting = 0, shift = 0, blksizesel = 0;
 
 char *main_errorMessage = NULL;
