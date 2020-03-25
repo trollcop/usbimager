@@ -104,6 +104,13 @@ static void onThreadError(void *data)
     uiMsgBoxError(mainwin, main_errorMessage && *main_errorMessage ? main_errorMessage : lang[L_ERROR], (char*)data);
 }
 
+static void onSourceSet(void *data)
+{
+    uiControlEnable(uiControl(source));
+    uiEntrySetText(source, data);
+    uiControlDisable(uiControl(source));
+}
+
 /**
  * Function that reads from input and writes to disk
  */
@@ -225,7 +232,7 @@ static void *readerRoutine(void *data)
         snprintf(fn + i, sizeof(fn)-1-i, "/usbimager-%04d%02d%02dT%02d%02d.dd%s",
             lt->tm_year+1900, lt->tm_mon+1, lt->tm_mday, lt->tm_hour, lt->tm_min,
             needCompress ? ".bz2" : "");
-        uiEntrySetText(source, fn);
+        uiQueueMain(onSourceSet, fn);
 
         if(!stream_create(&ctx, fn, needCompress, disks_capacity[targetId])) {
             while(ctx.readSize < ctx.fileSize) {
