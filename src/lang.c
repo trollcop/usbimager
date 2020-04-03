@@ -163,7 +163,7 @@ char *dict[NUMLANGS][NUMTEXTS + 1] = {
         "de",
         "Überprüfen",
         "Komprimieren",
-        "Ausschreiben",
+        "Schreiben",
         "Lesen",
         "Senden",
         "Serielle Schnittstelle",
