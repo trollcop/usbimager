@@ -24,7 +24,17 @@ Installation
 You can use the executable in the archive as-is, the other files only provide integration with your desktop (icons and such). It will autodetect your
 operating system's configured language, and if dictionary found, it will greet you in your language.
 
-On Ubuntu LTS and Raspbian machines you can also download the deb version, which then can be installed by the `sudo dpkg -i usbimager_*.deb` command.
+On Ubuntu LTS and Raspbian machines you can also download the deb version, which then can be installed by the
+```
+sudo dpkg -i usbimager_*.deb
+```
+command.
+
+Support the Development by Donation
+-----------------------------------
+
+If you like it or find it useful, your donation of any amount will be very much appreciated:
+<a href="bitcoin:3EsdxN1ZsX5JkLgk3uR4ybHLDX5i687dkx"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQYAAAEIAQMAAACH8cgPAAAABlBMVEUAAAD///+l2Z/dAAACDklEQVRo3u2aMXKEMAxFxVC45AgchaPZR+MoHIHSBWNFX7INIZlJHXndLOt5zWqk/yWxxH+ciz7Ei9gJJzAf6x4TF7ITk34s4xEb4hLycqycIk3MmUhhOac/ItF0BXzfI8ujRGE9JB4SmeCV0CBQnMqcCaHhwQk+5ZYT5CCwZ8KqQZOCJ37Ar3pxQZjSofal4Mt0tce3Frog2jmJtv64/uaEYxCIWBXADVGqtZ/idM15cUdsDHMzV+fS4cjX3OvFEZEIBW/yZoXBWvt3PEYi5EjEJCm674dTfV9jt3gjdmIEQV2d4OoBtZ9imZs6eCIkHk3W5BpRWPiAIDSfG41IhKHFru1ehV+NkJ0RUH5JBckP8TnxfcwvK+CiM5w3YsNPD+rqCdWgBi/DKdhlRCIhSbTVo1gsK6oTZlq8EUSsBY/WhtqsLjVyx8MRAXeD3NusLvOLdTmSEvNFoxJkuws4YTVFXNauzxOxV7m3I9cZXY6ViENis3WENnLW3J+2knko3VAEupysAijy0HxftFD6/D4D+SGSVYM2OaxSWM9cZ3VHRD1Z5xd0OTnUQXau8RiLaJsrW7u3/ABMj+2GG8K2knUvVW0fMlB6R++KqPt1beN7IqAYLtfEpu+SMKsTHu/5ZUwC0Wpdjq0t3hHzQLQ3iZhe741z+ja9uiG60tXFBHSddAv3QwtHID7/mfifxBdO6bv7HdArZQAAAABJRU5ErkJggg=="><br>BTC 3EsdxN1ZsX5JkLgk3uR4ybHLDX5i687dkx</a>
 
 Features
 --------
