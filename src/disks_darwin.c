@@ -119,6 +119,11 @@ void disks_refreshlist()
                                                                kIORegistryIterateRecursively );
         if (!bsdName) continue;
         deviceName = [[NSString stringWithFormat: @"%@", bsdName] UTF8String];
+        /* kIOUSBDeviceClassName lists some non-disks as writable disks (like USB-dongles with device driver storages) */
+        if (deviceName[0] == 'e' && deviceName[1] == 'n' && deviceName[2] >= '0' && deviceName[2] <= '9') {
+            CFRelease(bsdName); bsdName = NULL;
+            continue;
+        }
 
         vendor = (CFTypeRef) IORegistryEntrySearchCFProperty (usb_device_ref,
                                                                kIOServicePlane,
