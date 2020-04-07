@@ -84,6 +84,7 @@ static Atom delAtom;
 static Pixmap icons_act, icons_ina;
 static Cursor loading, pointer;
 
+static char *bkpdir = NULL;
 static char source[PATH_MAX], targetList[DISKS_MAX][128], status[128];
 static char blksizeList[10][128];
 static int fonth = 0, fonta = 0, inactive = 0, pressedBtn = 0, half;
@@ -774,16 +775,20 @@ static void *readerRoutine()
     src = (int)((long int)disks_open(targetId, 0));
     if(src > 0) {
         fn[0] = 0;
-        if((env = getenv("HOME")))
-            strncpy(fn, env, sizeof(fn)-1);
-        else if((env = getenv("LOGNAME")))
-            snprintf(fn, sizeof(fn)-1, "/home/%s", env);
-        if(!fn[0]) strcpy(fn, "./");
-        i = strlen(fn);
-        strncpy(fn + i, "/Desktop", sizeof(fn)-1-i);
-        if(stat(fn, &st)) {
-            strncpy(fn + i, "/Downloads", sizeof(fn)-1-i);
-            if(stat(fn, &st)) fn[i] = 0;
+        if(bkpdir && !stat(bkpdir, &st)) {
+            strncpy(fn, bkpdir, sizeof(fn)-1);
+        } else {
+            if((env = getenv("HOME")))
+                strncpy(fn, env, sizeof(fn)-1);
+            else if((env = getenv("LOGNAME")))
+                snprintf(fn, sizeof(fn)-1, "/home/%s", env);
+            if(!fn[0]) strcpy(fn, ".");
+            i = strlen(fn);
+            strncpy(fn + i, "/Desktop", sizeof(fn)-1-i);
+            if(stat(fn, &st)) {
+                strncpy(fn + i, "/Downloads", sizeof(fn)-1-i);
+                if(stat(fn, &st)) strcpy(fn, ".");
+            }
         }
         i = strlen(fn);
         lt = localtime(&now);
@@ -1405,7 +1410,7 @@ int main(int argc, char **argv)
     XTextProperty title_property;
     Atom a, t;
     char colorName[16], *title = "USBImager " USBIMAGER_VERSION;
-    int i, ser;
+    int i, j, ser;
     long *extents;
     unsigned long n, b;
     char *lc = getenv("LANG"), *sd = getenv("XDG_SESSION_DESKTOP");
@@ -1414,37 +1419,40 @@ int main(int argc, char **argv)
         " (build " USBIMAGER_BUILD ")"
 #endif
         " - MIT license, Copyright (C) 2020 bzt\r\n\r\n"
-        "./usbimager [-v|-vv|-s|-S|-1|-2|-3|-4|-5|-6|-7|-8|-9|-L(xx)]\r\n\r\n"
+        "./usbimager [-v|-vv|-s|-S|-1|-2|-3|-4|-5|-6|-7|-8|-9|-L(xx)] <backup path>\r\n\r\n"
         "https://gitlab.com/bztsrc/usbimager\r\n\r\n";
 
-    if(argc > 1 && argv[1] && argv[1][0] == '-') {
-        if(!strcmp(argv[1], "--version")) {
-            printf(USBIMAGER_VERSION "\n");
-            exit(0);
-        }
-        if(!strcmp(argv[1], "--help")) {
-            printf("%s", help);
-            exit(0);
-        }
-        for(i = 1; argv[1][i]; i++)
-            switch(argv[1][i]) {
-                case 'v':
-                    verbose++;
-                    if(verbose == 1) printf("%s", help);
-                break;
-                case 's': disks_serial = 1; break;
-                case 'S': disks_serial = 2; break;
-                case '1': blksizesel = 1; buffer_size = 2*1024*1024; break;
-                case '2': blksizesel = 2; buffer_size = 4*1024*1024; break;
-                case '3': blksizesel = 3; buffer_size = 8*1024*1024; break;
-                case '4': blksizesel = 4; buffer_size = 16*1024*1024; break;
-                case '5': blksizesel = 5; buffer_size = 32*1024*1024; break;
-                case '6': blksizesel = 6; buffer_size = 64*1024*1024; break;
-                case '7': blksizesel = 7; buffer_size = 128*1024*1024; break;
-                case '8': blksizesel = 8; buffer_size = 256*1024*1024; break;
-                case '9': blksizesel = 9; buffer_size = 512*1024*1024; break;
-                case 'L': lc = &argv[1][++i]; ++i; break;
+    for(j = 1; j < argc && argv[j]; j++) {
+        if(argv[j][0] == '-') {
+            if(!strcmp(argv[j], "--version")) {
+                printf(USBIMAGER_VERSION "\n");
+                exit(0);
             }
+            if(!strcmp(argv[j], "--help")) {
+                printf("%s", help);
+                exit(0);
+            }
+            for(i = 1; argv[j][i]; i++)
+                switch(argv[j][i]) {
+                    case 'v':
+                        verbose++;
+                        if(verbose == 1) printf("%s", help);
+                    break;
+                    case 's': disks_serial = 1; break;
+                    case 'S': disks_serial = 2; break;
+                    case '1': blksizesel = 1; buffer_size = 2*1024*1024; break;
+                    case '2': blksizesel = 2; buffer_size = 4*1024*1024; break;
+                    case '3': blksizesel = 3; buffer_size = 8*1024*1024; break;
+                    case '4': blksizesel = 4; buffer_size = 16*1024*1024; break;
+                    case '5': blksizesel = 5; buffer_size = 32*1024*1024; break;
+                    case '6': blksizesel = 6; buffer_size = 64*1024*1024; break;
+                    case '7': blksizesel = 7; buffer_size = 128*1024*1024; break;
+                    case '8': blksizesel = 8; buffer_size = 256*1024*1024; break;
+                    case '9': blksizesel = 9; buffer_size = 512*1024*1024; break;
+                    case 'L': lc = &argv[j][++i]; ++i; break;
+                }
+        } else
+            bkpdir = argv[j];
     }
 
     if(!lc) lc = "en";
@@ -1456,8 +1464,11 @@ int main(int argc, char **argv)
     }
     if(!lang) lang = &dict[0][1];
 
-    if(verbose) printf("LANG '%s', dict '%s', serial %d, buffer_size %d MiB\r\n",
-        lc, lang[-1], disks_serial, buffer_size/1024/1024);
+    if(verbose) {
+        printf("LANG '%s', dict '%s', serial %d, buffer_size %d MiB\r\n",
+            lc, lang[-1], disks_serial, buffer_size/1024/1024);
+        if(bkpdir) printf("bkpdir '%s'\r\n", bkpdir);
+    }
 
     dpy = XOpenDisplay(NULL);
     if(!dpy) { fprintf(stderr, "Unable to open display\n"); return 1; }

@@ -53,6 +53,7 @@ extern char *dict[NUMLANGS][NUMTEXTS + 1];
 int blksizesel = 0;
 
 static HWND mainHwndDlg;
+static wchar_t *bkpdir = NULL;
 
 wchar_t *main_errorMessage;
 
@@ -465,52 +466,68 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszArgum
     int lid = 0;
     int i, j, ret;
     unsigned int c;
-    char *s;
+    char *s, *e;
     wchar_t *d;
 
     char *cmdline = GetCommandLineA(), *loc = NULL;
-    if(cmdline) cmdline = strrchr(cmdline, ' '); else cmdline = NULL;
-    for(; cmdline && cmdline[0] && cmdline[0] != '-'; cmdline++);
-    if(cmdline && cmdline[0] == '-') {
-        for(; cmdline[0]; cmdline++)
-            switch(cmdline[0]) {
-                case 'v':
-                    verbose++;
-                    if(verbose == 1) {
-                        AllocConsole();
-                        HANDLE ConsoleHandle = GetStdHandle(STD_OUTPUT_HANDLE);
-                        FILE *f = _fdopen(_open_osfhandle((intptr_t)ConsoleHandle, _O_TEXT), "w");
-                        *stdout = *f;
-                        setvbuf(stdout, NULL, _IONBF, 0);
-                        SetConsoleTitle(TEXT("USBImager Debug"));
-                        CONSOLE_SCREEN_BUFFER_INFO csbi;
-                        if(GetConsoleScreenBufferInfo(ConsoleHandle, &csbi)) {
-                            COORD bs;
-                            bs.X = 132; bs.Y = 32767;
-                            SetConsoleScreenBufferSize(ConsoleHandle, bs);
-                        }
-                        printf("USBImager " USBIMAGER_VERSION
+    if(cmdline) {
+        s = strrchr(cmdline, '\\');
+        if(!s) s = cmdline;
+        for(; s && *s && *s != ' '; s++);
+        for(; s && *s; s++) {
+            while(*s == ' ') s++;
+            if(*s == '-') {
+                for(s++; *s && *s != ' '; s++) {
+                    switch(*s) {
+                        case 'v':
+                            verbose++;
+                            if(verbose == 1) {
+                                AllocConsole();
+                                HANDLE ConsoleHandle = GetStdHandle(STD_OUTPUT_HANDLE);
+                                FILE *f = _fdopen(_open_osfhandle((intptr_t)ConsoleHandle, _O_TEXT), "w");
+                                *stdout = *f;
+                                setvbuf(stdout, NULL, _IONBF, 0);
+                                SetConsoleTitle(TEXT("USBImager Debug"));
+                                CONSOLE_SCREEN_BUFFER_INFO csbi;
+                                if(GetConsoleScreenBufferInfo(ConsoleHandle, &csbi)) {
+                                    COORD bs;
+                                    bs.X = 132; bs.Y = 32767;
+                                    SetConsoleScreenBufferSize(ConsoleHandle, bs);
+                                }
+                                printf("USBImager " USBIMAGER_VERSION
 #ifdef USBIMAGER_BUILD
-                            " (build " USBIMAGER_BUILD ")"
+                                    " (build " USBIMAGER_BUILD ")"
 #endif
-                            " - MIT license, Copyright (C) 2020 bzt\r\n\r\n"
-                            "usbimager.exe -[v|vv|s|S|1|2|3|4|5|6|7|8|9|L(xx)]\r\n\r\n"
-                            "https://gitlab.com/bztsrc/usbimager\r\n\r\n");
+                                    " - MIT license, Copyright (C) 2020 bzt\r\n\r\n"
+                                    "./usbimager [-v|-vv|-s|-S|-1|-2|-3|-4|-5|-6|-7|-8|-9|-L(xx)] <backup path>\r\n\r\n"
+                                    "https://gitlab.com/bztsrc/usbimager\r\n\r\n");
+                            }
+                        break;
+                        case 's': disks_serial = 1; break;
+                        case 'S': disks_serial = 2; break;
+                        case '1': blksizesel = 1; buffer_size = 2*1024*1024; break;
+                        case '2': blksizesel = 2; buffer_size = 4*1024*1024; break;
+                        case '3': blksizesel = 3; buffer_size = 8*1024*1024; break;
+                        case '4': blksizesel = 4; buffer_size = 16*1024*1024; break;
+                        case '5': blksizesel = 5; buffer_size = 32*1024*1024; break;
+                        case '6': blksizesel = 6; buffer_size = 64*1024*1024; break;
+                        case '7': blksizesel = 7; buffer_size = 128*1024*1024; break;
+                        case '8': blksizesel = 8; buffer_size = 256*1024*1024; break;
+                        case '9': blksizesel = 9; buffer_size = 512*1024*1024; break;
+                        case 'L': loc = ++s; ++s; break;
                     }
-                break;
-                case 's': disks_serial = 1; break;
-                case 'S': disks_serial = 2; break;
-                case '1': blksizesel = 1; buffer_size = 2*1024*1024; break;
-                case '2': blksizesel = 2; buffer_size = 4*1024*1024; break;
-                case '3': blksizesel = 3; buffer_size = 8*1024*1024; break;
-                case '4': blksizesel = 4; buffer_size = 16*1024*1024; break;
-                case '5': blksizesel = 5; buffer_size = 32*1024*1024; break;
-                case '6': blksizesel = 6; buffer_size = 64*1024*1024; break;
-                case '7': blksizesel = 7; buffer_size = 128*1024*1024; break;
-                case '8': blksizesel = 8; buffer_size = 256*1024*1024; break;
-                case '9': blksizesel = 9; buffer_size = 512*1024*1024; break;
-                case 'L': loc = ++cmdline; ++cmdline; break;
+                }
+            } else {
+                if(*s == '\"') s++;
+                for(e = s; *e && *e != ' ' && *e != '\"'; e++);
+                bkpdir = malloc(2 * ((unsigned long)e - (unsigned long)s + 1));
+                if(bkpdir) {
+                    for(i = 0; s < e; s++, i++)
+                        bkpdir[i] = (wchar_t)s[0];
+                    bkpdir[i] = 0;
+                }
             }
+        }
     }
     if(!loc) {
         lid = GetUserDefaultLangID(); /* GetUserDefaultUILanguage(); */
@@ -574,13 +591,17 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszArgum
         }
         *d = 0;
     }
-    if(verbose) printf("GetUserDefaultLangID %04x '%s', dict '%s', serial %d, buffer_size %d MiB\r\n",
-        lid, loc, dict[i][0], disks_serial, buffer_size/1024/1024);
+    if(verbose) {
+        printf("GetUserDefaultLangID %04x '%s', dict '%s', serial %d, buffer_size %d MiB\r\n",
+            lid, loc, dict[i][0], disks_serial, buffer_size/1024/1024);
+        if(bkpdir) wprintf(L"bkpdir '%s'\r\n", bkpdir);
+    }
 
     ret = DialogBoxParam(hInstance, MAKEINTRESOURCE(IDC_MAINDLG), NULL, MainDlgProc, (LPARAM) hInstance);
 
     for(j = 0; j < NUMTEXTS; j++)
         free(lang[j]);
     free(lang);
+    if(bkpdir) free(bkpdir);
     return ret;
 }

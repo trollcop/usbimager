@@ -145,7 +145,8 @@ a gzipé. Nyers lemezképek esetén a hátralévő idő pontos, tömörítés es
 adatok függvénye, ezért csak egy becslés.
 
 Megjegyzés: Linuxon ha nincs ~/Desktop (Asztal), akkor a ~/Downloads (Letöltések) mappát használja. Ha az sincs, akkor a lemezkép a
-home mappába lesz lementve. A többi platformon mindig van Asztal, ha mégse találná, akkor az aktuális könyvtárba ment.
+home mappába lesz lementve. A többi platformon mindig van Asztal, ha mégse találná, akkor az aktuális könyvtárba ment. Minden platformon
+érvényes, ha egy létező könyvtár meg van adva a parancssorban, akkor azt használja a lemezképek lementéséhez.
 
 ### Haladó funkciók
 
@@ -160,6 +161,8 @@ home mappába lesz lementve. A többi platformon mindig van Asztal, ha mégse ta
 Windows felhasználóknak: jobb-klikk az usbimager.exe-n, majd választd a "Parancsikon létrehozása" menüt. Aztán jobb-klikk az újonnan
 létrejött ".lnk" fájlra, és válaszd a "Tulajdonságok" menüt. A "Parancsikon" fülön, a "Cél" mezőben tudod hozzáadni a kapcsolókat.
 Ugyancsak itt, a "Biztonság" fülön be lehet állítani, hogy rendszergazdaként futtassa, ha problémáid lennének a direkt lemezhozzáférésekkel.
+
+A legelső paraméter, ami nem kapcsoló (nem '-'-el kezdődik) a lemezképek lementési könyvtáraként értelmeződik.
 
 A kapcsolókat külön-külön (pl. "usbimager -v -s -2") vagy egyben ("usbimager -2vs") is megadhatod, a sorrend nem számít. Azon kapcsolók
 közül, amik ugyanazt állítják, csak a legutolsót veszi figyelembe (pl "-124" ugyanaz, mint a "-4").
@@ -270,9 +273,9 @@ Hozzájárulások
 --------------
 
 Szeretnék köszönetet mondani a következő felhasználóknak: @mattmiller, @MisterEd, @the_scruss, @rpdom, @DarkElvenAngel, és különösen
-@tvjon-nak és @CaptainMidnight-nak amiért több különböző platformon és számos különböző eszközzel is letesztelték az USBImager-t.
+@tvjon-nak, @CaptainMidnight-nak és @gitlabhack-nek amiért több különböző platformon és számos különböző eszközzel is letesztelték az USBImager-t.
 
-Köszönet a fordítások ellenőrzéséért és javításáért: @mline-nak (német), @epoch1970-nek és @JumpZero-nak (francia), @hansotten-nek és @zonstraal-nak (holland), @ller (orosz), @zaval (ukrán), @lmarmisa (spanyol).
+Köszönet a fordítások ellenőrzéséért és javításáért: @mline-nak (német), @epoch1970-nek és @JumpZero-nak (francia), @hansotten-nek és @zonstraal-nak (holland), @ller (orosz), @zaval (ukrán), @lmarmisa (spanyol), @otani (japán).
 
 Legjobbakat,
 

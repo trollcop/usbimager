@@ -140,7 +140,8 @@ time is accurate, however for compression it highly depends on the time taken by
 so remaining time is just an estimate.
 
 Note: on Linux, if ~/Desktop is not found, then ~/Downloads will be used. If even that doesn't exists, then the image file will be saved in your home directory. On
-other platforms the Desktop always exists, but if by any chance not, then the current directory is used.
+other platforms the Desktop always exists, but if by any chance not, then the current directory is used. On all platforms, if an existing
+directory is specified on the command line, that is used to save backups.
 
 ### Advanced Functionalities
 
@@ -155,6 +156,8 @@ other platforms the Desktop always exists, but if by any chance not, then the cu
 For Windows users: right-click on usbimager.exe, and select "Create Shortcut". Then right-click on the newly created ".lnk" file, and
 select "Properties". On the "Shortcut" tab, in the "Target" field, you can add the flags. On the "Security" tab, you can also set
 to run USBImager as Administrator if you have problems accessing the raw disk devices.
+
+The first argument which is not a flag (does not start with '-') is used as the backup image directory.
 
 Flags can be given separately (like "usbimager -v -s -2") or at once ("usbimager -2vs"), the order doesn't matter. For flags that set
 the same thing, only the last taken into account (for example "-124" is the same as "-4").
@@ -258,10 +261,10 @@ Authors
 Contributors
 ------------
 
-I'd like to say thanks to @mattmiller, @MisterEd, @the_scruss, @rpdom, @DarkElvenAngel, and especially to @tvjon and @CaptainMidnight for testing
+I'd like to say thanks to @mattmiller, @MisterEd, @the_scruss, @rpdom, @DarkElvenAngel, and especially to @tvjon, @CaptainMidnight and @gitlabhack for testing
 USBImager on various platforms with various devices.
 
-My thanks for checking and fixing the translations goes to: @mline (German), @epoch1970, @JumpZero (French), and @hansotten, @zonstraal (Dutch), @ller (Russian), @zaval (Ukrainian), @lmarmisa (Spanish).
+My thanks for checking and fixing the translations goes to: @mline (German), @epoch1970, @JumpZero (French), and @hansotten, @zonstraal (Dutch), @ller (Russian), @zaval (Ukrainian), @lmarmisa (Spanish), @otani (Japanese).
 
 Bests,
 
