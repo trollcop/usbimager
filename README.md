@@ -152,6 +152,7 @@ directory is specified on the command line, that is used to save backups.
 | -1..9     | Set buffer size     |
 | -s/-S     | Use serial devices  |
 | --version | Prints version      |
+| (dir)     | First non-flag is the backup directory |
 
 For Windows users: right-click on usbimager.exe, and select "Create Shortcut". Then right-click on the newly created ".lnk" file, and
 select "Properties". On the "Shortcut" tab, in the "Target" field, you can add the flags. On the "Security" tab, you can also set

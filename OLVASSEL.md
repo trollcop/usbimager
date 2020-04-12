@@ -157,6 +157,7 @@ home mappába lesz lementve. A többi platformon mindig van Asztal, ha mégse ta
 | -1..9     | Buffer méret beállítása |
 | -s/-S     | Soros portok használata |
 | --version | Kiírja a verziót        |
+| (könyvtár)| Az első nem-kapcsoló a mentési könyvtár |
 
 Windows felhasználóknak: jobb-klikk az usbimager.exe-n, majd választd a "Parancsikon létrehozása" menüt. Aztán jobb-klikk az újonnan
 létrejött ".lnk" fájlra, és válaszd a "Tulajdonságok" menüt. A "Parancsikon" fülön, a "Cél" mezőben tudod hozzáadni a kapcsolókat.
