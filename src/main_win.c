@@ -34,6 +34,7 @@
 #include <shlobj.h>
 #include <io.h>
 #include <fcntl.h>
+#include <sys/stat.h>
 #include "lang.h"
 #include "resource.h"
 #include "stream.h"
@@ -253,6 +254,7 @@ static DWORD WINAPI readerRoutine(LPVOID lpParam) {
     char *fn = NULL;
     static wchar_t lpStatus[128];
     static stream_t ctx;
+    struct _stat st;
     wchar_t home[MAX_PATH], d[16], t[8], wFn[MAX_PATH+512];
 
     if(targetId >= 0 && targetId < DISKS_MAX && disks_targets[targetId] >= 1024) return 0;
@@ -264,7 +266,7 @@ static DWORD WINAPI readerRoutine(LPVOID lpParam) {
             wsprintfW(home, L".\\");
         GetDateFormatW(LOCALE_USER_DEFAULT, 0, NULL, L"yyyyMMdd", (LPWSTR)&d, 16);
         GetTimeFormatW(LOCALE_USER_DEFAULT, 0, NULL, L"HHmm", (LPWSTR)&t, 8);
-        wsprintfW(wFn, L"%s\\usbimager-%sT%s.dd%s", home, d, t, needCompress ? L".bz2" : L"");
+        wsprintfW(wFn, L"%s\\usbimager-%sT%s.dd%s", bkpdir && !_wstat(bkpdir, &st) ? bkpdir : home, d, t, needCompress ? L".bz2" : L"");
         for(wlen = 0; wFn[wlen]; wlen++);
         len = WideCharToMultiByte(CP_UTF8, 0, wFn, wlen, 0, 0, NULL, NULL);
         if(len > 0) {
