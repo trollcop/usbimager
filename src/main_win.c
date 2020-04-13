@@ -473,10 +473,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszArgum
 
     char *cmdline = GetCommandLineA(), *loc = NULL;
     if(cmdline) {
-        s = strrchr(cmdline, '\\');
-        if(!s) s = cmdline;
-        for(; s && *s && *s != ' '; s++);
-        for(; s && *s; s++) {
+        s = cmdline;
+        if(*s == '\"') for(s++; *s && *s != '\"'; s++);
+        for(; *s && *s != ' '; s++);
+        for(; *s; s++) {
             while(*s == ' ') s++;
             if(*s == '-') {
                 for(s++; *s && *s != ' '; s++) {
@@ -501,7 +501,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszArgum
                                     " (build " USBIMAGER_BUILD ")"
 #endif
                                     " - MIT license, Copyright (C) 2020 bzt\r\n\r\n"
-                                    "./usbimager [-v|-vv|-s|-S|-1|-2|-3|-4|-5|-6|-7|-8|-9|-L(xx)] <backup path>\r\n\r\n"
+                                    "usbimager.exe [-v|-vv|-s|-S|-1|-2|-3|-4|-5|-6|-7|-8|-9|-L(xx)] <backup path>\r\n\r\n"
                                     "https://gitlab.com/bztsrc/usbimager\r\n\r\n");
                             }
                         break;
@@ -520,6 +520,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszArgum
                     }
                 }
             } else {
+                if(bkpdir) break;
                 if(*s == '\"') s++;
                 for(e = s; *e && *e != ' ' && *e != '\"'; e++);
                 bkpdir = malloc(2 * ((unsigned long)e - (unsigned long)s + 1));
