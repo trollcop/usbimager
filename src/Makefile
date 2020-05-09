@@ -98,7 +98,7 @@ LIBS += libui/linux.a
 else
 LIBS += libui/raspbian.a
 endif
-ifneq ("$(wildchard /usr/bin/pkg-config)","")
+ifneq ("$(wildcard /usr/bin/pkg-config)","")
 LIBS += $(shell pkg-config --libs gtk+-3.0)
 else
 LIBS += -lgtk-3 -lgdk-3 -lgobject-2.0 -lglib-2.0
