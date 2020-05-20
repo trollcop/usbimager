@@ -249,6 +249,14 @@ int stream_open(stream_t *ctx, char *fn, int uncompr)
             if(!ctx->compSize || !ctx->fileSize) { fclose(ctx->f); return 4; }
         }
         myseek(ctx->f, (uint64_t)(30 + hdr[26] + (hdr[27]<<8) + hdr[28] + (hdr[29]<<8)));
+    } else
+    if(hdr[0] == '7' && hdr[1] == 'z' && hdr[2] == 0xBC && hdr[3] == 0xAF) {
+        /* 7zip */
+        if(verbose) printf(" 7z (deliberately not supported, use xz instead)\r\n");
+        /* this is a badly designed, non-transmission-error-proof, inadeqvate for long term preservation format
+         * with a particularly badly written, badly documented, non-portable SDK which I simply refuse to support.
+         * Don't use this format if your data is precious to you. Better to use tar.xz.  You have been warned. */
+        fclose(ctx->f); return 3;
     } else {
         /* uncompressed image */
         if(verbose) printf(" raw image\r\n");
