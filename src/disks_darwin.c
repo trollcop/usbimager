@@ -367,6 +367,16 @@ sererr:         main_getErrorMessage();
     }
 #endif
 
+    /* Fix issue #16: check if we have write permission before we try to umount */
+    sprintf(deviceName, "/dev/rdisk%d", disks_targets[targetId]);
+    errno = 0;
+    ret = open(deviceName, O_RDWR);
+    if(errno == EPERM || errno == EACCES) {
+        main_getErrorMessage();
+        return NULL;
+    }
+    if(ret > 0) close(ret);
+
     NSAutoreleasePool * pool = [[NSAutoreleasePool alloc] init];
     CFURLRef path;
     DADiskRef disk;
