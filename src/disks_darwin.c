@@ -297,23 +297,8 @@ void *disks_open(int targetId, uint64_t size)
                 termios.c_oflag = 0;
                 termios.c_cflag = CS8 | CREAD | CLOCAL;
                 termios.c_lflag = 0;
-                switch(baud) {
-                    case 57600:   tiobaud =   B57600; break;
-                    case 230400:  tiobaud =  B230400; break;
-                    case 460800:  tiobaud =  B460800; break;
-                    case 500000:  tiobaud =  B500000; break;
-                    case 576000:  tiobaud =  B576000; break;
-                    case 921600:  tiobaud =  B921600; break;
-                    case 1000000: tiobaud = B1000000; break;
-                    case 1152000: tiobaud = B1152000; break;
-                    case 1500000: tiobuad = B1500000; break;
-                    case 2000000: tiobaud = B2000000; break;
-                    case 2500000: tiobaud = B2500000; break;
-                    case 3000000: tiobaud = B3000000; break;
-                    case 3500000: tiobaud = B3500000; break;
-                    case 4000000: tiobaud = B4000000; break;
-                    default: tiobaud = B115200; break;
-                }
+                /* under MacOSX, only defined up to B230400, however unlike in Linux, lower rates are the same as their defines */
+                tiobaud = baud;
                 if((cfsetispeed(&termios, tiobaud) < 0) || (cfsetospeed(&termios, tiobaud) < 0))
                 {
                     if(verbose)
