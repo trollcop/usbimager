@@ -177,12 +177,12 @@ sererr:     main_getErrorMessage();
             CloseHandle(ret);
             return (HANDLE)-4;
         }
-        config.BaudRate = 115200;
+        config.BaudRate = baud;
         config.ByteSize = 8;
         config.Parity = NOPARITY;
         config.StopBits = ONESTOPBIT;
         if(SetCommState(ret, &config) == 0) {
-            if(verbose) printf("  SetCommState error\r\n");
+            if(verbose) printf("  SetCommState error baud %d\r\n", baud);
             goto sererr;
         }
         timeouts.ReadIntervalTimeout = 1;

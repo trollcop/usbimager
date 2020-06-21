@@ -8,12 +8,17 @@ annyira egyszerű, amennyire csak lehetséges, teljesen salang mentes.
 
 | Platform     | Felület      | Leírás                       |
 |--------------|--------------|------------------------------|
-| Windows      | [GDI](https://gitlab.com/bztsrc/usbimager/raw/binaries/usbimager_1.0.3-i686-win-gdi.zip) | natív interfész |
-| MacOSX       | [Cocoa](https://gitlab.com/bztsrc/usbimager/raw/binaries/usbimager_1.0.3-intel-macosx-cocoa.zip) | natív interfész |
-| Ubuntu LTS   | [GTK+](https://gitlab.com/bztsrc/usbimager/raw/binaries/usbimager_1.0.3-amd64.deb) | ua. mint a Linux PC GTK verzió udisks2-vel, csak .deb formátumban |
-| Linux PC     | [X11](https://gitlab.com/bztsrc/usbimager/raw/binaries/usbimager_1.0.3-x86_64-linux-x11.zip)<br>[GTK+](https://gitlab.com/bztsrc/usbimager/raw/binaries/usbimager_1.0.3-x86_64-linux-gtk.zip)  | javalott<br>kompatíbilitás (van egy kis biztonsági kockázat a nyers lemezelérések engedélyezésekor udisks2 nélkül) |
-| Raspbian     | [GTK+](https://gitlab.com/bztsrc/usbimager/raw/binaries/usbimager_1.0.3-armhf.deb) | ua. mint a Raspberry Pi GTK verzió udisks2-vel, csak .deb formátumban |
-| Raspberry Pi | [X11](https://gitlab.com/bztsrc/usbimager/raw/binaries/usbimager_1.0.3-armv7l-linux-x11.zip) | natív interfész |
+| Windows      | [GDI](https://gitlab.com/bztsrc/usbimager/raw/binaries/usbimager_1.0.4-i686-win-gdi.zip) | natív interfész |
+| MacOSX       | [Cocoa](https://gitlab.com/bztsrc/usbimager/raw/binaries/usbimager_1.0.4-intel-macosx-cocoa.zip) | natív interfész |
+| Ubuntu LTS   | [GTK+](https://gitlab.com/bztsrc/usbimager/raw/binaries/usbimager_1.0.4-amd64.deb) | ua. mint a Linux PC GTK verzió udisks2-vel, csak .deb formátumban |
+| Linux PC     | [X11](https://gitlab.com/bztsrc/usbimager/raw/binaries/usbimager_1.0.4-x86_64-linux-x11.zip)<br>[GTK+](https://gitlab.com/bztsrc/usbimager/raw/binaries/usbimager_1.0.4-x86_64-linux-gtk.zip)  | javalott<br>kompatíbilitás (van egy kis biztonsági kockázat a nyers lemezelérések engedélyezésekor udisks2 nélkül) |
+| Raspbian     | [GTK+](https://gitlab.com/bztsrc/usbimager/raw/binaries/usbimager_1.0.4-armhf.deb) | ua. mint a Raspberry Pi GTK verzió udisks2-vel, csak .deb formátumban |
+| Raspberry Pi | [X11](https://gitlab.com/bztsrc/usbimager/raw/binaries/usbimager_1.0.4-armv7l-linux-x11.zip) | natív interfész |
+
+Képernyőképek
+-------------
+
+<img src="https://gitlab.com/bztsrc/usbimager/raw/master/usbimager.png">
 
 Telepítés
 ---------
@@ -82,11 +87,6 @@ Fícsörök
 
 (3) - a méréseket @CaptainMidnight végezte Windows 10 Pro alatt egy SanDisk Ulta 32GB A1 kártyával. A nyers lemezkép mérete 31,166,976 Kb volt, míg a bzip2 tömörítetté 1,887,044 Kb. WIN32 Disk Imager nem kezel tömörített lemezképeket, így a végeredménye nem volt bebootolható.
 
-Képernyőképek
--------------
-
-<img src="https://gitlab.com/bztsrc/usbimager/raw/master/usbimager.png">
-
 Használat
 ---------
 
@@ -150,14 +150,14 @@ home mappába lesz lementve. A többi platformon mindig van Asztal, ha mégse ta
 
 ### Haladó funkciók
 
-| Kapcsoló  | Leírás                  |
-|-----------|-------------------------|
-| -v/-vv    | Részletes kimenet       |
-| -Lxx      | Nyelvkód kikényszerítés |
-| -1..9     | Buffer méret beállítása |
-| -s/-S     | Soros portok használata |
-| --version | Kiírja a verziót        |
-| (könyvtár)| Az első nem-kapcsoló a mentési könyvtár |
+| Kapcsoló            | Leírás                  |
+|---------------------|-------------------------|
+| -v/-vv              | Részletes kimenet       |
+| -Lxx                | Nyelvkód kikényszerítés |
+| -1..9               | Buffer méret beállítása |
+| -s\[baud]/-S\[baud] | Soros portok használata |
+| --version           | Kiírja a verziót        |
+| (könyvtár)          | Az első nem-kapcsoló a mentési könyvtár |
 
 Windows felhasználóknak: jobb-klikk az usbimager.exe-n, majd választd a "Parancsikon létrehozása" menüt. Aztán jobb-klikk az újonnan
 létrejött ".lnk" fájlra, és válaszd a "Tulajdonságok" menüt. A "Parancsikon" fülön, a "Cél" mezőben tudod hozzáadni a kapcsolókat.
@@ -197,6 +197,11 @@ Mindkét esetben a soros port 115200 baud, 8 adatbit, nincs paritás, 1 stopbit 
 az USBImager nem tömöríti ki a lemezképet, hogy csökkentse az átviteli időt, így a kicsomagolást a kliensen kell elvégezni. Ha egy egyszerű
 rendszerbetöltőre vágysz, ami kompatíbilis az USBImager-el, akkor javalom az [Image Receiver](https://gitlab.com/bztsrc/imgrecv)-t
 (elérhető RPi1, 2, 3, 4 és IBM PC BIOS gépekre).
+
+Ha más baud-ot szeretnél, csak add meg a kapcsoló után, pl. "-s57600" vagy "-S230400". Lehetséges értékek:
+57600, 115200, 230400, 460800, 500000, 576000, 921600, 1000000, 1152000, 1500000, 2000000, 2500000, 3000000, 3500000, 4000000
+
+FIGYELEM: nem minden soros port kezeli az összes baud rátát. Ellenőrizd a kézikönyvében.
 
 Fordítás
 --------
@@ -276,7 +281,7 @@ Hozzájárulások
 Szeretnék köszönetet mondani a következő felhasználóknak: @mattmiller, @MisterEd, @the_scruss, @rpdom, @DarkElvenAngel, és különösen
 @tvjon-nak, @CaptainMidnight-nak és @gitlabhack-nek amiért több különböző platformon és számos különböző eszközzel is letesztelték az USBImager-t.
 
-Köszönet a fordítások ellenőrzéséért és javításáért: @mline-nak (német), @epoch1970-nek és @JumpZero-nak (francia), @hansotten-nek és @zonstraal-nak (holland), @ller (orosz), @zaval (ukrán), @lmarmisa (spanyol), @otani (japán).
+Köszönet a fordítások ellenőrzéséért és javításáért: @mline-nak és @vordenken-nek (német), @epoch1970-nek és @JumpZero-nak (francia), @hansotten-nek és @zonstraal-nak (holland), @ller (orosz), @zaval (ukrán), @lmarmisa (spanyol), @otani (japán), @ngedizaydindogmus (török), @coltrane (portugál).
 
 Legjobbakat,
 

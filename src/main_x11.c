@@ -1419,7 +1419,7 @@ int main(int argc, char **argv)
         " (build " USBIMAGER_BUILD ")"
 #endif
         " - MIT license, Copyright (C) 2020 bzt\r\n\r\n"
-        "./usbimager [-v|-vv|-s|-S|-1|-2|-3|-4|-5|-6|-7|-8|-9|-L(xx)] <backup path>\r\n\r\n"
+        "./usbimager [-v|-vv|-s[baud]|-S[baud]|-1|-2|-3|-4|-5|-6|-7|-8|-9|-L(xx)] <backup path>\r\n\r\n"
         "https://gitlab.com/bztsrc/usbimager\r\n\r\n";
 
     for(j = 1; j < argc && argv[j]; j++) {
@@ -1438,8 +1438,20 @@ int main(int argc, char **argv)
                         verbose++;
                         if(verbose == 1) printf("%s", help);
                     break;
-                    case 's': disks_serial = 1; break;
-                    case 'S': disks_serial = 2; break;
+                    case 's':
+                        disks_serial = 1;
+                        if(argv[j][i+1] >= '0' && argv[j][i+1] <= '9') {
+                            stream_baud(atoi(argv[j] + i + 1));
+                            while(argv[j][i+1] >= '0' && argv[j][i+1] <= '9') i++;
+                        }
+                        break;
+                    case 'S':
+                        disks_serial = 2;
+                        if(argv[j][i+1] >= '0' && argv[j][i+1] <= '9') {
+                            stream_baud(atoi(argv[j] + i + 1));
+                            while(argv[j][i+1] >= '0' && argv[j][i+1] <= '9') i++;
+                        }
+                        break;
                     case '1': blksizesel = 1; buffer_size = 2*1024*1024; break;
                     case '2': blksizesel = 2; buffer_size = 4*1024*1024; break;
                     case '3': blksizesel = 3; buffer_size = 8*1024*1024; break;
@@ -1467,6 +1479,7 @@ int main(int argc, char **argv)
     if(verbose) {
         printf("LANG '%s', dict '%s', serial %d, buffer_size %d MiB\r\n",
             lc, lang[-1], disks_serial, buffer_size/1024/1024);
+        if(disks_serial) printf("Serial %d,8,n,1\r\n", baud);
         if(bkpdir) printf("bkpdir '%s'\r\n", bkpdir);
     }
 

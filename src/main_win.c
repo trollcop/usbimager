@@ -501,12 +501,24 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszArgum
                                     " (build " USBIMAGER_BUILD ")"
 #endif
                                     " - MIT license, Copyright (C) 2020 bzt\r\n\r\n"
-                                    "usbimager.exe [-v|-vv|-s|-S|-1|-2|-3|-4|-5|-6|-7|-8|-9|-L(xx)] <backup path>\r\n\r\n"
+                                    "usbimager.exe [-v|-vv|-s[baud]|-S[baud]|-1|-2|-3|-4|-5|-6|-7|-8|-9|-L(xx)] <backup path>\r\n\r\n"
                                     "https://gitlab.com/bztsrc/usbimager\r\n\r\n");
                             }
                         break;
-                        case 's': disks_serial = 1; break;
-                        case 'S': disks_serial = 2; break;
+                        case 's':
+                            disks_serial = 1;
+                            if(s[1] >= '0' && s[1] <= '9') {
+                                stream_baud(atoi(s + 1));
+                                while(s[1] >= '0' && s[1] <= '9') s++;
+                            }
+                            break;
+                        case 'S':
+                            disks_serial = 2;
+                            if(s[1] >= '0' && s[1] <= '9') {
+                                stream_baud(atoi(s + 1));
+                                while(s[1] >= '0' && s[1] <= '9') s++;
+                            }
+                            break;
                         case '1': blksizesel = 1; buffer_size = 2*1024*1024; break;
                         case '2': blksizesel = 2; buffer_size = 4*1024*1024; break;
                         case '3': blksizesel = 3; buffer_size = 8*1024*1024; break;
@@ -597,6 +609,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszArgum
     if(verbose) {
         printf("GetUserDefaultLangID %04x '%s', dict '%s', serial %d, buffer_size %d MiB\r\n",
             lid, loc, dict[i][0], disks_serial, buffer_size/1024/1024);
+        if(disks_serial) printf("Serial %d,8,n,1\r\n", baud);
         if(bkpdir) wprintf(L"bkpdir '%s'\r\n", bkpdir);
     }
 

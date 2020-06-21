@@ -7,12 +7,17 @@ and creates backups. Available platforms: Windows, MacOSX and Linux. Its interfa
 
 | Platform     | Frontend     | Description                  |
 |--------------|--------------|------------------------------|
-| Windows      | [GDI](https://gitlab.com/bztsrc/usbimager/raw/binaries/usbimager_1.0.3-i686-win-gdi.zip) | native interface |
-| MacOSX       | [Cocoa](https://gitlab.com/bztsrc/usbimager/raw/binaries/usbimager_1.0.3-intel-macosx-cocoa.zip) | native interface|
-| Ubuntu LTS   | [GTK+](https://gitlab.com/bztsrc/usbimager/raw/binaries/usbimager_1.0.3-amd64.deb) | same as the Linux PC GTK version with udisks2 support, but in .deb format |
-| Linux PC     | [X11](https://gitlab.com/bztsrc/usbimager/raw/binaries/usbimager_1.0.3-x86_64-linux-x11.zip)<br>[GTK+](https://gitlab.com/bztsrc/usbimager/raw/binaries/usbimager_1.0.3-x86_64-linux-gtk.zip) | recommended<br>compatibility (has security issues with accessing raw disks without udisks2) |
-| Raspbian     | [GTK+](https://gitlab.com/bztsrc/usbimager/raw/binaries/usbimager_1.0.3-armhf.deb) | same as the Raspberry Pi GTK version with udisks2 support, but in .deb format |
-| Raspberry Pi | [X11](https://gitlab.com/bztsrc/usbimager/raw/binaries/usbimager_1.0.3-armv7l-linux-x11.zip) | native interface |
+| Windows      | [GDI](https://gitlab.com/bztsrc/usbimager/raw/binaries/usbimager_1.0.4-i686-win-gdi.zip) | native interface |
+| MacOSX       | [Cocoa](https://gitlab.com/bztsrc/usbimager/raw/binaries/usbimager_1.0.4-intel-macosx-cocoa.zip) | native interface|
+| Ubuntu LTS   | [GTK+](https://gitlab.com/bztsrc/usbimager/raw/binaries/usbimager_1.0.4-amd64.deb) | same as the Linux PC GTK version with udisks2 support, but in .deb format |
+| Linux PC     | [X11](https://gitlab.com/bztsrc/usbimager/raw/binaries/usbimager_1.0.4-x86_64-linux-x11.zip)<br>[GTK+](https://gitlab.com/bztsrc/usbimager/raw/binaries/usbimager_1.0.4-x86_64-linux-gtk.zip) | recommended<br>compatibility (has security issues with accessing raw disks without udisks2) |
+| Raspbian     | [GTK+](https://gitlab.com/bztsrc/usbimager/raw/binaries/usbimager_1.0.4-armhf.deb) | same as the Raspberry Pi GTK version with udisks2 support, but in .deb format |
+| Raspberry Pi | [X11](https://gitlab.com/bztsrc/usbimager/raw/binaries/usbimager_1.0.4-armv7l-linux-x11.zip) | native interface |
+
+Screenshots
+-----------
+
+<img src="https://gitlab.com/bztsrc/usbimager/raw/master/usbimager.png">
 
 Installation
 ------------
@@ -80,11 +85,6 @@ Comparition
 
 (3) - measurements performed by @CaptainMidnight on Windows 10 Pro using a SanDisk Ulta 32GB A1 device. Raw image file size was 31,166,976 Kb, the bzip2 compressed image size was 1,887,044 Kb. WIN32 Disk Imager was unable to uncompress the image file, therefore the resulting card was unbootable.
 
-Screenshots
------------
-
-<img src="https://gitlab.com/bztsrc/usbimager/raw/master/usbimager.png">
-
 Usage
 -----
 
@@ -145,14 +145,14 @@ directory is specified on the command line, that is used to save backups.
 
 ### Advanced Functionalities
 
-| Flag      | Description         |
-|-----------|---------------------|
-| -v/-vv    | Be verbose          |
-| -Lxx      | Force language      |
-| -1..9     | Set buffer size     |
-| -s/-S     | Use serial devices  |
-| --version | Prints version      |
-| (dir)     | First non-flag is the backup directory |
+| Flag                | Description         |
+|---------------------|---------------------|
+| -v/-vv              | Be verbose          |
+| -Lxx                | Force language      |
+| -1..9               | Set buffer size     |
+| -s\[baud]/-S\[baud] | Use serial devices  |
+| --version           | Prints version      |
+| (dir)               | First non-flag is the backup directory |
 
 For Windows users: right-click on usbimager.exe, and select "Create Shortcut". Then right-click on the newly created ".lnk" file, and
 select "Properties". On the "Shortcut" tab, in the "Target" field, you can add the flags. On the "Security" tab, you can also set
@@ -191,6 +191,11 @@ on the serial line:
 For both case the serial line is set to 115200 baud, 8 data bits, no parity, 1 stop bit. For serial transfers, USBImager does not uncompress the image to minimize
 transfer times, so that has to be done on the client side. For a simple boot loader that's compatible with USBImager, take a look at
 [Image Receiver](https://gitlab.com/bztsrc/imgrecv) (available for RPi1, 2, 3, 4 and IBM PC BIOS machines).
+
+If you want to use a different baud, just simply add it to the flag, like "-s57600" or "-S230400". Valid values are:
+57600, 115200, 230400, 460800, 500000, 576000, 921600, 1000000, 1152000, 1500000, 2000000, 2500000, 3000000, 3500000, 4000000
+
+WARNING: not every serial port supports all baud rates. Check you device's manual.
 
 Compilation
 -----------
@@ -265,7 +270,7 @@ Contributors
 I'd like to say thanks to @mattmiller, @MisterEd, @the_scruss, @rpdom, @DarkElvenAngel, and especially to @tvjon, @CaptainMidnight and @gitlabhack for testing
 USBImager on various platforms with various devices.
 
-My thanks for checking and fixing the translations goes to: @mline (German), @epoch1970, @JumpZero (French), and @hansotten, @zonstraal (Dutch), @ller (Russian), @zaval (Ukrainian), @lmarmisa (Spanish), @otani (Japanese).
+My thanks for checking and fixing the translations goes to: @mline, @vordenken (German), @epoch1970, @JumpZero (French), and @hansotten, @zonstraal (Dutch), @ller (Russian), @zaval (Ukrainian), @lmarmisa (Spanish), @otani (Japanese), @ngedizaydindogmus (Turkish), @coltrane (Portuguese).
 
 Bests,
 

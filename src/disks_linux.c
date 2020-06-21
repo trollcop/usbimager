@@ -304,7 +304,7 @@ char *disks_volumes(int *num, char ***mounts)
 void *disks_open(int targetId, uint64_t size)
 {
     struct termios termios;
-    int ret = 0, l, k;
+    int ret = 0, l, k, tiobaud;
     char deviceName[64], *c, buf[1024], *path, *device;
     FILE *m;
 #if USE_UDISKS2
@@ -346,10 +346,27 @@ void *disks_open(int targetId, uint64_t size)
                 termios.c_oflag = 0;
                 termios.c_cflag = CS8 | CREAD | CLOCAL;
                 termios.c_lflag = 0;
-                if((cfsetispeed(&termios, B115200) < 0) || (cfsetospeed(&termios, B115200) < 0))
+                switch(baud) {
+                    case 57600:   tiobaud =   B57600; break;
+                    case 230400:  tiobaud =  B230400; break;
+                    case 460800:  tiobaud =  B460800; break;
+                    case 500000:  tiobaud =  B500000; break;
+                    case 576000:  tiobaud =  B576000; break;
+                    case 921600:  tiobaud =  B921600; break;
+                    case 1000000: tiobaud = B1000000; break;
+                    case 1152000: tiobaud = B1152000; break;
+                    case 1500000: tiobaud = B1500000; break;
+                    case 2000000: tiobaud = B2000000; break;
+                    case 2500000: tiobaud = B2500000; break;
+                    case 3000000: tiobaud = B3000000; break;
+                    case 3500000: tiobaud = B3500000; break;
+                    case 4000000: tiobaud = B4000000; break;
+                    default: tiobaud = B115200; break;
+                }
+                if((cfsetispeed(&termios, tiobaud) < 0) || (cfsetospeed(&termios, tiobaud) < 0))
                 {
                     if(verbose)
-                        printf(" failed to set baud errno=%d err=%s\r\n", errno, strerror(errno));
+                        printf(" failed to set %d baud errno=%d err=%s\r\n", baud, errno, strerror(errno));
                     goto sererr;
                 }
                 if(tcsetattr(ret, TCSAFLUSH, &termios) == -1) {

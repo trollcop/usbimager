@@ -230,7 +230,7 @@ endif
 clean:
 	rm $(TARGET) *.o *.bin zlib/*.o zlib/*.exe zlib/ztest* bzip2/*.o xz/*.o 2>/dev/null || true
 
-cleanall: clean
+distclean: clean
 	@make -C zlib clean || true
 	@make -C bzip2 clean || true
 	@make -C xz clean || true

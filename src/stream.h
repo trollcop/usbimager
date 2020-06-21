@@ -104,3 +104,8 @@ int stream_write(stream_t *ctx, char *buffer, int size);
  * Close stream descriptors
  */
 void stream_close(stream_t *ctx);
+
+/**
+ * Check and set a valid baud rate
+ */
+void stream_baud(int rate);

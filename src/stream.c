@@ -53,6 +53,7 @@ int myseek (FILE* stream, uint64_t offset)
 
 int verbose = 0;
 int buffer_size = 1024*1024;
+int baud = 115200;
 
 /**
  * Returns progress percentage and the status string in str
@@ -479,3 +480,16 @@ void stream_close(stream_t *ctx)
         case TYPE_XZ: xz_dec_end(ctx->xz); break;
     }
 }
+
+/**
+ * Check and set a valid baud rate
+ */
+void stream_baud(int rate)
+{
+    int i, bauds[] = { 57600, 115200, 230400, 460800, 500000, 576000,
+        921600, 1000000, 1152000, 1500000, 2000000, 2500000, 3000000,
+        3500000, 4000000 };
+    for(i = 0; i < (int)(sizeof(bauds)/sizeof(bauds[0])) && bauds[i] <= rate; i++)
+        baud = bauds[i];
+}
+
