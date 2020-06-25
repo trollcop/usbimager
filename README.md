@@ -67,23 +67,25 @@ Comparition
 |--------------------------------|---------------|-------------------|-----------|
 | Multiplatform                  | ✔             | ✗                 | ✔         |
 | Minimum Windows                | Win 7         | Win XP            | Win XP    |
-| Minimum MacOSX                 | ?             | ✗                 | 10.14     |
+| Minimum MacOSX (1)             | ?             | ✗                 | 10.14     |
 | Available on Raspbian          | ✗             | ✗                 | ✔         |
-| Program size (1)               | 130 Mb        | ✗                 | 256 Kb    |
+| Program size (2)               | 130 Mb        | ✗                 | 256 Kb    |
 | Dependencies                   | lots, ~300 Mb | Qt, ~8 Mb         | ✗ none    |
 | Spyware-free and ad-free       | ✗             | ✔                 | ✔         |
 | Native interface               | ✗             | ✗                 | ✔         |
-| Guarantee on data writes (2)   | ✗             | ✗                 | ✔         |
+| Guarantee on data writes (3)   | ✗             | ✗                 | ✔         |
 | Verify data written            | ✔             | ✗                 | ✔         |
 | Compressed images              | ✔             | ✗                 | ✔         |
-| Raw write time (3)             | 23:16         | 23:28             | 24:05     |
-| Compressed write time (3)      | 01:12:51      | ✗                 | 30:47     |
+| Raw write time (4)             | 23:16         | 23:28             | 24:05     |
+| Compressed write time (4)      | 01:12:51      | ✗                 | 30:47     |
 
-(1) - the portable executable's size on Windows platform. I couldn't download an official pre-compiled version of WIN32 Disk Imager, just the source.
+(1) - the provided binary was compiled under 10.14 (because that's what I have), however it was reported that you can compile the source under 10.13 too without problems.
 
-(2) - USBImager uses only non-buffered IO operations to make sure data is physically written to disk
+(2) - the portable executable's size on Windows platform. I couldn't download an official pre-compiled version of WIN32 Disk Imager, just the source.
 
-(3) - measurements performed by @CaptainMidnight on Windows 10 Pro using a SanDisk Ulta 32GB A1 device. Raw image file size was 31,166,976 Kb, the bzip2 compressed image size was 1,887,044 Kb. WIN32 Disk Imager was unable to uncompress the image file, therefore the resulting card was unbootable.
+(3) - USBImager uses only non-buffered IO operations to make sure data is physically written to disk
+
+(4) - measurements performed by @CaptainMidnight on Windows 10 Pro using a SanDisk Ulta 32GB A1 device. Raw image file size was 31,166,976 Kb, the bzip2 compressed image size was 1,887,044 Kb. WIN32 Disk Imager was unable to uncompress the image file, therefore the resulting card was unbootable.
 
 Usage
 -----
@@ -92,8 +94,8 @@ If you can't write to the target device (you get "permission denied" errors), th
 
 __Windows__: right-click on usbimager.exe and use the "Run as Administrator" option.
 
-__MacOSX__: go to "System Preferences", "Security & Privacy" and "Privacy". Add USBImager to the list of "Full Disk Access". Alternatively
-run from a Terminal as *sudo /Applications/USBImager.app/Contents/Mac/usbimager*.
+__MacOSX__: 10.14 an up: go to "System Preferences", "Security & Privacy" and "Privacy". Add USBImager to the list of "Full Disk Access". Alternatively
+run from a Terminal as *sudo /Applications/USBImager.app/Contents/Mac/usbimager* (this latter is the only way under 10.13).
 
 __Linux__:  this should not be an issue as USBImager comes with setgid bit set. If not, then you can use *sudo chgrp disk usbimager && sudo chmod g+s usbimager*
 to set it. Alternatively add your user to the "disk" group (see "ls -la /dev|grep -e ^b" to find out which group your OS is using).

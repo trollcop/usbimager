@@ -69,23 +69,25 @@ Fícsörök
 |---------------------------------|---------------|-------------------|-----------|
 | Többplatformos                  | ✔             | ✗                 | ✔         |
 | Minimum Windows                 | Win 7         | Win XP            | Win XP    |
-| Minimum MacOSX                  | ?             | ✗                 | 10.14     |
+| Minimum MacOSX (1)              | ?             | ✗                 | 10.14     |
 | Elérhető Raspbian-on            | ✗             | ✗                 | ✔         |
-| Program mérete (1)              | 130 Mb        | ✗                 | 256 Kb    |
+| Program mérete (2)              | 130 Mb        | ✗                 | 256 Kb    |
 | Függőségek                      | sok, ~300 Mb  | Qt, ~8 Mb         | ✗ nincs   |
 | Kémkedés- és reklámmentes       | ✗             | ✔                 | ✔         |
 | Natív interfész                 | ✗             | ✗                 | ✔         |
-| Garantált kiírás (2)            | ✗             | ✗                 | ✔         |
+| Garantált kiírás (3)            | ✗             | ✗                 | ✔         |
 | Kiírt adatok ellenőrzése        | ✔             | ✗                 | ✔         |
 | Tömörített lemezképek           | ✔             | ✗                 | ✔         |
-| Nyers kiírási idő (3)           | 23:16         | 23:28             | 24:05     |
-| Tömörített kiírás (3)           | 01:12:51      | ✗                 | 30:47     |
+| Nyers kiírási idő (4)           | 23:16         | 23:28             | 24:05     |
+| Tömörített kiírás (4)           | 01:12:51      | ✗                 | 30:47     |
 
-(1) - a szállítható futtatható mérete Windowson. A WIN32 Disk Imagerhez nem tudtam letölteni előre lefordított hivatalos csomagokat, csak forrást.
+(1) - a mellékelt bináris 10.14-en lett fordítva (mert nekem az van), de visszaigazolták, hogy a forrás 10.13 alatt is gond nélkül lefordul.
 
-(2) - USBImager csak nem-bufferelt IO utasításokat használ, hogy a fizikális lemezreírás biztos legyen
+(2) - a szállítható futtatható mérete Windowson. A WIN32 Disk Imagerhez nem tudtam letölteni előre lefordított hivatalos csomagokat, csak forrást.
 
-(3) - a méréseket @CaptainMidnight végezte Windows 10 Pro alatt egy SanDisk Ulta 32GB A1 kártyával. A nyers lemezkép mérete 31,166,976 Kb volt, míg a bzip2 tömörítetté 1,887,044 Kb. WIN32 Disk Imager nem kezel tömörített lemezképeket, így a végeredménye nem volt bebootolható.
+(3) - USBImager csak nem-bufferelt IO utasításokat használ, hogy a fizikális lemezreírás biztos legyen
+
+(4) - a méréseket @CaptainMidnight végezte Windows 10 Pro alatt egy SanDisk Ulta 32GB A1 kártyával. A nyers lemezkép mérete 31,166,976 Kb volt, míg a bzip2 tömörítetté 1,887,044 Kb. WIN32 Disk Imager nem kezel tömörített lemezképeket, így a végeredménye nem volt bebootolható.
 
 Használat
 ---------
@@ -95,8 +97,8 @@ Ha nem tudod írni a céleszközt (folyton "hozzáférés megtagadva" hibaüzene
 
 __Windows__: jobbklikk az usbimager.exe-n és használd a "Futtatás rendszergazdaként" opciót.
 
-__MacOSX__: menj a rendszerbeállításokhoz "System Preferences", aztán "Security & Privacy" és "Privacy". Add hozzá az USBImager-t a
-"Full Disk Access" listához. Alternatívaként indíthatod Terminálból a *sudo /Applications/USBImager.app/Contents/Mac/usbimager* paranccsal.
+__MacOSX__: 10.14 és afölött: menj a rendszerbeállításokhoz "System Preferences", aztán "Security & Privacy" és "Privacy". Add hozzá az USBImager-t a
+"Full Disk Access" listához. Alternatívaként indíthatod Terminálból a *sudo /Applications/USBImager.app/Contents/Mac/usbimager* paranccsal (10.13 alatt csak ez utóbbi működik).
 
 __Linux__: ez valószínűleg nem fordulhat elő, mivel az USBImager setgid bittel érkezik. Ha mégsem, akkor a *sudo chgrp disk usbimager && sudo chmod g+s usbimager*
 parancs beállítja. Alternatívaként add hozzá a felhasználódat a "disk" csoportokhoz (az "ls -la /dev|grep -e ^b" parancs kiírja, melyik csoportban vannak az oprendszered
