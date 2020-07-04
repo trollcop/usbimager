@@ -147,9 +147,12 @@ void disks_refreshlist()
             if(k != j) continue;
             if(verbose > 1) printf("\n");
             /* some mmc card driver do not set this... */
+            /* and some SATA to USB converters either, see issue #19. Better not to check at all */
+            /*
             sprintf(path, "/sys/block/%s/removable", de->d_name);
             filegetcontent(path, vendorName, 2);
-            if(de->d_name[0] == 's' && vendorName[0] != '1') continue;
+            if(vendorName[0] != '1') continue;
+	    */
             sprintf(path, "/sys/block/%s/ro", de->d_name);
             filegetcontent(path, vendorName, 2);
             if(vendorName[0] != '0') continue;
@@ -284,7 +287,7 @@ char *disks_volumes(int *num, char ***mounts)
                     k++;
                     while(*c && *c != ' ' && *c != '\t' && *c != '\n') c++;
                 }
-                if(!path || !path[0] || !memcmp(path, "/dev", 4) || !memcmp(path, "/sys", 4) ||
+                if(!path || !path[0] || !memcmp(path, "/dev", 4) || !memcmp(path, "/sys", 4) || !memcmp(path, "/var/", 5) ||
                     !memcmp(path, "/run", 4) || !memcmp(path, "/proc", 5) || !strcmp(path, "/")) continue;
                 *mounts = (char**)realloc(*mounts, ((*num) + 1) * sizeof(char*));
                 if(*mounts) {
