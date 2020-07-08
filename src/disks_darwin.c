@@ -55,7 +55,7 @@
 #import "main.h"
 #import "disks.h"
 
-int disks_serial = 0, disks_targets[DISKS_MAX], currTarget = 0;
+int disks_all = 0, disks_serial = 0, disks_targets[DISKS_MAX], currTarget = 0;
 uint64_t disks_capacity[DISKS_MAX];
 char disks_serials[DISKS_MAX][64];
 
@@ -120,7 +120,7 @@ void disks_refreshlist()
         if (!bsdName) continue;
         deviceName = [[NSString stringWithFormat: @"%@", bsdName] UTF8String];
         /* kIOUSBDeviceClassName lists some non-disks as writable disks (like USB-dongles with device driver storages) */
-        if (deviceName[0] == 'e' && deviceName[1] == 'n' && deviceName[2] >= '0' && deviceName[2] <= '9') {
+        if (!disks_all && (deviceName[0] == 'e' && deviceName[1] == 'n' && deviceName[2] >= '0' && deviceName[2] <= '9')) {
             CFRelease(bsdName); bsdName = NULL;
             continue;
         }

@@ -33,7 +33,7 @@
 
 #define DISKS_MAX 128
 
-extern int disks_serial, disks_targets[DISKS_MAX];
+extern int disks_all, disks_serial, disks_targets[DISKS_MAX];
 extern uint64_t disks_capacity[DISKS_MAX];
 
 /* some defines if not defined in limit.h */

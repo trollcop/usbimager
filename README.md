@@ -152,6 +152,7 @@ directory is specified on the command line, that is used to save backups.
 | -v/-vv              | Be verbose          |
 | -Lxx                | Force language      |
 | -1..9               | Set buffer size     |
+| -a                  | List all devices    |
 | -s\[baud]/-S\[baud] | Use serial devices  |
 | --version           | Prints version      |
 | (dir)               | First non-flag is the backup directory |
@@ -161,6 +162,8 @@ select "Properties". On the "Shortcut" tab, in the "Target" field, you can add t
 to run USBImager as Administrator if you have problems accessing the raw disk devices.
 
 The first argument which is not a flag (does not start with '-') is used as the backup image directory.
+
+With '-a', all devices will be listed, even system disks. With this you can seriously damage your computer, be careful.
 
 Flags can be given separately (like "usbimager -v -s -2") or at once ("usbimager -2vs"), the order doesn't matter. For flags that set
 the same thing, only the last taken into account (for example "-124" is the same as "-4").

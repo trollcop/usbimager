@@ -152,13 +152,14 @@ home mappába lesz lementve. A többi platformon mindig van Asztal, ha mégse ta
 
 ### Haladó funkciók
 
-| Kapcsoló            | Leírás                  |
-|---------------------|-------------------------|
-| -v/-vv              | Részletes kimenet       |
-| -Lxx                | Nyelvkód kikényszerítés |
-| -1..9               | Buffer méret beállítása |
-| -s\[baud]/-S\[baud] | Soros portok használata |
-| --version           | Kiírja a verziót        |
+| Kapcsoló            | Leírás                    |
+|---------------------|---------------------------|
+| -v/-vv              | Részletes kimenet         |
+| -Lxx                | Nyelvkód kikényszerítés   |
+| -1..9               | Buffer méret beállítása   |
+| -a                  | Minden meghajtó listázása |
+| -s\[baud]/-S\[baud] | Soros portok használata   |
+| --version           | Kiírja a verziót          |
 | (könyvtár)          | Az első nem-kapcsoló a mentési könyvtár |
 
 Windows felhasználóknak: jobb-klikk az usbimager.exe-n, majd választd a "Parancsikon létrehozása" menüt. Aztán jobb-klikk az újonnan
@@ -166,6 +167,8 @@ létrejött ".lnk" fájlra, és válaszd a "Tulajdonságok" menüt. A "Parancsik
 Ugyancsak itt, a "Biztonság" fülön be lehet állítani, hogy rendszergazdaként futtassa, ha problémáid lennének a direkt lemezhozzáférésekkel.
 
 A legelső paraméter, ami nem kapcsoló (nem '-'-el kezdődik) a lemezképek lementési könyvtáraként értelmeződik.
+
+A '-a' kapcsoló minden eszközt listáz, még a rendszerlemezeket is. Ezzel használhatatlanná lehet tenni a gépet, óvatosan.
 
 A kapcsolókat külön-külön (pl. "usbimager -v -s -2") vagy egyben ("usbimager -2vs") is megadhatod, a sorrend nem számít. Azon kapcsolók
 közül, amik ugyanazt állítják, csak a legutolsót veszi figyelembe (pl "-124" ugyanaz, mint a "-4").

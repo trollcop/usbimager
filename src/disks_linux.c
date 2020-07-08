@@ -57,7 +57,7 @@ int usleep(unsigned long int);
  * 'a' - 'z': sdX devices
  * 1024+: serial devices
  */
-int disks_serial = 0, disks_targets[DISKS_MAX];
+int disks_all = 0, disks_serial = 0, disks_targets[DISKS_MAX];
 uint64_t disks_capacity[DISKS_MAX];
 char *serials[DISKS_MAX], *skip[DISKS_MAX];
 int serialdrivers = 0;
@@ -143,8 +143,10 @@ void disks_refreshlist()
         while((de = readdir(dir))) {
             if((de->d_name[0] != 's' || de->d_name[1] != 'd') &&
                 (de->d_name[0] != 'm' || de->d_name[1] != 'm')) continue;
-            for(k = 0; k < j && strcmp(de->d_name, skip[k]); k++);
-            if(k != j) continue;
+            if(!disks_all) {
+                for(k = 0; k < j && strcmp(de->d_name, skip[k]); k++);
+                if(k != j) continue;
+            }
             if(verbose > 1) printf("\n");
             /* some mmc card driver do not set this... */
             /* and some SATA to USB converters either, see issue #19. Better not to check at all */

@@ -35,7 +35,7 @@
 #include "main.h"
 #include "disks.h"
 
-int disks_serial = 0, disks_targets[DISKS_MAX];
+int disks_all = 0, disks_serial = 0, disks_targets[DISKS_MAX];
 uint64_t disks_capacity[DISKS_MAX];
 
 HANDLE hTargetVolume = NULL;
@@ -68,7 +68,7 @@ void disks_refreshlist() {
     for(letter = 'A'; letter <= 'Z'; letter++) {
         fn[4] = letter;
         /* fn[6] = '\\'; if(GetDriveType(fn) != DRIVE_REMOVABLE) continue; else fn[6] = 0; */
-        if(letter == 'C') continue;
+        if(!disks_all && letter == 'C') continue;
         hTargetDevice = CreateFileA(fn, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
         if (hTargetDevice != INVALID_HANDLE_VALUE) {
             totalNumberOfBytes = 0;
@@ -160,7 +160,7 @@ void *disks_open(int targetId, uint64_t size)
     COMMTIMEOUTS timeouts;
     int k;
 
-    if(targetId < 0 || targetId >= DISKS_MAX || disks_targets[targetId] == -1 || disks_targets[targetId] == 'C') return (HANDLE)-1;
+    if(targetId < 0 || targetId >= DISKS_MAX || disks_targets[targetId] == -1 || (!disks_all && disks_targets[targetId] == 'C')) return (HANDLE)-1;
     if(size && disks_capacity[targetId] && size > disks_capacity[targetId]) return (HANDLE)-1;
 
     if(disks_targets[targetId] >= 1024) {

@@ -501,7 +501,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszArgum
                                     " (build " USBIMAGER_BUILD ")"
 #endif
                                     " - MIT license, Copyright (C) 2020 bzt\r\n\r\n"
-                                    "usbimager.exe [-v|-vv|-s[baud]|-S[baud]|-1|-2|-3|-4|-5|-6|-7|-8|-9|-L(xx)] <backup path>\r\n\r\n"
+                                    "usbimager.exe [-v|-vv|-a|-s[baud]|-S[baud]|-1|-2|-3|-4|-5|-6|-7|-8|-9|-L(xx)] <backup path>\r\n\r\n"
                                     "https://gitlab.com/bztsrc/usbimager\r\n\r\n");
                             }
                         break;
@@ -519,6 +519,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszArgum
                                 while(s[1] >= '0' && s[1] <= '9') s++;
                             }
                             break;
+                        case 'a': disks_all = 1; break;
                         case '1': blksizesel = 1; buffer_size = 2*1024*1024; break;
                         case '2': blksizesel = 2; buffer_size = 4*1024*1024; break;
                         case '3': blksizesel = 3; buffer_size = 8*1024*1024; break;
