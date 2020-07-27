@@ -34,6 +34,11 @@ cat <<EOF >Info.plist
     <string>NSApplication</string>
     <key>CGDisableCoalescedUpdates</key>
     <true/>
+    <key>LSEnvironment</key>
+    <dict>
+        <key>LANG</key>
+        <string>en_US</string>
+    </dict>
 </dict>
 </plist>
 EOF
