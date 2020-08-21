@@ -418,6 +418,9 @@ int main(int argc, char **argv)
             bkpdir = argv[j];
     }
 
+#if MACOSX
+    if(!lc) lc = disks_getlang();
+#endif
     if(!lc) lc = "en";
     for(i = 0; i < NUMLANGS; i++) {
         if(!memcmp(lc, dict[i][0], strlen(dict[i][0]))) {

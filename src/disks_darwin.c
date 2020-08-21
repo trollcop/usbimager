@@ -70,6 +70,16 @@ void disks_umountDone(DADiskRef disk, DADissenterRef dis, void *context)
 }
 
 /**
+ * This function doesn't belong here, but it has to be written in Obj-C
+ * Get the UI language
+ */
+char *disks_getlang()
+{
+    NSString* language = [[NSLocale preferredLanguages] objectAtIndex:0];
+    return (char*)[[NSString stringWithFormat: @"%@", language] UTF8String];
+}
+
+/**
  * Refresh target device list in the combobox
  */
 void disks_refreshlist()

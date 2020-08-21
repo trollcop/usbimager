@@ -49,6 +49,11 @@ extern uint64_t disks_capacity[DISKS_MAX];
 #endif
 
 /**
+ * Get UI language
+ */
+char *disks_getlang();
+
+/**
  * Refresh target device list in the combobox
  * Should set disks_targets[] and call main_addToCombobox()
  */
