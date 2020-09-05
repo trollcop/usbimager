@@ -89,12 +89,13 @@ static void MainDlgMsgBox(HWND hwndDlg, wchar_t *message)
     wchar_t msg[1024], *err = main_errorMessage;
     int i = 0;
     if(main_errorMessage && *main_errorMessage) {
-        for(; err[i]; i++) msg[i] = err[i];
+        for(; err[i] && i < 1021; i++) msg[i] = err[i];
         msg[i++] = (wchar_t)'\r';
         msg[i++] = (wchar_t)'\n';
     }
-    for(; *message; i++, message++)
+    for(; *message && i < 1023; i++, message++)
         msg[i] = *message;
+    msg[i] = (wchar_t)0;
     MessageBoxW(hwndDlg, msg, lang[L_ERROR], MB_ICONERROR);
 }
 
