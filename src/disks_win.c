@@ -45,6 +45,8 @@ HANDLE hTargetVolume = NULL;
  */
 void disks_refreshlist() {
     int i = 0, j, k;
+    unsigned int cdrive = 0;
+    VOLUME_DISK_EXTENTS volumeDiskExtents;
     wchar_t szLbText[1024], volName[MAX_PATH+1], siz[64], *wc;
     HANDLE hTargetDevice;
     DISK_GEOMETRY diskGeometry;
@@ -52,7 +54,7 @@ void disks_refreshlist() {
     DWORD bytesReturned;
     long long int totalNumberOfBytes = 0;
     STORAGE_PROPERTY_QUERY Query;
-    char Buf[1024] = {0}, letter, *c, fn[64] = "\\\\.\\X:";
+    char Buf[1024] = {0}, letter, *c, fn[64] = "\\\\.\\C:";
     PSTORAGE_DEVICE_DESCRIPTOR pDevDesc = (PSTORAGE_DEVICE_DESCRIPTOR)Buf;
     pDevDesc->Size = sizeof(Buf);
     Query.PropertyId = StorageDeviceProperty;
@@ -65,12 +67,25 @@ void disks_refreshlist() {
     wsprintfW(szLbText, L"T: .\\test.bin");
     main_addToCombobox((char*)szLbText);
 #endif
+    hTargetDevice = CreateFileA(fn, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
+    if (hTargetDevice != INVALID_HANDLE_VALUE) {
+        if(DeviceIoControl(hTargetDevice, IOCTL_VOLUME_GET_VOLUME_DISK_EXTENTS, NULL, 0, &volumeDiskExtents, sizeof volumeDiskExtents, &bytesReturned, NULL))
+            cdrive = (unsigned int)volumeDiskExtents.Extents[0].DiskNumber;
+        CloseHandle(hTargetDevice);
+    }
     for(letter = 'A'; letter <= 'Z'; letter++) {
         fn[4] = letter;
         /* fn[6] = '\\'; if(GetDriveType(fn) != DRIVE_REMOVABLE) continue; else fn[6] = 0; */
         if(!disks_all && letter == 'C') continue;
         hTargetDevice = CreateFileA(fn, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
         if (hTargetDevice != INVALID_HANDLE_VALUE) {
+            /* skip drive letters that are on the same physical disk as the C: drive */
+            if(!disks_all &&
+                DeviceIoControl(hTargetDevice, IOCTL_VOLUME_GET_VOLUME_DISK_EXTENTS, NULL, 0, &volumeDiskExtents, sizeof volumeDiskExtents, &bytesReturned, NULL) &&
+                cdrive == (unsigned int)volumeDiskExtents.Extents[0].DiskNumber) {
+                    CloseHandle(hTargetDevice);
+                    continue;
+            }
             totalNumberOfBytes = 0;
             if (DeviceIoControl(hTargetDevice, IOCTL_DISK_GET_DRIVE_GEOMETRY_EX, NULL, 0, &diskGeometryEx, sizeof diskGeometryEx, &bytesReturned, NULL)) {
                 totalNumberOfBytes = (long long int)diskGeometryEx.DiskSize.QuadPart;
