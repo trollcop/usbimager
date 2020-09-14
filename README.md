@@ -11,7 +11,7 @@ and creates backups. Available platforms: Windows, MacOSX and Linux. Its interfa
 | MacOSX       | [Cocoa](https://gitlab.com/bztsrc/usbimager/raw/binaries/usbimager_1.0.4-intel-macosx-cocoa.zip) | native interface|
 | Ubuntu LTS   | [GTK+](https://gitlab.com/bztsrc/usbimager/raw/binaries/usbimager_1.0.4-amd64.deb) | same as the Linux PC GTK version with udisks2 support, but in .deb format |
 | Arch/Manjaro | [GTK+](https://aur.archlinux.org/packages/usbimager/) | same as the Linux PC GTK version with udisks2 support, but in an AUR package |
-| Linux PC     | [X11](https://gitlab.com/bztsrc/usbimager/raw/binaries/usbimager_1.0.4-x86_64-linux-x11.zip)<br>[GTK+](https://gitlab.com/bztsrc/usbimager/raw/binaries/usbimager_1.0.4-x86_64-linux-gtk.zip) | recommended<br>compatibility (has security issues with accessing raw disks without udisks2) |
+| Linux PC     | [X11](https://gitlab.com/bztsrc/usbimager/raw/binaries/usbimager_1.0.5-x86_64-linux-x11.zip)<br>[GTK+](https://gitlab.com/bztsrc/usbimager/raw/binaries/usbimager_1.0.5-x86_64-linux-gtk.zip) | recommended<br>compatibility (has security issues with accessing raw disks without udisks2) |
 | Raspbian     | [GTK+](https://gitlab.com/bztsrc/usbimager/raw/binaries/usbimager_1.0.4-armhf.deb) | same as the Raspberry Pi GTK version with udisks2 support, but in .deb format |
 | Raspberry Pi | [X11](https://gitlab.com/bztsrc/usbimager/raw/binaries/usbimager_1.0.4-armv7l-linux-x11.zip) | native interface |
 
@@ -54,7 +54,7 @@ Features
 - Makes synchronized writes, that is, all data is on disk when the progressbar reaches 100%
 - Can verify writing by comparing the disk to the image
 - Can read raw disk images: .img, .bin, .raw, .iso, .dd, etc.
-- Can read compressed images on-the-fly: .gz, .bz2, .xz
+- Can read compressed images on-the-fly: .gz, .bz2, .xz, .zst
 - Can read archives on-the-fly: .zip (PKZIP and ZIP64) (*)
 - Can create backups in raw and bzip2 compressed format
 - Can send images to microcontrollers over serial line
@@ -70,7 +70,7 @@ Comparition
 | Minimum Windows                | Win 7         | Win XP            | Win XP    |
 | Minimum MacOSX (1)             | ?             | ✗                 | 10.14     |
 | Available on Raspbian          | ✗             | ✗                 | ✔         |
-| Program size (2)               | 130 Mb        | ✗                 | 256 Kb    |
+| Program size (2)               | 130 Mb        | ✗                 | 300 Kb    |
 | Dependencies                   | lots, ~300 Mb | Qt, ~8 Mb         | ✗ none    |
 | Spyware-free and ad-free       | ✗             | ✔                 | ✔         |
 | Native interface               | ✗             | ✗                 | ✔         |

@@ -251,6 +251,14 @@ int stream_open(stream_t *ctx, char *fn, int uncompr)
         }
         myseek(ctx->f, (uint64_t)(30 + hdr[26] + (hdr[27]<<8) + hdr[28] + (hdr[29]<<8)));
     } else
+    if(hdr[0] == 0x28 && hdr[1] == 0xB5 && hdr[2] == 0x2F && hdr[3] == 0xFD) {
+        /* zstandard */
+        if(verbose) printf(" zstd\r\n");
+        ctx->compSize = fs;
+        ctx->fileSize = (size_t)ZSTD_getFrameContentSize(hdr, sizeof(hdr));
+        myseek(ctx->f, 0L);
+        ctx->type = TYPE_ZSTD;
+    } else
     if(hdr[0] == '7' && hdr[1] == 'z' && hdr[2] == 0xBC && hdr[3] == 0xAF) {
         /* 7zip */
         if(verbose) printf(" 7z (deliberately not supported, use xz instead)\r\n");
@@ -279,6 +287,10 @@ int stream_open(stream_t *ctx, char *fn, int uncompr)
             xz_crc64_init();
             ctx->xz = xz_dec_init(XZ_DYNALLOC, 1 << 26);
             if (!ctx->xz) { fclose(ctx->f); return 4; }
+        break;
+        case TYPE_ZSTD:
+            ctx->zstd = ZSTD_createDCtx();
+            if (!ctx->zstd) { fclose(ctx->f); return 4; }
         break;
     }
     if(verbose) printf(" type %d compSize %" PRIu64 " fileSize %" PRIu64
@@ -384,6 +396,31 @@ int stream_read(stream_t *ctx)
             }
             size = ctx->xstrm.out_pos;
         break;
+        case TYPE_ZSTD:
+            ctx->zo.dst = ctx->buffer;
+            ctx->zo.pos = 0;
+            ctx->zo.size = buffer_size;
+            do {
+                if(ctx->zi.pos == ctx->zi.size) {
+                    insiz = ctx->compSize - ctx->cmrdSize;
+                    if(insiz < 1) { ret = 0; break; }
+                    if(insiz > buffer_size) insiz = buffer_size;
+                    if(verbose) printf("  xstd cmrdSize %" PRIu64
+                        " insiz %" PRId64 "\r\n", ctx->cmrdSize, insiz);
+                    ctx->zi.src = ctx->compBuf;
+                    ctx->zi.pos = 0;
+                    ctx->zi.size = insiz;
+                    if(!fread(ctx->compBuf, insiz, 1, ctx->f)) break;
+                    ctx->cmrdSize += (uint64_t)insiz;
+                }
+                ret = (int) ZSTD_decompressStream(ctx->zstd, &ctx->zo, &ctx->zi);
+            } while(!ZSTD_isError(ret) && ctx->zo.pos < ctx->zo.size);
+            if(ZSTD_isError(ret)) {
+                if(verbose) printf("  xstd decompress error %d\r\n", ret);
+                return -1;
+            }
+            size = ctx->zo.pos;
+        break;
     }
     while(size & 511) ctx->buffer[size++] = 0;
     if(verbose) printf("stream_read() output size %" PRId64 "\r\n", size);
@@ -478,6 +515,7 @@ void stream_close(stream_t *ctx)
         case TYPE_DEFLATE: inflateEnd(&ctx->zstrm); break;
         case TYPE_BZIP2: if(ctx->b) BZ2_bzclose(ctx->b); else BZ2_bzDecompressEnd(&ctx->bstrm); break;
         case TYPE_XZ: xz_dec_end(ctx->xz); break;
+        case TYPE_ZSTD: ZSTD_freeDCtx(ctx->zstd); break;
     }
 }
 

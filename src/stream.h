@@ -41,6 +41,7 @@
 #define XZ_USE_CRC64
 #define XZ_DEC_ANY_CHECK
 #include "xz.h"
+#include "zstd.h"
 
 #ifndef PRIu64
 #if __WORDSIZE == 64
@@ -68,6 +69,9 @@ typedef struct {
     bz_stream bstrm;
     struct xz_buf xstrm;
     struct xz_dec *xz;
+    ZSTD_DCtx* zstd;
+    ZSTD_inBuffer zi;
+    ZSTD_outBuffer zo;
     BZFILE *b;
     char type;
     time_t start;

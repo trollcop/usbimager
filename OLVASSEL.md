@@ -11,7 +11,7 @@ annyira egyszerű, amennyire csak lehetséges, teljesen salang mentes.
 | Windows      | [GDI](https://gitlab.com/bztsrc/usbimager/raw/binaries/usbimager_1.0.4-i686-win-gdi.zip) | natív interfész |
 | MacOSX       | [Cocoa](https://gitlab.com/bztsrc/usbimager/raw/binaries/usbimager_1.0.4-intel-macosx-cocoa.zip) | natív interfész |
 | Ubuntu LTS   | [GTK+](https://gitlab.com/bztsrc/usbimager/raw/binaries/usbimager_1.0.4-amd64.deb) | ua. mint a Linux PC GTK verzió udisks2-vel, csak .deb formátumban |
-| Linux PC     | [X11](https://gitlab.com/bztsrc/usbimager/raw/binaries/usbimager_1.0.4-x86_64-linux-x11.zip)<br>[GTK+](https://gitlab.com/bztsrc/usbimager/raw/binaries/usbimager_1.0.4-x86_64-linux-gtk.zip)  | javalott<br>kompatíbilitás (van egy kis biztonsági kockázat a nyers lemezelérések engedélyezésekor udisks2 nélkül) |
+| Linux PC     | [X11](https://gitlab.com/bztsrc/usbimager/raw/binaries/usbimager_1.0.5-x86_64-linux-x11.zip)<br>[GTK+](https://gitlab.com/bztsrc/usbimager/raw/binaries/usbimager_1.0.5-x86_64-linux-gtk.zip)  | javalott<br>kompatíbilitás (van egy kis biztonsági kockázat a nyers lemezelérések engedélyezésekor udisks2 nélkül) |
 | Raspbian     | [GTK+](https://gitlab.com/bztsrc/usbimager/raw/binaries/usbimager_1.0.4-armhf.deb) | ua. mint a Raspberry Pi GTK verzió udisks2-vel, csak .deb formátumban |
 | Raspberry Pi | [X11](https://gitlab.com/bztsrc/usbimager/raw/binaries/usbimager_1.0.4-armv7l-linux-x11.zip) | natív interfész |
 
@@ -55,7 +55,7 @@ Fícsörök
 - Szinkronizáltan ír, azaz minden adat garantáltan a lemezen lesz, amikorra a csík a végére ér
 - Képes ellenőrizni az írást visszaolvasással és az eredeti lemezképpel való összevetéssel
 - Képes nyers lemezképeket olvasni: .img, .bin, .raw, .iso, .dd, stb.
-- Képes futási időben kitömöríteni: .gz, .bz2, .xz
+- Képes futási időben kitömöríteni: .gz, .bz2, .xz, .zst
 - Képes csomagolt fájlokat kitömöríteni: .zip (PKZIP és ZIP64) (*)
 - Képes lemezképeket készíteni, nyers és bzip2 tömörített formátumban
 - Képes mikrokontrollerek számára soros vonalon leküldeni a lemezképeket
@@ -71,7 +71,7 @@ Fícsörök
 | Minimum Windows                 | Win 7         | Win XP            | Win XP    |
 | Minimum MacOSX (1)              | ?             | ✗                 | 10.14     |
 | Elérhető Raspbian-on            | ✗             | ✗                 | ✔         |
-| Program mérete (2)              | 130 Mb        | ✗                 | 256 Kb    |
+| Program mérete (2)              | 130 Mb        | ✗                 | 300 Kb    |
 | Függőségek                      | sok, ~300 Mb  | Qt, ~8 Mb         | ✗ nincs   |
 | Kémkedés- és reklámmentes       | ✗             | ✔                 | ✔         |
 | Natív interfész                 | ✗             | ✗                 | ✔         |

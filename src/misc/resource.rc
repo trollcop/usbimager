@@ -8,8 +8,8 @@ IDI_WRITE    ICON "write.ico"
 IDI_READ     ICON "read.ico"
 
 VS_VERSION_INFO    VERSIONINFO
-FILEVERSION        1,0,4,0
-PRODUCTVERSION     1,0,4,0
+FILEVERSION        1,0,5,0
+PRODUCTVERSION     1,0,5,0
 FILEFLAGSMASK      VS_FFI_FILEFLAGSMASK
 FILEFLAGS          0
 FILEOS             VOS_NT_WINDOWS32
@@ -27,7 +27,7 @@ BEGIN
       VALUE "LegalCopyright", "©2020 bzt@gitlab"
       VALUE "OriginalFilename", "usbimager.exe"
       VALUE "ProductName", "USBImager by bzt"
-      VALUE "ProductVersion", "1.0.4"
+      VALUE "ProductVersion", "1.0.5"
     END
   END
   BLOCK "VarFileInfo"
@@ -39,7 +39,7 @@ END
 IDC_MAINDLG DIALOGEX 0, 0, 320, 100
 STYLE DS_CENTER | DS_SHELLFONT | WS_SYSMENU
 FONT 8, "MS Shell Dlg"
-CAPTION "USBImager 1.0.4"
+CAPTION "USBImager 1.0.5"
 BEGIN
     EDITTEXT IDC_MAINDLG_SOURCE, 5, 5, 275, 12, ES_AUTOHSCROLL
     PUSHBUTTON "...", IDC_MAINDLG_SELECT, 285, 4, 30, 14

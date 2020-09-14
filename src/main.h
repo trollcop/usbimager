@@ -27,15 +27,16 @@
  *
  */
 
-#define USBIMAGER_VERSION "1.0.4"
-#define USBIMAGER_BUILD "10"
+#define USBIMAGER_VERSION "1.0.5"
+#define USBIMAGER_BUILD "11"
 
 /* filters */
 enum {
     TYPE_PLAIN = 0,
     TYPE_DEFLATE,
     TYPE_BZIP2,
-    TYPE_XZ
+    TYPE_XZ,
+    TYPE_ZSTD
 };
 
 extern int verbose;

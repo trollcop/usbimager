@@ -33,10 +33,10 @@ CC = gcc
 LD = gcc
 STRIP = strip
 # setting DISKS_TEST to 1 will add a test.bin "device" to the target disks list
-CFLAGS = -DDISKS_TEST=0 -D_FILE_OFFSET_BITS=64 -D__USE_FILE_OFFSET64 -D__USE_LARGEFILE -Wall -Wextra -pedantic --std=c99 -O3 -fvisibility=hidden -I./zlib -I./bzip2 -I./xz
+CFLAGS = -DDISKS_TEST=0 -D_FILE_OFFSET_BITS=64 -D__USE_FILE_OFFSET64 -D__USE_LARGEFILE -Wall -Wextra -pedantic --std=c99 -O3 -fvisibility=hidden -I./zlib -I./bzip2 -I./xz -I./zstd
 LDFLAGS =
 LIBS =
-DECOMPRESSORS = zlib/libz.a bzip2/libbz2.a xz/libxz.a
+DECOMPRESSORS = zlib/libz.a bzip2/libbz2.a xz/libxz.a zstd/libzstd.a
 PREFIX ?= usr/
 INSTDIR=$(DESTDIR:/=)/$(PREFIX)
 
@@ -137,6 +137,10 @@ bzip2/libbz2.a:
 xz/libxz.a:
 	@make -C xz libxz.a
 
+zstd/libzstd.a:
+	@make -C zstd libzstd.a ZSTD_LIB_COMPRESSION=0 ZSTD_LIB_DICTBUILDER=0 ZSTD_LIB_DEPRECATED=0 \
+		ZSTD_LIB_MINIFY=1 ZSTD_STATIC_LINKING_ONLY=1 ZSTD_STRIP_ERROR_STRINGS=1 DEBUGLEVEL=0
+
 resource.o: misc/resource.rc
 	$(WINDRES) misc/resource.rc -o resource.o
 
@@ -234,4 +238,5 @@ distclean: clean
 	@make -C zlib clean || true
 	@make -C bzip2 clean || true
 	@make -C xz clean || true
+	@make -C zstd clean || true
 	@rm zlib/Makefile zlib/*.log zlib/zlib.pc $(DECOMPRESSORS) 2>/dev/null || true
