@@ -98,7 +98,7 @@ Ha nem tudod írni a céleszközt (folyton "hozzáférés megtagadva" hibaüzene
 __Windows__: jobbklikk az usbimager.exe-n és használd a "Futtatás rendszergazdaként" opciót.
 
 __MacOSX__: 10.14 és afölött: menj a rendszerbeállításokhoz "System Preferences", aztán "Security & Privacy" és "Privacy". Add hozzá az USBImager-t a
-"Full Disk Access" listához. Alternatívaként indíthatod Terminálból a *sudo /Applications/USBImager.app/Contents/Mac/usbimager* paranccsal (10.13 alatt csak ez utóbbi működik).
+"Full Disk Access" listához. Alternatívaként indíthatod Terminálból a *sudo /Applications/USBImager.app/Contents/MacOS/usbimager* paranccsal (10.13 alatt csak ez utóbbi működik).
 
 __Linux__: ez valószínűleg nem fordulhat elő, mivel az USBImager setgid bittel érkezik. Ha mégsem, akkor a *sudo chgrp disk usbimager && sudo chmod g+s usbimager*
 parancs beállítja. Alternatívaként add hozzá a felhasználódat a "disk" csoportokhoz (az "ls -la /dev|grep -e ^b" parancs kiírja, melyik csoportban vannak az oprendszered

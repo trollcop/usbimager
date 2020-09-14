@@ -96,7 +96,7 @@ If you can't write to the target device (you get "permission denied" errors), th
 __Windows__: right-click on usbimager.exe and use the "Run as Administrator" option.
 
 __MacOSX__: 10.14 an up: go to "System Preferences", "Security & Privacy" and "Privacy". Add USBImager to the list of "Full Disk Access". Alternatively
-run from a Terminal as *sudo /Applications/USBImager.app/Contents/Mac/usbimager* (this latter is the only way under 10.13).
+run from a Terminal as *sudo /Applications/USBImager.app/Contents/MacOS/usbimager* (this latter is the only way under 10.13).
 
 __Linux__:  this should not be an issue as USBImager comes with setgid bit set. If not, then you can use *sudo chgrp disk usbimager && sudo chmod g+s usbimager*
 to set it. Alternatively add your user to the "disk" group (see "ls -la /dev|grep -e ^b" to find out which group your OS is using).
