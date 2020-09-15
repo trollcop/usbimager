@@ -427,7 +427,7 @@ sererr:         main_getErrorMessage();
             }
             free(buf);
             for(i = 0; numUmount > 0 && i < 30000; i++) {
-               CFRunLoopRun();
+               CFRunLoopRunInMode(kCFRunLoopCommonModes, 0, 0);
                if(verbose) { printf("  waiting for umount num=%d i=%d\r", numUmount, i); fflush(stdout); }
                if(numUmount) usleep(100);
             }
