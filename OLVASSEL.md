@@ -202,7 +202,8 @@ kézfogást fogja alkalmazni a soros vonalon:
 Mindkét esetben a soros port 115200 baud, 8 adatbit, nincs paritás, 1 stopbit módra kerül felkonfigurálásra. A soros vonali átvitelek esetében
 az USBImager nem tömöríti ki a lemezképet, hogy csökkentse az átviteli időt, így a kicsomagolást a kliensen kell elvégezni. Ha egy egyszerű
 rendszerbetöltőre vágysz, ami kompatíbilis az USBImager-el, akkor javalom az [Image Receiver](https://gitlab.com/bztsrc/imgrecv)-t
-(elérhető RPi1, 2, 3, 4 és IBM PC BIOS gépekre).
+(elérhető RPi1, 2, 3, 4 és IBM PC BIOS gépekre). Használható vészhelyzeti induló lemezképek küldésére
+[BOOTBOOT](https://gitlab.com/bztsrc/bootboot) kompatíbilis rendszerbetöltők számára.
 
 Ha más baud-ot szeretnél, csak add meg a kapcsoló után, pl. "-s57600" vagy "-S230400". Lehetséges értékek:
 57600, 115200, 230400, 460800, 500000, 576000, 921600, 1000000, 1152000, 1500000, 2000000, 2500000, 3000000, 3500000, 4000000
