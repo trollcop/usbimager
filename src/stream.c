@@ -35,7 +35,7 @@
 
 #ifdef WINVER
 #include <windows.h>
-extern int _fileno(FILE *f);
+/*extern int _fileno(FILE *f);*/
 #else
 extern int fileno(FILE *f);
 #endif
@@ -118,12 +118,12 @@ int stream_status(stream_t *ctx, char *str, int done)
     }
 #ifdef WINVER
     if(ctx->fileSize)
-        wsprintfW((wchar_t*)str, L"%6" PRIu64 " %s / %" PRIu64 " %s%s%s",
-            (ctx->readSize >> 20), lang[L_MIB],
-            (ctx->fileSize >> 20), lang[L_MIB], rem[0] ? L", " : L"", rem);
+        wsprintfW((wchar_t*)str, L"%6u %s / %u %s%s%s",
+            (unsigned int)(ctx->readSize >> 20), lang[L_MIB],
+            (unsigned int)(ctx->fileSize >> 20), lang[L_MIB], rem[0] ? L", " : L"", rem);
     else
-        wsprintfW((wchar_t*)str, L"%6" PRIu64 " %s %s%s%s",
-            (ctx->readSize >> 20), lang[L_MIB], lang[L_SOFAR], rem[0] ? L", " : L"", rem);
+        wsprintfW((wchar_t*)str, L"%6u %s %s%s%s",
+            (unsigned int)(ctx->readSize >> 20), lang[L_MIB], lang[L_SOFAR], rem[0] ? L", " : L"", rem);
 #else
     if(ctx->fileSize)
         sprintf(str, "%6" PRIu64 " %s / %" PRIu64 " %s%s%s",

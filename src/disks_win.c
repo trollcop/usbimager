@@ -30,7 +30,7 @@
 #include <windows.h>
 #include <winioctl.h>
 #include <commctrl.h>
-#include <ddk/ntdddisk.h>
+#include <ntdddisk.h>
 #include "lang.h"
 #include "main.h"
 #include "disks.h"
@@ -181,7 +181,7 @@ void *disks_open(int targetId, uint64_t size)
     if(disks_targets[targetId] >= 1024) {
         sprintf(szDevicePathName, "\\\\.\\COM%d", disks_targets[targetId] - 1024);
         ret = CreateFileA(szDevicePathName, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_FLAG_NO_BUFFERING, NULL);
-        if(verbose) printf("disks_open(%s) serial\r\n  fd=%d errno=%d\r\n", szDevicePathName, ret, errno);
+        if(verbose) printf("disks_open(%s) serial\r\n  fd=%d errno=%d\r\n", szDevicePathName, (int)ret, errno);
         if(ret == INVALID_HANDLE_VALUE) {
             main_getErrorMessage();
             return NULL;
@@ -270,7 +270,7 @@ sererr:     main_getErrorMessage();
             sprintf(szDevicePathName, "\\\\.\\PhysicalDrive%u", (unsigned int)volumeDiskExtents.Extents[0].DiskNumber);
             ret = CreateFileA(szDevicePathName, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_FLAG_NO_BUFFERING, NULL);
             if(verbose)
-                printf("disks_open(%s)\r\n  fd=%d\r\n", szDevicePathName, ret);
+                printf("disks_open(%s)\r\n  fd=%d\r\n", szDevicePathName, (int)ret);
             if (ret == INVALID_HANDLE_VALUE) {
                 main_getErrorMessage();
                 DeviceIoControl(hTargetVolume, FSCTL_UNLOCK_VOLUME, NULL, 0, NULL, 0, &bytesReturned, NULL);
