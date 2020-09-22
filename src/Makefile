@@ -96,7 +96,11 @@ LDFLAGS += -pthread
 ifeq ($(ARCH),x86_64)
 LIBS += libui/linux.a
 else
+ifeq ($(ARCH),aarch64)
+LIBS += libui/raspios.a
+else
 LIBS += libui/raspbian.a
+endif
 endif
 ifneq ("$(wildcard /usr/bin/pkg-config)","")
 LIBS += $(shell pkg-config --libs gtk+-3.0)
@@ -111,7 +115,8 @@ LIBS += $(shell pkg-config --libs udisks2)
 endif
 SRC += disks_linux.c
 TMP = $(ARCH:x86_64=amd64)
-DEBARCH = $(TMP:armv7l=armhf)
+TMP2 = $(ARCH:aarch64=arm64)
+DEBARCH = $(TMP2:armv7l=armhf)
 endif
 endif
 
@@ -232,7 +237,7 @@ endif
 ####### cleanup #######
 
 clean:
-	rm $(TARGET) *.o *.bin zlib/*.o zlib/*.exe zlib/ztest* bzip2/*.o xz/*.o 2>/dev/null || true
+	rm $(TARGET) *.o *.bin zlib/*.o zlib/*.exe zlib/ztest* bzip2/*.o xz/*.o zstd/common/*.o zstd/decompress/*.o 2>/dev/null || true
 
 distclean: clean
 	@make -C zlib clean || true
