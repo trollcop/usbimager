@@ -9,7 +9,7 @@ annyira egyszerű, amennyire csak lehetséges, teljesen salang mentes.
 | Platform     | Felület      | Leírás                       |
 |--------------|--------------|------------------------------|
 | Windows      | [GDI](https://gitlab.com/bztsrc/usbimager/raw/binaries/usbimager_1.0.5-i686-win-gdi.zip) | natív interfész |
-| MacOSX       | [Cocoa](https://gitlab.com/bztsrc/usbimager/raw/binaries/usbimager_1.0.4-intel-macosx-cocoa.zip) | natív interfész |
+| MacOSX       | [Cocoa](https://gitlab.com/bztsrc/usbimager/raw/binaries/usbimager_1.0.5-intel-macosx-cocoa.zip) | natív interfész |
 | Ubuntu LTS   | [GTK+](https://gitlab.com/bztsrc/usbimager/raw/binaries/usbimager_1.0.4-amd64.deb) | ua. mint a Linux PC GTK verzió udisks2-vel, csak .deb formátumban |
 | Arch/Manjaro | [GTK+](https://aur.archlinux.org/packages/usbimager/) | ua. mint a Linux PC GTK verzió udisks2-vel, csak AUR csomagban |
 | Linux PC     | [X11](https://gitlab.com/bztsrc/usbimager/raw/binaries/usbimager_1.0.5-x86_64-linux-x11.zip)<br>[GTK+](https://gitlab.com/bztsrc/usbimager/raw/binaries/usbimager_1.0.5-x86_64-linux-gtk.zip)  | javalott<br>kompatíbilitás (van egy kis biztonsági kockázat a nyers lemezelérések engedélyezésekor udisks2 nélkül) |
@@ -289,6 +289,8 @@ Szeretnék köszönetet mondani a következő felhasználóknak: @mattmiller, @M
 @tvjon-nak, @CaptainMidnight-nak és @gitlabhack-nek amiért több különböző platformon és számos különböző eszközzel is letesztelték az USBImager-t.
 
 Köszönet a fordítások ellenőrzéséért és javításáért: @mline-nak és @vordenken-nek (német), @epoch1970-nek és @JumpZero-nak (francia), @hansotten-nek és @zonstraal-nak (holland), @ller (orosz), @zaval (ukrán), @lmarmisa (spanyol), @otani (japán), @ngedizaydindogmus (török), @coltrane (portugál).
+
+További köszönet @munntjlx-nek, hogy lefordította az USBImager-t MacOS-en.
 
 Legjobbakat,
 
