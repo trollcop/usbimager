@@ -1,0 +1,5 @@
+src/Debug/
+src/Release/
+src/.vs/
+src/usbimager.vcxproj.user
+src/x64/

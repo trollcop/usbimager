@@ -1,0 +1,281 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav</Extensions>
+    </Filter>
+    <Filter Include="xz">
+      <UniqueIdentifier>{a7bb5eca-aecb-4531-b883-922a28609d8c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="bzip2">
+      <UniqueIdentifier>{61f50f05-1a7e-43ed-a59b-e2679b60ca82}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="zlib">
+      <UniqueIdentifier>{b64ab9fc-7472-4692-9531-c8c34095434c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="zstd">
+      <UniqueIdentifier>{56f9ca91-a9c9-4394-a987-54141f0887cb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="zstd\common">
+      <UniqueIdentifier>{c121a99c-a356-4c20-a98a-33778b81264b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="zstd\decompress">
+      <UniqueIdentifier>{0d7fd24f-ad5c-44ce-8d4b-2d1b014e92c5}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="disks_win.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="lang.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="main_win.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="stream.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="xz\xz_dec_stream.c">
+      <Filter>xz</Filter>
+    </ClCompile>
+    <ClCompile Include="xz\xz_crc32.c">
+      <Filter>xz</Filter>
+    </ClCompile>
+    <ClCompile Include="xz\xz_crc64.c">
+      <Filter>xz</Filter>
+    </ClCompile>
+    <ClCompile Include="xz\xz_dec_bcj.c">
+      <Filter>xz</Filter>
+    </ClCompile>
+    <ClCompile Include="xz\xz_dec_lzma2.c">
+      <Filter>xz</Filter>
+    </ClCompile>
+    <ClCompile Include="bzip2\blocksort.c">
+      <Filter>bzip2</Filter>
+    </ClCompile>
+    <ClCompile Include="bzip2\bzlib.c">
+      <Filter>bzip2</Filter>
+    </ClCompile>
+    <ClCompile Include="bzip2\compress.c">
+      <Filter>bzip2</Filter>
+    </ClCompile>
+    <ClCompile Include="bzip2\crctable.c">
+      <Filter>bzip2</Filter>
+    </ClCompile>
+    <ClCompile Include="bzip2\decompress.c">
+      <Filter>bzip2</Filter>
+    </ClCompile>
+    <ClCompile Include="bzip2\huffman.c">
+      <Filter>bzip2</Filter>
+    </ClCompile>
+    <ClCompile Include="bzip2\randtable.c">
+      <Filter>bzip2</Filter>
+    </ClCompile>
+    <ClCompile Include="zlib\adler32.c">
+      <Filter>zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="zlib\crc32.c">
+      <Filter>zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="zlib\infback.c">
+      <Filter>zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="zlib\inffast.c">
+      <Filter>zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="zlib\inflate.c">
+      <Filter>zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="zlib\inftrees.c">
+      <Filter>zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="zlib\trees.c">
+      <Filter>zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="zlib\zutil.c">
+      <Filter>zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="zstd\common\debug.c">
+      <Filter>zstd\common</Filter>
+    </ClCompile>
+    <ClCompile Include="zstd\common\entropy_common.c">
+      <Filter>zstd\common</Filter>
+    </ClCompile>
+    <ClCompile Include="zstd\common\error_private.c">
+      <Filter>zstd\common</Filter>
+    </ClCompile>
+    <ClCompile Include="zstd\common\fse_decompress.c">
+      <Filter>zstd\common</Filter>
+    </ClCompile>
+    <ClCompile Include="zstd\common\pool.c">
+      <Filter>zstd\common</Filter>
+    </ClCompile>
+    <ClCompile Include="zstd\common\threading.c">
+      <Filter>zstd\common</Filter>
+    </ClCompile>
+    <ClCompile Include="zstd\common\xxhash.c">
+      <Filter>zstd\common</Filter>
+    </ClCompile>
+    <ClCompile Include="zstd\common\zstd_common.c">
+      <Filter>zstd\common</Filter>
+    </ClCompile>
+    <ClCompile Include="zstd\decompress\huf_decompress.c">
+      <Filter>zstd\decompress</Filter>
+    </ClCompile>
+    <ClCompile Include="zstd\decompress\zstd_ddict.c">
+      <Filter>zstd\decompress</Filter>
+    </ClCompile>
+    <ClCompile Include="zstd\decompress\zstd_decompress.c">
+      <Filter>zstd\decompress</Filter>
+    </ClCompile>
+    <ClCompile Include="zstd\decompress\zstd_decompress_block.c">
+      <Filter>zstd\decompress</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="disks.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="lang.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="main.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="stream.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="bzip2\bzlib.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="bzip2\bzlib_private.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="libui\ui.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="misc\wm_icon.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="xz\xz.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="xz\xz_config.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="xz\xz_lzma2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="xz\xz_private.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="xz\xz_stream.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib\crc32.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib\deflate.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib\gzguts.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib\inffast.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib\inffixed.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib\inflate.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib\inftrees.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib\trees.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib\zconf.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib\zlib.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib\zutil.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="zstd\zstd.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="zstd\common\bitstream.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="zstd\common\compiler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="zstd\common\cpu.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="zstd\common\debug.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="zstd\common\error_private.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="zstd\common\fse.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="zstd\common\huf.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="zstd\common\mem.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="zstd\common\pool.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="zstd\common\threading.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="zstd\common\xxhash.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="zstd\common\zstd_deps.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="zstd\common\zstd_errors.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="zstd\common\zstd_internal.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="zstd\decompress\zstd_ddict.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="zstd\decompress\zstd_decompress_block.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="zstd\decompress\zstd_decompress_internal.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="misc\resource.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+</Project>
