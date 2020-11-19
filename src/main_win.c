@@ -35,6 +35,7 @@
 #include <io.h>
 #include <fcntl.h>
 #include <sys/stat.h>
+#include <stdio.h>
 #include "lang.h"
 #include "resource.h"
 #include "stream.h"
@@ -46,8 +47,6 @@
 #ifndef DBT_DEVICEREMOVECOMPLETE
 #define DBT_DEVICEREMOVECOMPLETE 0x8004
 #endif
-
-_CRTIMP __cdecl __MINGW_NOTHROW  FILE * _fdopen (int, const char *);
 
 wchar_t **lang;
 extern char *dict[NUMLANGS][NUMTEXTS + 1];
