@@ -63,7 +63,7 @@ void main_addToCombobox(char *option)
     SendDlgItemMessageW(mainHwndDlg, IDC_MAINDLG_TARGET_LIST, CB_ADDSTRING, 0, (LPARAM)msg);
 }
 
-void main_getErrorMessage()
+void main_getErrorMessage(void)
 {
     if(main_errorMessage) {
         LocalFree(main_errorMessage);
@@ -117,7 +117,8 @@ static void onDone(HWND hwndDlg)
 /**
  * Function that reads from input and writes to disk
  */
-static DWORD WINAPI writerRoutine(LPVOID lpParam) {
+static DWORD WINAPI writerRoutine(LPVOID lpParam)
+{
     HWND hwndDlg = (HWND) lpParam;
     wchar_t szFilePathName[MAX_PATH];
     LARGE_INTEGER totalNumberOfBytesWritten;
@@ -126,22 +127,11 @@ static DWORD WINAPI writerRoutine(LPVOID lpParam) {
     LRESULT index = SendDlgItemMessage(hwndDlg, IDC_MAINDLG_TARGET_LIST, CB_GETCURSEL, 0, 0);
     static wchar_t lpStatus[128];
     static stream_t ctx;
-    int ret = 1, len, wlen;
-    char *fn;
+    int ret = 1;
 
     ctx.fileSize = 0;
     GetDlgItemTextW(hwndDlg, IDC_MAINDLG_SOURCE, szFilePathName, sizeof(szFilePathName) / sizeof(szFilePathName[0]));
-    for(wlen = 0; szFilePathName[wlen]; wlen++);
-    len = WideCharToMultiByte(CP_UTF8, 0, szFilePathName, wlen, 0, 0, NULL, NULL);
-    if(len > 0) {
-        fn = (char*)malloc(len+1);
-        if(fn) {
-            WideCharToMultiByte(CP_UTF8, 0, szFilePathName, wlen, fn, len, NULL, NULL);
-            fn[len] = 0;
-            ret = stream_open(&ctx, fn, index >= 0 && index < DISKS_MAX && disks_targets[index] >= 1024);
-            free(fn);
-        }
-    }
+    ret = stream_open(&ctx, szFilePathName, index >= 0 && index < DISKS_MAX &&disks_targets[index] >= 1024);
 
     if (!ret) {
         int needVerify = IsDlgButtonChecked(hwndDlg, IDC_MAINDLG_VERIFY);
@@ -219,7 +209,8 @@ static DWORD WINAPI writerRoutine(LPVOID lpParam) {
     return 0;
 }
 
-INT_PTR MainDlgWriteClick(HWND hwndDlg) {
+INT_PTR MainDlgWriteClick(HWND hwndDlg)
+{
     EnableWindow(GetDlgItem(hwndDlg, IDC_MAINDLG_SOURCE), FALSE);
     EnableWindow(GetDlgItem(hwndDlg, IDC_MAINDLG_SELECT), FALSE);
     EnableWindow(GetDlgItem(hwndDlg, IDC_MAINDLG_TARGET_LIST), FALSE);
@@ -238,48 +229,51 @@ INT_PTR MainDlgWriteClick(HWND hwndDlg) {
     }
 
     if(verbose) printf("Starting worker thread.\r\n");
-    CloseHandle(CreateThread(NULL, 0, writerRoutine, hwndDlg, 0, NULL));
+    HANDLE hThread = CreateThread(NULL, 0, writerRoutine, hwndDlg, 0, NULL);
+    if (hThread)
+        CloseHandle(hThread);
     return TRUE;
 }
 
 /**
  * Function that reads from disk and writes to output file
  */
-static DWORD WINAPI readerRoutine(LPVOID lpParam) {
+static DWORD WINAPI readerRoutine(LPVOID lpParam)
+{
     HWND hwndDlg = (HWND) lpParam;
     HANDLE src;
-    LRESULT targetId = SendDlgItemMessage(hwndDlg, IDC_MAINDLG_TARGET_LIST, CB_GETCURSEL, 0, 0);
-    int size, wlen, len, needCompress = IsDlgButtonChecked(hwndDlg, IDC_MAINDLG_COMPRESS);
+    int targetId;
+    uint32_t size;
+    int needCompress = IsDlgButtonChecked(hwndDlg, IDC_MAINDLG_COMPRESS);
     DWORD numberOfBytesRead;
     char *fn = NULL;
     static wchar_t lpStatus[128];
     static stream_t ctx;
     struct _stat st;
-    wchar_t home[MAX_PATH], d[16], t[8], wFn[MAX_PATH+512];
+    wchar_t *home = NULL;
+    wchar_t d[16], t[8], wFn[MAX_PATH + 512] = { 0, };
 
+    targetId = SendDlgItemMessage(hwndDlg, IDC_MAINDLG_TARGET_LIST, CB_GETCURSEL, 0, 0);
     if(targetId >= 0 && targetId < DISKS_MAX && disks_targets[targetId] >= 1024) return 0;
 
     ctx.fileSize = 0;
-    src = targetId == CB_ERR ? (HANDLE)-1 : (HANDLE)disks_open((int)targetId, 0);
+    src = targetId == CB_ERR ? (HANDLE)-1 : (HANDLE)disks_open(targetId, 0);
     if(src != NULL && src != (HANDLE)-1 && src != (HANDLE)-2 && src != (HANDLE)-3 && src != (HANDLE)-4) {
-        if(SHGetFolderPathW(HWND_DESKTOP, CSIDL_DESKTOPDIRECTORY, NULL, 0, home))
-            wsprintfW(home, L".\\");
+        if (SHGetKnownFolderPath(&FOLDERID_Desktop, KF_FLAG_DEFAULT, NULL, &home) != S_OK) {
+            home = CoTaskMemAlloc(MAX_PATH);
+            if (home)
+                wsprintfW(home, L".");
+        }
         GetDateFormatW(LOCALE_USER_DEFAULT, 0, NULL, L"yyyyMMdd", (LPWSTR)&d, 16);
         GetTimeFormatW(LOCALE_USER_DEFAULT, 0, NULL, L"HHmm", (LPWSTR)&t, 8);
         wsprintfW(wFn, L"%s\\usbimager-%sT%s.dd%s", bkpdir && !_wstat(bkpdir, &st) ? bkpdir : home, d, t, needCompress ? L".bz2" : L"");
-        for(wlen = 0; wFn[wlen]; wlen++);
-        len = WideCharToMultiByte(CP_UTF8, 0, wFn, wlen, 0, 0, NULL, NULL);
-        if(len > 0) {
-            fn = (char*)malloc(len+1);
-            if(fn) {
-                WideCharToMultiByte(CP_UTF8, 0, wFn, wlen, fn, len, NULL, NULL);
-                fn[len] = 0;
-            }
-        }
+        if (home)
+            CoTaskMemFree(home);
+
         SetWindowTextW(GetDlgItem(hwndDlg, IDC_MAINDLG_SOURCE), wFn);
         ShowWindow(GetDlgItem(hwndDlg, IDC_MAINDLG_SOURCE), SW_HIDE);
         ShowWindow(GetDlgItem(hwndDlg, IDC_MAINDLG_SOURCE), SW_SHOW);
-        if(fn && !stream_create(&ctx, fn, needCompress, disks_capacity[targetId])) {
+        if (wFn && !stream_create(&ctx, wFn, needCompress, disks_capacity[targetId & (DISKS_MAX - 1)])) {
             while(ctx.readSize < ctx.fileSize) {
                 errno = 0;
                 size = ctx.fileSize - ctx.readSize < (uint64_t)buffer_size ? (int)(ctx.fileSize - ctx.readSize) : buffer_size;
@@ -308,7 +302,6 @@ static DWORD WINAPI readerRoutine(LPVOID lpParam) {
     } else {
         MainDlgMsgBox(hwndDlg, lang[src == (HANDLE)-1 ? L_TRGERR : (src == (HANDLE)-2 ? L_UMOUNTERR : (src == (HANDLE)-4 ? L_COMMERR : L_OPENTRGERR))]);
     }
-    if(fn) free(fn);
     stream_status(&ctx, (char*)&lpStatus, 1);
     SetWindowTextW(GetDlgItem(hwndDlg, IDC_MAINDLG_STATUS), lpStatus);
     onDone(hwndDlg);
@@ -318,7 +311,8 @@ static DWORD WINAPI readerRoutine(LPVOID lpParam) {
     return 0;
 }
 
-INT_PTR MainDlgReadClick(HWND hwndDlg) {
+INT_PTR MainDlgReadClick(HWND hwndDlg)
+{
     EnableWindow(GetDlgItem(hwndDlg, IDC_MAINDLG_SOURCE), FALSE);
     EnableWindow(GetDlgItem(hwndDlg, IDC_MAINDLG_SELECT), FALSE);
     EnableWindow(GetDlgItem(hwndDlg, IDC_MAINDLG_TARGET_LIST), FALSE);
@@ -337,11 +331,15 @@ INT_PTR MainDlgReadClick(HWND hwndDlg) {
     }
 
     if(verbose) printf("Starting worker thread for reading.\r\n");
-    CloseHandle(CreateThread(NULL, 0, readerRoutine, hwndDlg, 0, NULL));
+    HANDLE hThread = CreateThread(NULL, 0, readerRoutine, hwndDlg, 0, NULL);
+    if (hThread != NULL)
+        CloseHandle(hThread);
+
     return TRUE;
 }
 
-INT_PTR MainDlgRefreshTarget(HWND hwndDlg) {
+INT_PTR MainDlgRefreshTarget(HWND hwndDlg)
+{
     LRESULT index = SendDlgItemMessage(hwndDlg, IDC_MAINDLG_TARGET_LIST, CB_GETCURSEL, 0, 0);
     SendDlgItemMessage(hwndDlg, IDC_MAINDLG_TARGET_LIST, CB_RESETCONTENT, 0, 0);
     disks_refreshlist();
@@ -358,17 +356,16 @@ INT_PTR MainDlgRefreshTarget(HWND hwndDlg) {
     return TRUE;
 }
 
-INT_PTR MainDlgSelectClick(HWND hwndDlg) {
-    OPENFILENAME ofn;
-    TCHAR lpstrFile[MAX_PATH];
+INT_PTR MainDlgSelectClick(HWND hwndDlg)
+{
+    OPENFILENAME ofn = { 0, };
+    TCHAR lpstrFile[MAX_PATH] = { 0, };
 
     MainDlgRefreshTarget(hwndDlg);
 
     SetWindowTextW(GetDlgItem(hwndDlg, IDC_MAINDLG_STATUS), L"");
-    ZeroMemory(&ofn, sizeof ofn);
-    ZeroMemory(lpstrFile, sizeof lpstrFile);
 
-    ofn.lStructSize = sizeof ofn;
+    ofn.lStructSize = sizeof(ofn);
     ofn.hwndOwner = hwndDlg;
     ofn.lpstrFilter = TEXT("(*.*)\0*.*\0\0");
     ofn.lpstrFile = lpstrFile;
@@ -382,7 +379,8 @@ INT_PTR MainDlgSelectClick(HWND hwndDlg) {
     return TRUE;
 }
 
-static INT_PTR CALLBACK MainDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+static INT_PTR CALLBACK MainDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
     HICON wrico, rdico;
     UNREFERENCED_PARAMETER(lParam);
     LRESULT index;
@@ -461,7 +459,8 @@ static INT_PTR CALLBACK MainDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
     }
 }
 
-int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszArgument, int nCmdShow) {
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszArgument, int nCmdShow)
+{
     UNREFERENCED_PARAMETER(hPrevInstance);
     UNREFERENCED_PARAMETER(lpszArgument);
     UNREFERENCED_PARAMETER(nCmdShow);

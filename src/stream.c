@@ -142,7 +142,7 @@ int stream_status(stream_t *ctx, char *str, int done)
 /**
  * Open file and determine the source's format
  */
-int stream_open(stream_t *ctx, char *fn, int uncompr)
+int stream_open(stream_t *ctx, wchar_t *fn, int uncompr)
 {
     unsigned char hdr[65536], *buff;
     uint64_t fs = 0;
@@ -155,7 +155,7 @@ int stream_open(stream_t *ctx, char *fn, int uncompr)
     memset(ctx, 0, sizeof(stream_t));
     if(!fn || !*fn) return 1;
 
-    if(verbose) printf("stream_open(%s)\r\n", fn);
+    if(verbose) printf("stream_open(%S)\r\n", fn);
 
     ctx->compBuf = (unsigned char*)malloc(buffer_size);
     if(!ctx->compBuf) {
@@ -175,8 +175,11 @@ int stream_open(stream_t *ctx, char *fn, int uncompr)
         free(ctx->verifyBuf); ctx->verifyBuf = NULL;
         return 1;
     }
-
+#ifdef WINVER
+    ctx->f = _wfopen(fn, L"rb");
+#else
     ctx->f = fopen(fn, "rb");
+#endif
     if(!ctx->f) return 1;
 #ifdef WINVER
     fs = (uint64_t)_filelengthi64(_fileno(ctx->f));
@@ -431,14 +434,14 @@ int stream_read(stream_t *ctx)
 /**
  * Open file for writing
  */
-int stream_create(stream_t *ctx, char *fn, int comp, uint64_t size)
+int stream_create(stream_t *ctx, wchar_t *fn, int comp, uint64_t size)
 {
     errno = 0;
     memset(ctx, 0, sizeof(stream_t));
     if(!fn || !*fn || !size) return 1;
 
     if(verbose)
-        printf("stream_create(%s) comp %d size %" PRIu64 ")\r\n", fn, comp, size);
+        printf("stream_create(%S) comp %d size %" PRIu64 ")\r\n", fn, comp, size);
 
     ctx->compBuf = (unsigned char*)malloc(buffer_size);
     if(!ctx->compBuf) {
@@ -463,7 +466,11 @@ int stream_create(stream_t *ctx, char *fn, int comp, uint64_t size)
         }
     } else {
         ctx->type = TYPE_PLAIN;
+#ifdef WINVER
+        ctx->f = _wfopen(fn, L"wb");
+#else
         ctx->f = fopen(fn, "wb");
+#endif
         if(!ctx->f) {
             main_getErrorMessage();
             free(ctx->buffer); ctx->buffer = NULL;

@@ -85,7 +85,7 @@ int stream_status(stream_t *ctx, char *str, int done);
  * Open file and determine the source's format
  * if uncompr is set, then file will be assumed uncompressed
  */
-int stream_open(stream_t *ctx, char *fn, int uncompr);
+int stream_open(stream_t *ctx, wchar_t *fn, int uncompr);
 
 /**
  * Read no more than buffer_size uncompressed bytes of source data
@@ -95,7 +95,7 @@ int stream_read(stream_t *ctx);
 /**
  * Open file for writing
  */
-int stream_create(stream_t *ctx, char *fn, int comp, uint64_t size);
+int stream_create(stream_t *ctx, wchar_t *fn, int comp, uint64_t size);
 
 /**
  * Compress and write out data
