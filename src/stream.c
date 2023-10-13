@@ -27,6 +27,8 @@
  *
  */
 
+#define _CRT_SECURE_NO_WARNINGS
+
 #include <time.h>
 #include <errno.h>
 #include <sys/types.h>
@@ -35,6 +37,7 @@
 
 #ifdef WINVER
 #include <windows.h>
+#include <io.h>
 /*extern int _fileno(FILE *f);*/
 #else
 extern int fileno(FILE *f);
@@ -54,6 +57,8 @@ int myseek (FILE* stream, uint64_t offset)
 int verbose = 0;
 int buffer_size = 1024*1024;
 int baud = 115200;
+int force = 0;
+int dstfd = 0;
 
 /**
  * Returns progress percentage and the status string in str
@@ -98,7 +103,7 @@ int stream_status(stream_t *ctx, char *str, int done)
             ctx->avgSpeedBytes += d;
             ctx->avgSpeedNum++;
             d = ctx->avgSpeedBytes / ctx->avgSpeedNum;
-            if(verbose) printf("  average speed %" PRIu64" bytes / sec\r\n", d);
+            if(verbose > 1) printf("  average speed %" PRIu64" bytes / sec\r\n", d);
         }
         if(ctx->avgSpeedNum > 2) {
             d = d ? (ctx->fileSize ? ctx->fileSize - ctx->readSize : ctx->compSize - ctx->cmrdSize) / d : 0;
@@ -144,7 +149,7 @@ int stream_status(stream_t *ctx, char *str, int done)
  */
 int stream_open(stream_t *ctx, wchar_t *fn, int uncompr)
 {
-    unsigned char hdr[65536], *buff;
+    static uint8_t hdr[65536], *buff;
     uint64_t fs = 0;
     int x, y;
 #ifndef WINVER
@@ -317,7 +322,7 @@ int stream_read(stream_t *ctx)
     size = ctx->fileSize - ctx->readSize;
     if(size < 1) { if(ctx->fileSize) return 0; size = 0; }
     if(size > buffer_size) size = buffer_size;
-    if(verbose)
+    if(verbose > 1)
         printf("stream_read() readSize %" PRIu64 " / fileSize %" PRIu64 " (input size %"
             PRId64 "), cmrdSize %" PRIu64 " / compSize %" PRIu64 "u\r\n",
             ctx->readSize, ctx->fileSize, size, ctx->cmrdSize, ctx->compSize);
@@ -356,7 +361,7 @@ int stream_read(stream_t *ctx)
                     insiz = ctx->compSize - ctx->cmrdSize;
                     if(insiz < 1) { ret = BZ_STREAM_END; break; }
                     if(insiz > buffer_size) insiz = buffer_size;
-                    if(verbose) printf("  bzip2 cmrdSize %" PRIu64
+                    if(verbose > 1) printf("  bzip2 cmrdSize %" PRIu64
                         " insiz %" PRId64 "\r\n", ctx->cmrdSize, insiz);
                     ctx->bstrm.next_in = (char*)ctx->compBuf;
                     ctx->bstrm.avail_in = insiz;
@@ -380,7 +385,7 @@ int stream_read(stream_t *ctx)
                     insiz = ctx->compSize - ctx->cmrdSize;
                     if(insiz < 1) { ret = XZ_STREAM_END; break; }
                     if(insiz > buffer_size) insiz = buffer_size;
-                    if(verbose) printf("  xz cmrdSize %" PRIu64
+                    if(verbose > 1) printf("  xz cmrdSize %" PRIu64
                         " insiz %" PRId64 "\r\n", ctx->cmrdSize, insiz);
                     ctx->xstrm.in = (unsigned char*)ctx->compBuf;
                     ctx->xstrm.in_pos = 0;
@@ -408,7 +413,7 @@ int stream_read(stream_t *ctx)
                     insiz = ctx->compSize - ctx->cmrdSize;
                     if(insiz < 1) { ret = 0; break; }
                     if(insiz > buffer_size) insiz = buffer_size;
-                    if(verbose) printf("  xstd cmrdSize %" PRIu64
+                    if(verbose > 1) printf("  zstd cmrdSize %" PRIu64
                         " insiz %" PRId64 "\r\n", ctx->cmrdSize, insiz);
                     ctx->zi.src = ctx->compBuf;
                     ctx->zi.pos = 0;
@@ -426,9 +431,45 @@ int stream_read(stream_t *ctx)
         break;
     }
     while(size & 511) ctx->buffer[size++] = 0;
-    if(verbose) printf("stream_read() output size %" PRId64 "\r\n", size);
+    if(verbose > 1) printf("stream_read() output size %" PRId64 "\r\n", size);
     ctx->readSize += (uint64_t)size;
     return size;
+}
+
+/**
+ * Get a reference to the destination file system
+ */
+int stream_dst(wchar_t *fn, FILE *f)
+{
+#ifdef WINVER
+    wchar_t tmp[MAX_PATH + 1];
+    (void)f;
+    GetFullPathNameW(fn, MAX_PATH, tmp, NULL);
+    return tmp[1] == L':' ? (int)tmp[0] : 0;
+#else
+    (void)fn;
+    return fileno(f);
+#endif
+}
+
+/**
+ * Return available space on destination file system
+ */
+uint64_t stream_avail(int fd)
+{
+#ifdef WINVER
+    wchar_t tmp[MAX_PATH + 1];
+    DWORD spc = 0, bps = 0, fc = 0, tc;
+    tmp[0] = fd; tmp[1] = L':'; tmp[2] = L'\\'; tmp[3] = 0;
+    if(fd && GetDiskFreeSpaceW(tmp, &spc, &bps, &fc, &tc))
+        return (uint64_t)fc * (uint64_t)spc * (uint64_t)bps;
+#else
+    struct statvfs vfs;
+    if(fd && !fstatvfs(fd, &vfs))
+        return (uint64_t)vfs.f_bavail * (uint64_t)vfs.f_bsize;
+#endif
+    /* return the largest unsigned number if we don't know the limit */
+    return (uint64_t)-1UL;
 }
 
 /**
@@ -457,7 +498,7 @@ int stream_create(stream_t *ctx, wchar_t *fn, int comp, uint64_t size)
 
     if(comp) {
         ctx->type = TYPE_BZIP2;
-        ctx->b = BZ2_bzopen(fn, "wb");
+        ctx->b = BZ2_bzopen(fn, L"wb");
         if(!ctx->b) {
             main_getErrorMessage();
             free(ctx->buffer); ctx->buffer = NULL;
@@ -489,23 +530,47 @@ int stream_create(stream_t *ctx, wchar_t *fn, int comp, uint64_t size)
  */
 int stream_write(stream_t *ctx, char *buffer, int size)
 {
-    if(verbose)
+    int i;
+    uint64_t avail;
+    if(verbose > 1)
         printf("stream_write() readSize %" PRIu64 " / fileSize %" PRIu64 " (output size %d)\r\n",
             ctx->readSize, ctx->fileSize, size);
     errno = 0;
     ctx->readSize += (uint64_t)size;
 
+    /* don't rely on OS reporting "no space left on device", go ahead that by buffer size times 2. See issue #50 */
+    if(dstfd && (avail = stream_avail(dstfd)) && avail <= (((uint64_t)buffer_size) << 1)) {
+        if(verbose) printf("stream_write() available size %" PRIu64 " <= 2 * buffer_size\r\n", avail);
+#ifdef WINVER
+        SetLastError(ERROR_DISK_FULL);
+#else
+        errno = ENOSPC;
+#endif
+        return 0;
+    }
     switch(ctx->type) {
         case TYPE_PLAIN:
+            /* check if the data contains only zeros nothing else */
+            for(i = 0; i < size && !buffer[i]; i++) {}
+            /* there's a bug in the newest Windows 10 kernel, see issue #53, so do not use sparse file under Win */
+#if !defined(WINVER) || defined(WINKRNL_NOT_BUGGY_ANY_MORE)
+            if(i == size) {
+                /* if all bytes zero, then don't write just seek, that will create a sparse file */
+                fseek(ctx->f, (long)size, SEEK_CUR);
+            } else
+#endif
+            {
+                /* we have some non-zero data, write the block as-is */
             if(!fwrite(buffer, size, 1, ctx->f))
                 size = 0;
+            }
         break;
         case TYPE_BZIP2:
             if(BZ2_bzwrite(ctx->b, buffer, size) < 1)
                 size = 0;
         break;
     }
-    if(verbose) printf("stream_write() output size %d\r\n", size);
+    if(verbose > 1) printf("stream_write() output size %d\r\n", size);
     return size;
 }
 
@@ -514,6 +579,7 @@ int stream_write(stream_t *ctx, char *buffer, int size)
  */
 void stream_close(stream_t *ctx)
 {
+    if(verbose) printf("stream_close()\r\n");
     if(ctx->compBuf) free(ctx->compBuf);
     if(ctx->verifyBuf) free(ctx->verifyBuf);
     if(ctx->buffer) free(ctx->buffer);
@@ -524,6 +590,7 @@ void stream_close(stream_t *ctx)
         case TYPE_XZ: xz_dec_end(ctx->xz); break;
         case TYPE_ZSTD: ZSTD_freeDCtx(ctx->zstd); break;
     }
+    dstfd = 0;
 }
 
 /**

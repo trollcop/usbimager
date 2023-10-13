@@ -52,7 +52,7 @@ wchar_t **lang;
 extern char *dict[NUMLANGS][NUMTEXTS + 1];
 int blksizesel = 0;
 
-static HWND mainHwndDlg;
+static HWND mainHwndDlg = NULL;
 static wchar_t *bkpdir = NULL;
 
 wchar_t *main_errorMessage;
@@ -77,10 +77,12 @@ void main_getErrorMessage(void)
 void main_onProgress(void *data)
 {
     (void)data;
-    SendDlgItemMessage(mainHwndDlg, IDC_MAINDLG_PROGRESSBAR, PBM_SETPOS, 0, 0);
-    SetWindowTextW(GetDlgItem(mainHwndDlg, IDC_MAINDLG_STATUS), lang[L_WAITING]);
-    ShowWindow(GetDlgItem(mainHwndDlg, IDC_MAINDLG_STATUS), SW_HIDE);
-    ShowWindow(GetDlgItem(mainHwndDlg, IDC_MAINDLG_STATUS), SW_SHOW);
+    if (mainHwndDlg) {
+        SendDlgItemMessage(mainHwndDlg, IDC_MAINDLG_PROGRESSBAR, PBM_SETPOS, 0, 0);
+        SetWindowTextW(GetDlgItem(mainHwndDlg, IDC_MAINDLG_STATUS), lang[L_WAITING]);
+        ShowWindow(GetDlgItem(mainHwndDlg, IDC_MAINDLG_STATUS), SW_HIDE);
+        ShowWindow(GetDlgItem(mainHwndDlg, IDC_MAINDLG_STATUS), SW_SHOW);
+    }
 }
 
 static void MainDlgMsgBox(HWND hwndDlg, wchar_t *message)
@@ -100,18 +102,26 @@ static void MainDlgMsgBox(HWND hwndDlg, wchar_t *message)
 
 static void onDone(HWND hwndDlg)
 {
-    LRESULT index = SendDlgItemMessage(hwndDlg, IDC_MAINDLG_TARGET_LIST, CB_GETCURSEL, 0, 0);
-    EnableWindow(GetDlgItem(hwndDlg, IDC_MAINDLG_SOURCE), TRUE);
-    EnableWindow(GetDlgItem(hwndDlg, IDC_MAINDLG_SELECT), TRUE);
-    EnableWindow(GetDlgItem(hwndDlg, IDC_MAINDLG_TARGET_LIST),TRUE);
-    EnableWindow(GetDlgItem(hwndDlg, IDC_MAINDLG_WRITE), TRUE);
-    EnableWindow(GetDlgItem(hwndDlg, IDC_MAINDLG_READ), index >= 0 && index < DISKS_MAX && disks_targets[index] >= 1024 ? FALSE : TRUE);
-    EnableWindow(GetDlgItem(hwndDlg, IDC_MAINDLG_VERIFY), TRUE);
-    EnableWindow(GetDlgItem(hwndDlg, IDC_MAINDLG_COMPRESS), TRUE);
-    EnableWindow(GetDlgItem(hwndDlg, IDC_MAINDLG_BLKSIZE), TRUE);
-    SendDlgItemMessage(hwndDlg, IDC_MAINDLG_PROGRESSBAR, PBM_SETPOS, 0, 0);
-    ShowWindow(GetDlgItem(hwndDlg, IDC_MAINDLG_STATUS), SW_HIDE);
-    ShowWindow(GetDlgItem(hwndDlg, IDC_MAINDLG_STATUS), SW_SHOW);
+    LRESULT index;
+    SleepEx(500, 0);
+    if (mainHwndDlg) {
+        index = SendDlgItemMessage(hwndDlg, IDC_MAINDLG_TARGET_LIST, CB_GETCURSEL, 0, 0);
+        EnableWindow(GetDlgItem(hwndDlg, IDC_MAINDLG_SOURCE), TRUE);
+        EnableWindow(GetDlgItem(hwndDlg, IDC_MAINDLG_SELECT), TRUE);
+        EnableWindow(GetDlgItem(hwndDlg, IDC_MAINDLG_TARGET_LIST), TRUE);
+        EnableWindow(GetDlgItem(hwndDlg, IDC_MAINDLG_WRITE), TRUE);
+#if !defined(USE_WRONLY) || !USE_WRONLY
+        EnableWindow(GetDlgItem(hwndDlg, IDC_MAINDLG_READ), index >= 0 && index < DISKS_MAX && disks_targets[index] >= 1024 ? FALSE : TRUE);
+        EnableWindow(GetDlgItem(hwndDlg, IDC_MAINDLG_VERIFY), TRUE);
+        EnableWindow(GetDlgItem(hwndDlg, IDC_MAINDLG_COMPRESS), TRUE);
+        EnableWindow(GetDlgItem(hwndDlg, IDC_MAINDLG_BLKSIZE), TRUE);
+#else
+        (void)index;
+#endif
+        SendDlgItemMessage(hwndDlg, IDC_MAINDLG_PROGRESSBAR, PBM_SETPOS, 0, 0);
+        ShowWindow(GetDlgItem(hwndDlg, IDC_MAINDLG_STATUS), SW_HIDE);
+        ShowWindow(GetDlgItem(hwndDlg, IDC_MAINDLG_STATUS), SW_SHOW);
+    }
 }
 
 /**
@@ -127,20 +137,25 @@ static DWORD WINAPI writerRoutine(LPVOID lpParam)
     LRESULT index = SendDlgItemMessage(hwndDlg, IDC_MAINDLG_TARGET_LIST, CB_GETCURSEL, 0, 0);
     static wchar_t lpStatus[128];
     static stream_t ctx;
-    int ret = 1;
+    int ret = 1, needWrite;
 
     ctx.fileSize = 0;
     GetDlgItemTextW(hwndDlg, IDC_MAINDLG_SOURCE, szFilePathName, sizeof(szFilePathName) / sizeof(szFilePathName[0]));
     ret = stream_open(&ctx, szFilePathName, index >= 0 && index < DISKS_MAX &&disks_targets[index] >= 1024);
 
     if (!ret) {
+#if !defined(USE_WRONLY) || !USE_WRONLY
         int needVerify = IsDlgButtonChecked(hwndDlg, IDC_MAINDLG_VERIFY);
-
+#else
+        int needVerify = 1;
+#endif
         hTargetDevice = index == CB_ERR ? (HANDLE)-1 : (HANDLE)disks_open((int)index, ctx.fileSize);
         if (hTargetDevice != NULL && hTargetDevice != (HANDLE)-1 && hTargetDevice != (HANDLE)-2 && hTargetDevice != (HANDLE)-3 && hTargetDevice != (HANDLE)-4) {
             totalNumberOfBytesWritten.QuadPart = 0;
+            uint64_t t1 = GetTickCount64();
+            uint64_t t2 = GetTickCount64();
 
-            while(1) {
+            while(mainHwndDlg) {
                 int numberOfBytesRead;
 
                 if((numberOfBytesRead = stream_read(&ctx)) >= 0) {
@@ -148,31 +163,55 @@ static DWORD WINAPI writerRoutine(LPVOID lpParam)
                         if(!ctx.fileSize) ctx.fileSize = ctx.readSize;
                         break;
                     } else {
-                        DWORD numberOfBytesWritten, numberOfBytesVerify;
-
-                        if (WriteFile(hTargetDevice, ctx.buffer, numberOfBytesRead, &numberOfBytesWritten, NULL)) {
-                            if(verbose) printf("WriteFile(%d) numberOfBytesWritten %lu\r\n", numberOfBytesRead, numberOfBytesWritten);
-                            if(needVerify) {
-                                SetFilePointerEx(hTargetDevice, totalNumberOfBytesWritten, NULL, FILE_BEGIN);
-                                if(!ReadFile(hTargetDevice, ctx.verifyBuf, numberOfBytesWritten, &numberOfBytesVerify, NULL) ||
-                                    numberOfBytesWritten != numberOfBytesVerify || memcmp(ctx.buffer, ctx.verifyBuf, numberOfBytesWritten)) {
-                                    MessageBoxW(hwndDlg, lang[L_VRFYERR], lang[L_ERROR], MB_ICONERROR);
-                                    break;
+                        DWORD numberOfBytesWritten = 0, numberOfBytesVerify = 0;
+                        errno = 0; needWrite = 1;
+                        if (!force) {
+                            if (ReadFile(hTargetDevice, ctx.verifyBuf, numberOfBytesRead, &numberOfBytesVerify, NULL) &&
+                                numberOfBytesRead == (int)numberOfBytesVerify && !memcmp(ctx.buffer, ctx.verifyBuf, numberOfBytesRead)) {
+                                if (verbose > 1) printf("  numberOfBytesVerify %d matches disk, skipping write\n", numberOfBytesRead);
+                                needWrite = 0;
+                                totalNumberOfBytesWritten.QuadPart += numberOfBytesVerify;
+                                pos = (DWORD)stream_status(&ctx, (char *)&lpStatus, 0);
+                                /* time throttle spam to 100ms */
+                                if ((GetTickCount64() - t1) > 100) {
+                                    SendDlgItemMessage(hwndDlg, IDC_MAINDLG_PROGRESSBAR, PBM_SETPOS, pos, 0);
+                                    SetWindowTextW(GetDlgItem(hwndDlg, IDC_MAINDLG_STATUS), lpStatus);
+                                    ShowWindow(GetDlgItem(hwndDlg, IDC_MAINDLG_STATUS), SW_HIDE);
+                                    ShowWindow(GetDlgItem(hwndDlg, IDC_MAINDLG_STATUS), SW_SHOW);
+                                    t1 = GetTickCount64();
                                 }
-                                if(verbose) printf("  numberOfBytesVerify %lu\n", numberOfBytesVerify);
+                            } else
+                                SetFilePointerEx(hTargetDevice, totalNumberOfBytesWritten, NULL, FILE_BEGIN);
+                        }
+                        if (needWrite) {
+                            if (WriteFile(hTargetDevice, ctx.buffer, numberOfBytesRead, &numberOfBytesWritten, NULL)) {
+                                if (verbose > 1) printf("WriteFile(%d) numberOfBytesWritten %lu\r\n", numberOfBytesRead, numberOfBytesWritten);
+                                if (needVerify) {
+                                    SetFilePointerEx(hTargetDevice, totalNumberOfBytesWritten, NULL, FILE_BEGIN);
+                                    if (!ReadFile(hTargetDevice, ctx.verifyBuf, numberOfBytesWritten, &numberOfBytesVerify, NULL) ||
+                                        numberOfBytesWritten != numberOfBytesVerify || memcmp(ctx.buffer, ctx.verifyBuf, numberOfBytesWritten)) {
+                                        MessageBoxW(hwndDlg, lang[L_VRFYERR], lang[L_ERROR], MB_ICONERROR);
+                                        break;
+                                    }
+                                    if (verbose > 1) printf("  numberOfBytesVerify %lu\n", numberOfBytesVerify);
+                                }
                                 totalNumberOfBytesWritten.QuadPart += numberOfBytesWritten;
-                            }
 
-                            pos = (DWORD) stream_status(&ctx, (char*)&lpStatus, 0);
-                            SendDlgItemMessage(hwndDlg, IDC_MAINDLG_PROGRESSBAR, PBM_SETPOS, pos, 0);
-                            SetWindowTextW(GetDlgItem(hwndDlg, IDC_MAINDLG_STATUS), lpStatus);
-                            ShowWindow(GetDlgItem(hwndDlg, IDC_MAINDLG_STATUS), SW_HIDE);
-                            ShowWindow(GetDlgItem(hwndDlg, IDC_MAINDLG_STATUS), SW_SHOW);
-                        } else {
-                            if(verbose) printf("WriteFile(%d) numberOfBytesWritten %lu ERROR\r\n", numberOfBytesRead, numberOfBytesWritten);
-                            main_getErrorMessage();
-                            MainDlgMsgBox(hwndDlg, lang[L_WRTRGERR]);
-                            break;
+                                pos = (DWORD)stream_status(&ctx, (char *)&lpStatus, 0);
+                                /* time throttle spam to 100ms */
+                                if ((GetTickCount64() - t2) > 100) {
+                                    SendDlgItemMessage(hwndDlg, IDC_MAINDLG_PROGRESSBAR, PBM_SETPOS, pos, 0);
+                                    SetWindowTextW(GetDlgItem(hwndDlg, IDC_MAINDLG_STATUS), lpStatus);
+                                    ShowWindow(GetDlgItem(hwndDlg, IDC_MAINDLG_STATUS), SW_HIDE);
+                                    ShowWindow(GetDlgItem(hwndDlg, IDC_MAINDLG_STATUS), SW_SHOW);
+                                    t2 = GetTickCount64();
+                                }
+                            } else {
+                                if (verbose > 1) printf("WriteFile(%d) numberOfBytesWritten %lu ERROR\r\n", numberOfBytesRead, numberOfBytesWritten);
+                                main_getErrorMessage();
+                                MainDlgMsgBox(hwndDlg, lang[L_WRTRGERR]);
+                                break;
+                            }
                         }
                     }
                 } else {
@@ -215,10 +254,12 @@ INT_PTR MainDlgWriteClick(HWND hwndDlg)
     EnableWindow(GetDlgItem(hwndDlg, IDC_MAINDLG_SELECT), FALSE);
     EnableWindow(GetDlgItem(hwndDlg, IDC_MAINDLG_TARGET_LIST), FALSE);
     EnableWindow(GetDlgItem(hwndDlg, IDC_MAINDLG_WRITE), FALSE);
+#if !defined(USE_WRONLY) || !USE_WRONLY
     EnableWindow(GetDlgItem(hwndDlg, IDC_MAINDLG_READ), FALSE);
     EnableWindow(GetDlgItem(hwndDlg, IDC_MAINDLG_VERIFY), FALSE);
     EnableWindow(GetDlgItem(hwndDlg, IDC_MAINDLG_COMPRESS), FALSE);
     EnableWindow(GetDlgItem(hwndDlg, IDC_MAINDLG_BLKSIZE), FALSE);
+#endif
     SendDlgItemMessage(hwndDlg, IDC_MAINDLG_PROGRESSBAR, PBM_SETPOS, 0, 0);
     SetWindowTextW(GetDlgItem(hwndDlg, IDC_MAINDLG_STATUS), L"");
     ShowWindow(GetDlgItem(hwndDlg, IDC_MAINDLG_STATUS), SW_HIDE);
@@ -235,6 +276,7 @@ INT_PTR MainDlgWriteClick(HWND hwndDlg)
     return TRUE;
 }
 
+#if !defined(USE_WRONLY) || !USE_WRONLY
 /**
  * Function that reads from disk and writes to output file
  */
@@ -266,7 +308,8 @@ static DWORD WINAPI readerRoutine(LPVOID lpParam)
         }
         GetDateFormatW(LOCALE_USER_DEFAULT, 0, NULL, L"yyyyMMdd", (LPWSTR)&d, 16);
         GetTimeFormatW(LOCALE_USER_DEFAULT, 0, NULL, L"HHmm", (LPWSTR)&t, 8);
-        wsprintfW(wFn, L"%s\\usbimager-%sT%s.dd%s", bkpdir && !_wstat(bkpdir, &st) ? bkpdir : home, d, t, needCompress ? L".bz2" : L"");
+        wsprintfW(wFn, L"%s\\usbimager-%sT%s.dd%s", bkpdir && !_wstat(bkpdir, &st) ? bkpdir : home, d, t,
+			needCompress ? L".zst" : L"");
         if (home)
             CoTaskMemFree(home);
 
@@ -274,27 +317,34 @@ static DWORD WINAPI readerRoutine(LPVOID lpParam)
         ShowWindow(GetDlgItem(hwndDlg, IDC_MAINDLG_SOURCE), SW_HIDE);
         ShowWindow(GetDlgItem(hwndDlg, IDC_MAINDLG_SOURCE), SW_SHOW);
         if (wFn && !stream_create(&ctx, wFn, needCompress, disks_capacity[targetId & (DISKS_MAX - 1)])) {
-            while(ctx.readSize < ctx.fileSize) {
+            uint64_t t1 = GetTickCount64();
+            while(mainHwndDlg && ctx.readSize < ctx.fileSize) {
                 errno = 0;
                 size = ctx.fileSize - ctx.readSize < (uint64_t)buffer_size ? (int)(ctx.fileSize - ctx.readSize) : buffer_size;
                 if(ReadFile(src, ctx.buffer, size, &numberOfBytesRead, NULL)) {
-                    if(verbose) printf("ReadFile(%d) numberOfBytesRead %lu\r\n", size, numberOfBytesRead);
+                    if(verbose > 1) printf("ReadFile(%d) numberOfBytesRead %lu\r\n", size, numberOfBytesRead);
                     if(stream_write(&ctx, ctx.buffer, size)) {
                         DWORD pos = (DWORD) stream_status(&ctx, (char*)&lpStatus, 0);
-                        SendDlgItemMessage(hwndDlg, IDC_MAINDLG_PROGRESSBAR, PBM_SETPOS, pos, 0);
-                        SetWindowTextW(GetDlgItem(hwndDlg, IDC_MAINDLG_STATUS), lpStatus);
-                        ShowWindow(GetDlgItem(hwndDlg, IDC_MAINDLG_STATUS), SW_HIDE);
-                        ShowWindow(GetDlgItem(hwndDlg, IDC_MAINDLG_STATUS), SW_SHOW);
+                        /* time throttle spam to 100ms */
+                        if ((GetTickCount64() - t1) > 100) {
+                            SendDlgItemMessage(hwndDlg, IDC_MAINDLG_PROGRESSBAR, PBM_SETPOS, pos, 0);
+                            SetWindowTextW(GetDlgItem(hwndDlg, IDC_MAINDLG_STATUS), lpStatus);
+                            ShowWindow(GetDlgItem(hwndDlg, IDC_MAINDLG_STATUS), SW_HIDE);
+                            ShowWindow(GetDlgItem(hwndDlg, IDC_MAINDLG_STATUS), SW_SHOW);
+                            t1 = GetTickCount64();
+                        }
                     } else {
                         MainDlgMsgBox(hwndDlg, lang[L_WRIMGERR]);
+                        break;
                     }
                 } else {
-                    if(verbose) printf("ReadFile(%d) numberOfBytesRead %lu ERROR\r\n", size, numberOfBytesRead);
+                    if(verbose > 1) printf("ReadFile(%d) numberOfBytesRead %lu ERROR\r\n", size, numberOfBytesRead);
                     MainDlgMsgBox(hwndDlg, lang[L_RDSRCERR]);
                     break;
                 }
             }
             stream_close(&ctx);
+            if(GetLastError() == ERROR_DISK_FULL) DeleteFileW(wFn);
         } else {
             MainDlgMsgBox(hwndDlg, lang[L_OPENIMGERR]);
         }
@@ -337,6 +387,7 @@ INT_PTR MainDlgReadClick(HWND hwndDlg)
 
     return TRUE;
 }
+#endif
 
 INT_PTR MainDlgRefreshTarget(HWND hwndDlg)
 {
@@ -347,10 +398,14 @@ INT_PTR MainDlgRefreshTarget(HWND hwndDlg)
         SendDlgItemMessage(hwndDlg, IDC_MAINDLG_TARGET_LIST, CB_SETCURSEL, (WPARAM) index, 0);
         if(index >= 0 && index < DISKS_MAX && disks_targets[index] >= 1024) {
             SetDlgItemTextW(hwndDlg, IDC_MAINDLG_WRITE, lang[L_SEND]);
+#if !defined(USE_WRONLY) || !USE_WRONLY
             EnableWindow(GetDlgItem(hwndDlg, IDC_MAINDLG_READ), FALSE);
+#endif
         } else {
             SetDlgItemTextW(hwndDlg, IDC_MAINDLG_WRITE, lang[L_WRITE]);
+#if !defined(USE_WRONLY) || !USE_WRONLY
             EnableWindow(GetDlgItem(hwndDlg, IDC_MAINDLG_READ), TRUE);
+#endif
         }
     }
     return TRUE;
@@ -381,22 +436,25 @@ INT_PTR MainDlgSelectClick(HWND hwndDlg)
 
 static INT_PTR CALLBACK MainDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-    HICON wrico, rdico;
     UNREFERENCED_PARAMETER(lParam);
+#if !defined(USE_WRONLY) || !USE_WRONLY
     LRESULT index;
+    HICON wrico, rdico;
     wchar_t tmp[16];
+#endif
 
     switch (uMsg) {
         case WM_INITDIALOG:
             mainHwndDlg = hwndDlg;
             SendMessage(hwndDlg, WM_SETICON, ICON_SMALL, (LPARAM) LoadIcon((HINSTANCE) lParam, MAKEINTRESOURCE(IDI_APP_ICON)));
             /* ▲ 25b2  ▼ 28bc */
+            SetDlgItemTextW(hwndDlg, IDC_MAINDLG_WRITE, lang[L_WRITE]);
+#if !defined(USE_WRONLY) || !USE_WRONLY
             wrico=LoadImage(GetModuleHandle(NULL),MAKEINTRESOURCE(IDI_WRITE), IMAGE_ICON, 16, 16, 0);
             SendMessage(GetDlgItem(hwndDlg,IDC_MAINDLG_WRITE),BM_SETIMAGE, (WPARAM)IMAGE_ICON,(LPARAM)wrico);
-            SetDlgItemTextW(hwndDlg, IDC_MAINDLG_WRITE, lang[L_WRITE]);
+            SetDlgItemTextW(hwndDlg, IDC_MAINDLG_READ, lang[L_READ]);
             rdico=LoadImage(GetModuleHandle(NULL),MAKEINTRESOURCE(IDI_READ), IMAGE_ICON, 16, 16, 0);
             SendMessage(GetDlgItem(hwndDlg,IDC_MAINDLG_READ),BM_SETIMAGE, (WPARAM)IMAGE_ICON,(LPARAM)rdico);
-            SetDlgItemTextW(hwndDlg, IDC_MAINDLG_READ, lang[L_READ]);
             SetWindowTextW(GetDlgItem(hwndDlg, IDC_MAINDLG_VERIFY), lang[L_VERIFY]);
             SetWindowTextW(GetDlgItem(hwndDlg, IDC_MAINDLG_COMPRESS), lang[L_COMPRESS]);
             for(index = 0; index < 10; index++) {
@@ -404,8 +462,9 @@ static INT_PTR CALLBACK MainDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
                 SendDlgItemMessageW(mainHwndDlg, IDC_MAINDLG_BLKSIZE, CB_ADDSTRING, 0, (LPARAM)tmp);
             }
             SendDlgItemMessage(hwndDlg, IDC_MAINDLG_BLKSIZE, CB_SETCURSEL, blksizesel, 0);
-            MainDlgRefreshTarget(hwndDlg);
             CheckDlgButton(hwndDlg, IDC_MAINDLG_VERIFY, BST_CHECKED);
+#endif
+            MainDlgRefreshTarget(hwndDlg);
             return TRUE;
 
         case WM_CLOSE:
@@ -429,6 +488,7 @@ static INT_PTR CALLBACK MainDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
                 case IDC_MAINDLG_WRITE:
                     return (HIWORD(wParam) == BN_CLICKED) ? MainDlgWriteClick(hwndDlg) : FALSE;
 
+#if !defined(USE_WRONLY) || !USE_WRONLY
                 case IDC_MAINDLG_READ:
                     return (HIWORD(wParam) == BN_CLICKED) ? MainDlgReadClick(hwndDlg) : FALSE;
 
@@ -444,7 +504,7 @@ static INT_PTR CALLBACK MainDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
                     index = SendDlgItemMessage(hwndDlg, IDC_MAINDLG_BLKSIZE, CB_GETCURSEL, 0, 0);
                     buffer_size = (1ULL<<index) * 1024ULL * 1024ULL;
                     return TRUE;
-
+#endif
                 default:
                     return FALSE;
             }
@@ -480,6 +540,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszArgum
             if(*s == '-') {
                 for(s++; *s && *s != ' '; s++) {
                     switch(*s) {
+                        case 'f': force++; break;
                         case 'v':
                             verbose++;
                             if(verbose == 1) {
@@ -496,11 +557,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszArgum
                                     SetConsoleScreenBufferSize(ConsoleHandle, bs);
                                 }
                                 printf("USBImager " USBIMAGER_VERSION
+#if USE_WRONLY
+                                    "_wo"
+#endif
 #ifdef USBIMAGER_BUILD
                                     " (build " USBIMAGER_BUILD ")"
 #endif
                                     " - MIT license, Copyright (C) 2020 bzt\r\n\r\n"
-                                    "usbimager.exe [-v|-vv|-a|-s[baud]|-S[baud]|-1|-2|-3|-4|-5|-6|-7|-8|-9|-L(xx)] <backup path>\r\n\r\n"
+                                    "usbimager.exe [-v|-vv|-a|-f|-s[baud]|-S[baud]|-1|-2|-3|-4|-5|-6|-7|-8|-9|-L(xx)|-m(x)] <backup path>\r\n\r\n"
                                     "https://gitlab.com/bztsrc/usbimager\r\n\r\n");
                             }
                         break;
@@ -529,6 +593,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszArgum
                         case '8': blksizesel = 8; buffer_size = 256*1024*1024; break;
                         case '9': blksizesel = 9; buffer_size = 512*1024*1024; break;
                         case 'L': loc = ++s; ++s; break;
+                        case 'm': for(disks_maxsize = atoi(++s); *s >= '0' && *s <= '9'; s++); continue;
                     }
                 }
             } else {
@@ -607,10 +672,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszArgum
         *d = 0;
     }
     if(verbose) {
-        printf("GetUserDefaultLangID %04x '%s', dict '%s', serial %d, buffer_size %d MiB\r\n",
-            lid, loc, dict[i][0], disks_serial, buffer_size/1024/1024);
+        printf("GetUserDefaultLangID %04x '%s', dict '%s', serial %d, buffer_size %d MiB, force %d\r\n",
+            lid, loc, dict[i][0], disks_serial, buffer_size / 1024 / 1024, force);
+        printf("disks_maxsize %d GiB\r\n", disks_maxsize);
         if(disks_serial) printf("Serial %d,8,n,1\r\n", baud);
+#if !defined(USE_WRONLY) || !USE_WRONLY
         if(bkpdir) wprintf(L"bkpdir '%s'\r\n", bkpdir);
+#endif
     }
 
     ret = DialogBoxParam(hInstance, MAKEINTRESOURCE(IDC_MAINDLG), NULL, MainDlgProc, (LPARAM) hInstance);

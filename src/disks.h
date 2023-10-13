@@ -32,8 +32,9 @@
 #include <limits.h>
 
 #define DISKS_MAX 128
+#define DISKS_MAXSIZE 256 /* GiB, largest disk we display */
 
-extern int disks_all, disks_serial, disks_targets[DISKS_MAX];
+extern int disks_all, disks_serial, disks_maxsize, disks_targets[DISKS_MAX];
 extern uint64_t disks_capacity[DISKS_MAX];
 
 /* some defines if not defined in limit.h */
@@ -51,13 +52,13 @@ extern uint64_t disks_capacity[DISKS_MAX];
 /**
  * Get UI language
  */
-char *disks_getlang();
+char *disks_getlang(void);
 
 /**
  * Refresh target device list in the combobox
  * Should set disks_targets[] and call main_addToCombobox()
  */
-void disks_refreshlist();
+void disks_refreshlist(void);
 
 /**
  * Return mount points and bookmarks file
